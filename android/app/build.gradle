@@ -73,6 +73,13 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def secretsPropertiesFile = rootProject.file("secrets.properties")
+def secretsProperties = new Properties()
+if (secretsPropertiesFile.exists()) {
+    secretsProperties.load(new FileInputStream(secretsPropertiesFile))
+}
+def mapsApiKey = secretsProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -85,6 +92,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        if (!mapsApiKey.isEmpty()) {
+            resValue "string", "google_maps_api_key", mapsApiKey
+        }
     }
     signingConfigs {
         debug {

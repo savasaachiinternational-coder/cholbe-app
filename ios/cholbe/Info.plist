@@ -34,7 +34,9 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Cholbe uses your location to help you select a delivery address on the map.</string>
+	<key>GMSApiKey</key>
+	<string>AIzaSyDdAoHeCNbd81rqwMApCne-bB5qYVwCaqk</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

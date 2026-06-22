@@ -28,6 +28,8 @@ build/
 .idea
 .gradle
 local.properties
+android/secrets.properties
+src/config/googleMaps.ts
 *.iml
 *.hprof
 .cxx/

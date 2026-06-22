@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {Dimensions, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import MapView, {Marker, UrlTile} from 'react-native-maps';
+import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
@@ -12,8 +12,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AddressMapPicker'>;
 const {width} = Dimensions.get('window');
 
 const INITIAL_REGION = {
-  latitude: 26.0337,
-  longitude: 88.4617,
+  latitude: 23.874,
+  longitude: 90.3695,
   latitudeDelta: 0.03,
   longitudeDelta: 0.03,
 };
@@ -36,8 +36,10 @@ export function AddressMapPickerScreen({navigation}: Props) {
         <View style={styles.headerSpacer} />
       </View>
 
-      <MapView style={styles.map} initialRegion={INITIAL_REGION}>
-        <UrlTile urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png" maximumZ={19} flipY={false} />
+      <MapView
+        provider={PROVIDER_GOOGLE}
+        style={styles.map}
+        initialRegion={INITIAL_REGION}>
         <Marker
           coordinate={marker}
           draggable

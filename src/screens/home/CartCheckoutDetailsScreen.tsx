@@ -1,8 +1,6 @@
 import {useState} from 'react';
 import {
-  Dimensions,
-  Modal,
-  Pressable,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,295 +13,305 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {GOOGLE_MAPS_API_KEY} from '../../config/googleMaps';
 import type {RootStackParamList} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CartCheckoutDetails'>;
+type VariantKey = 'PC' | 'Stripe' | 'Box';
+type AddressCategory = 'Home' | 'Office';
 
-const {width} = Dimensions.get('window');
-
-const ORDER_SUMMARY_ITEMS = [
-  {id: '1', name: 'Thyrox 50mg Tablet', qty: 1, price: '৳10.00'},
-  {id: '2', name: 'Sergel 20mg Capsule', qty: 1, price: '৳7.00'},
-  {id: '3', name: 'Ace 500mg Tablet', qty: 2, price: '৳10.00'},
+const VARIANTS: {key: VariantKey; label: string}[] = [
+  {key: 'PC', label: '1 PC'},
+  {key: 'Stripe', label: '1 Stripe = 10 pcs'},
+  {key: 'Box', label: '1 Box = 10 Stripes'},
 ];
+
+const REGION_CHIPS = ['Dhaka', 'Dhaka North', 'Uttara Sector 12'];
+
+const MAP_PREVIEW_URL = `https://maps.googleapis.com/maps/api/staticmap?center=23.8740,90.3695&zoom=14&size=600x240&scale=2&markers=color:red%7C23.8740,90.3695&key=${GOOGLE_MAPS_API_KEY}`;
+
+function VerifiedBadgeIcon() {
+  return (
+    <View style={styles.badgeShieldIcon}>
+      <MaterialCommunityIcons name="check-decagram" size={14} color="#FFFFFF" />
+    </View>
+  );
+}
 
 export function CartCheckoutDetailsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [isOrderSuccessOpen, setIsOrderSuccessOpen] = useState(false);
+  const [addressCategory, setAddressCategory] = useState<AddressCategory>('Home');
+  const [selectedVariant, setSelectedVariant] = useState<VariantKey>('Box');
+  const [quantities, setQuantities] = useState<Record<VariantKey, number>>({
+    PC: 0,
+    Stripe: 0,
+    Box: 5,
+  });
 
-  const handleModalNavigation = (
-    route:
-      | 'Home'
-      | 'PharmacyShop'
-      | 'MedicineList'
-      | 'ReportsList'
-      | 'MyProfile'
-      | 'Notifications'
-      | 'OrderTracking'
-      | 'OrderListHistory',
-  ) => {
-    setIsOrderSuccessOpen(false);
-    navigation.navigate(route);
+  const handleQuantityChange = (variant: VariantKey, delta: number) => {
+    setQuantities(prev => ({
+      ...prev,
+      [variant]: Math.max(0, prev[variant] + delta),
+    }));
+    setSelectedVariant(variant);
   };
+
+  const formatQuantity = (value: number) => value.toString().padStart(2, '0');
+
+  const openAddressMap = () => navigation.navigate('AddressMapPicker');
 
   return (
     <View style={styles.container}>
-      <View style={[styles.headerContainer, {paddingTop: insets.top + 8}]}>
-        <TouchableOpacity style={styles.backButton} activeOpacity={0.7} onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={28} color="#333333" />
+      <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}>
+          <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitleText}>Cart Details</Text>
+        <Text style={styles.headerTitle}>Shipping</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollCanvasContent, {paddingBottom: 140 + insets.bottom}]}>
-        <View style={styles.checkoutMainCard}>
-          <View style={styles.sectionBlock}>
-            {ORDER_SUMMARY_ITEMS.map(item => (
-              <View key={item.id} style={styles.productRowLine}>
-                <View style={styles.productInfoLeft}>
-                  <Text style={styles.productNameText}>{item.name}</Text>
-                  <Text style={styles.productQtyText}>Qty: {item.qty}</Text>
-                </View>
-                <Text style={styles.productPriceText}>{item.price}</Text>
+        contentContainerStyle={styles.scrollContent}>
+        <View style={styles.timelineContainer}>
+          <View style={styles.timelineLine} />
+
+          <View style={styles.stepWrapper}>
+            <View style={[styles.stepCircle, styles.stepActive]}>
+              <Text style={styles.stepTextActive}>1</Text>
+            </View>
+            <Text style={styles.stepLabel}>Cart</Text>
+          </View>
+
+          <View style={styles.stepWrapper}>
+            <View style={[styles.stepCircle, styles.stepActive]}>
+              <Text style={styles.stepTextActive}>2</Text>
+            </View>
+            <Text style={styles.stepLabel}>Shipping</Text>
+          </View>
+
+          <View style={styles.stepWrapper}>
+            <View style={[styles.stepCircle, styles.stepInactive]}>
+              <Text style={styles.stepTextInactive}>3</Text>
+            </View>
+            <Text style={styles.stepLabel}>Payment</Text>
+          </View>
+        </View>
+
+        <View style={styles.guestBanner}>
+          <Text style={styles.guestBannerText}>
+            Order now as a guest.{' '}
+            <Text style={styles.greenLink}>Enjoy Free Home Delivery</Text> on your first order after{' '}
+            <Text style={[styles.greenLink, styles.underlineText]}>Log in</Text> !
+          </Text>
+        </View>
+
+        <View style={styles.cardSection}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeading}>Add Shipping Address</Text>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={openAddressMap}>
+              <MaterialCommunityIcons name="pencil-outline" size={20} color="#1A1C1E" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.inputLabel}>Recipient's Name</Text>
+          <View style={styles.inputFieldBox}>
+            <Feather name="user" size={18} color="#4F5E6D" style={styles.fieldIcon} />
+            <TextInput style={styles.textInputStyle} defaultValue="Tanvir Ahmed" editable={false} />
+          </View>
+
+          <Text style={styles.inputLabel}>Phone</Text>
+          <View style={styles.inputFieldBox}>
+            <Feather name="phone" size={18} color="#4F5E6D" style={styles.fieldIcon} />
+            <TextInput
+              style={styles.textInputStyle}
+              defaultValue="01677589448"
+              editable={false}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          <Text style={styles.inputLabel}>Region/City/Dhaka</Text>
+          <View style={styles.chipsFormBlock}>
+            {REGION_CHIPS.map(chip => (
+              <View key={chip} style={styles.inlineChip}>
+                <MaterialCommunityIcons name="checkbox-blank-circle" size={14} color="#47B39D" />
+                <Text style={styles.chipFormLabel}>{chip}</Text>
               </View>
             ))}
           </View>
 
-          <View style={styles.horizontalDivider} />
-
-          <View style={styles.sectionBlock}>
-            <View style={styles.sectionHeaderRow}>
-              <MaterialCommunityIcons
-                name="truck-delivery-outline"
-                size={22}
-                color="#45A096"
-                style={styles.sectionIcon}
-              />
-              <Text style={styles.sectionHeadingTitle}>Home Delivery</Text>
-              <TouchableOpacity
-                style={styles.mapSelectButton}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('AddressMapPicker')}>
-                <Feather name="map-pin" size={14} color="#45A096" />
-                <Text style={styles.mapSelectText}>Select on map</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Village</Text>
-              <View style={styles.textInputWrapper}>
-                <TextInput
-                  style={styles.textInput}
-                  defaultValue="Mokimpur"
-                  placeholderTextColor="#A0A5BA"
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Post Office</Text>
-              <View style={styles.textInputWrapper}>
-                <TextInput
-                  style={styles.textInput}
-                  defaultValue="Mokimpur"
-                  placeholderTextColor="#A0A5BA"
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Upazila</Text>
-              <View style={styles.textInputWrapper}>
-                <TextInput
-                  style={styles.textInput}
-                  defaultValue="Haripur"
-                  placeholderTextColor="#A0A5BA"
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>District</Text>
-              <View style={styles.textInputWrapper}>
-                <TextInput
-                  style={styles.textInput}
-                  defaultValue="Thakurgaon"
-                  placeholderTextColor="#A0A5BA"
-                />
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.horizontalDivider} />
-
-          <View style={[styles.sectionBlock, styles.summaryBlock]}>
-            <View style={styles.summaryCostRow}>
-              <Text style={styles.summaryLabelText}>Subtotal</Text>
-              <Text style={styles.summaryValueText}>৳27.00</Text>
-            </View>
-
-            <View style={styles.summaryCostRow}>
-              <Text style={styles.summaryLabelText}>Delivery charge</Text>
-              <Text style={styles.summaryValueText}>৳45.00</Text>
-            </View>
-
-            <View style={[styles.summaryCostRow, styles.totalRow]}>
-              <Text style={styles.totalLabelText}>Total</Text>
-              <Text style={styles.totalValueText}>৳72.00</Text>
-            </View>
-          </View>
-
+          <Text style={styles.inputLabel}>Delivery address</Text>
           <TouchableOpacity
-            style={styles.confirmButton}
+            style={styles.mapPreviewCard}
             activeOpacity={0.9}
-            onPress={() => setIsOrderSuccessOpen(true)}>
-            <Text style={styles.confirmButtonText}>Confirm Order</Text>
+            onPress={openAddressMap}>
+            <Image source={{uri: MAP_PREVIEW_URL}} style={styles.mapPreviewImage} />
+            <View style={styles.mapPreviewPin}>
+              <Feather name="map-pin" size={22} color="#E26D6D" />
+            </View>
           </TouchableOpacity>
+
+          <View style={styles.deliveryAddressRow}>
+            <TouchableOpacity
+              style={styles.addressTextRow}
+              activeOpacity={0.8}
+              onPress={openAddressMap}>
+              <TouchableOpacity
+                style={styles.mapPinButton}
+                activeOpacity={0.7}
+                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                onPress={openAddressMap}>
+                <Feather name="map-pin" size={18} color="#4F5E6D" />
+              </TouchableOpacity>
+              <Text style={styles.deliveryAddressText}>House 14 Road D6, Uttara 12</Text>
+            </TouchableOpacity>
+
+            <View style={styles.radioOptionGroup}>
+              {(['Home', 'Office'] as AddressCategory[]).map(category => (
+                <TouchableOpacity
+                  key={category}
+                  style={styles.radioClickItem}
+                  activeOpacity={0.8}
+                  onPress={() => setAddressCategory(category)}>
+                  <MaterialCommunityIcons
+                    name={addressCategory === category ? 'radiobox-marked' : 'radiobox-blank'}
+                    size={18}
+                    color={addressCategory === category ? '#4F5E6D' : '#7E8B97'}
+                  />
+                  <Text style={styles.radioLabelText}>{category}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
         </View>
+
+        <View style={styles.cardSection}>
+          <Text style={styles.sectionHeading}>Apply Your Promo Code</Text>
+          <View style={styles.promoInputWrapper}>
+            <TextInput
+              style={styles.promoInputField}
+              defaultValue="MULEN300FF"
+              editable={false}
+              placeholderTextColor="#9AA6B2"
+            />
+            <TouchableOpacity style={styles.applyPromoBtn} activeOpacity={0.85}>
+              <Text style={styles.applyPromoBtnText}>Apply</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.cardSection}>
+          <View style={styles.orderSummaryTitleRow}>
+            <MaterialCommunityIcons name="text-box-search-outline" size={20} color="#1A1C1E" />
+            <Text style={styles.orderSummaryTitle}>Order Summary</Text>
+          </View>
+
+          {VARIANTS.map(variant => (
+            <View key={variant.key} style={styles.summaryCounterItem}>
+              <View
+                style={[
+                  styles.summaryRadioFake,
+                  selectedVariant === variant.key && styles.summaryRadioFakeActive,
+                ]}
+              />
+              <Text style={styles.summaryUnitText}>{variant.label}</Text>
+              <View style={styles.summaryControlRow}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => handleQuantityChange(variant.key, -1)}>
+                  <Feather
+                    name="minus-circle"
+                    size={20}
+                    color={quantities[variant.key] > 0 ? '#1A1C1E' : '#C8D1DB'}
+                  />
+                </TouchableOpacity>
+                <Text style={styles.summaryCountVal}>{formatQuantity(quantities[variant.key])}</Text>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => handleQuantityChange(variant.key, 1)}>
+                  <Feather name="plus-circle" size={20} color="#1A1C1E" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+
+          <View style={styles.dividerLine} />
+
+          <View style={styles.productInvoiceBlock}>
+            <Image
+              source={{
+                uri: 'https://via.placeholder.com/100x100/FF8C00/FFFFFF?text=Immune+12S',
+              }}
+              style={styles.invoiceProductImage}
+            />
+            <View style={styles.invoiceMetaDetails}>
+              <View style={styles.invoiceTitleContainer}>
+                <Text style={styles.invoiceProductTitle}>Cetirizine 10 mg</Text>
+                <Text style={styles.invoiceCurrencyValue}>৳ 800</Text>
+              </View>
+              <Text style={styles.invoiceDiscountsText}>
+                ৳ 8000 <Text style={styles.lineThroughText}>৳ 960</Text> 10% off
+              </Text>
+
+              <View style={styles.invoiceRowSpaced}>
+                <Text style={styles.invoiceLabelStandard}>Items Total</Text>
+                <Text style={styles.invoiceLabelStandard}>৳ 800</Text>
+              </View>
+              <View style={styles.invoiceTitleContainer}>
+                <Text style={styles.invoiceLabelStandard}>Delivery Charge</Text>
+                <Text style={styles.invoiceLabelStandard}>৳ 30</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.dividerLine} />
+
+          <View style={styles.grandTotalContainer}>
+            <Text style={styles.grandTotalLabel}>Grand Total:</Text>
+            <Text style={styles.grandTotalValue}>৳ 830</Text>
+          </View>
+
+          <View style={styles.trustBadgesRow}>
+            <View style={styles.trustBadgeItem}>
+              <VerifiedBadgeIcon />
+              <Text style={styles.trustBadgeText}>Verified Purchase Badge</Text>
+            </View>
+            <View style={styles.trustBadgeItem}>
+              <MaterialCommunityIcons name="replay" size={16} color="#4F5E6D" />
+              <Text style={styles.trustBadgeText}>Free 1-Day Returns &1-Year warranty</Text>
+            </View>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.primaryActionButton}
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate('CartPayment')}>
+          <Text style={styles.primaryActionButtonText}>Next</Text>
+        </TouchableOpacity>
       </ScrollView>
 
-      <View style={[styles.bottomTabBar, {paddingBottom: 12 + insets.bottom}]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Home')}>
-          <Feather name="home" size={24} color="#A0A5BA" />
-          <Text style={styles.tabLabel}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('PharmacyShop')}>
-          <MaterialCommunityIcons name="clippy" size={24} color="#45A096" />
-          <Text style={[styles.tabLabel, styles.activeTabLabel]}>Pharmacy</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('MedicineList')}>
-          <MaterialCommunityIcons name="heart-pulse" size={24} color="#A0A5BA" />
-          <Text style={styles.tabLabel}>Medication</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('ReportsList')}>
-          <MaterialCommunityIcons name="file-document-outline" size={24} color="#A0A5BA" />
-          <Text style={styles.tabLabel}>Report</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('MyProfile')}>
-          <Feather name="user" size={24} color="#A0A5BA" />
-          <Text style={styles.tabLabel}>Profile</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Modal
-        visible={isOrderSuccessOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsOrderSuccessOpen(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setIsOrderSuccessOpen(false)} />
-
-        <View style={[styles.successModalSheet, {paddingBottom: insets.bottom}]}>
-          <View style={styles.modalHandle} />
-
-          <View style={[styles.successHeaderContainer, {paddingTop: 8}]}>
-            <TouchableOpacity style={styles.backButton} activeOpacity={0.7} onPress={() => setIsOrderSuccessOpen(false)}>
-              <Feather name="chevron-left" size={28} color="#333333" />
-            </TouchableOpacity>
-
-            <View style={styles.logoContainer}>
-              <View style={styles.logoPlaceholder}>
-                <MaterialCommunityIcons name="medical-bag" size={20} color="#00A896" />
-                <Text style={styles.logoTextMain}>Cholbe</Text>
-              </View>
-              <Text style={styles.logoTextSub}>PHARMACY</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.headerIconButton}
-              activeOpacity={0.7}
-              onPress={() => handleModalNavigation('Notifications')}>
-              <Feather name="bell" size={24} color="#333333" />
-            </TouchableOpacity>
+      <View style={[styles.totalStickyFooter, {paddingBottom: Math.max(insets.bottom, 16)}]}>
+        <View style={styles.footerDragTopHandle} />
+        <View style={styles.footerFlexRow}>
+          <View>
+            <Text style={styles.footerTotalLabel}>Total</Text>
+            <Text style={styles.footerTaxSubtitle}>(incl.fees and tax)</Text>
           </View>
-
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.successScrollCanvasContent}>
-            <View style={styles.successBadgeContainer}>
-              <View style={styles.circularSuccessRing}>
-                <Feather name="check" size={36} color="#FFFFFF" />
-              </View>
-              <Text style={styles.successHeadlineText}>Order Placed</Text>
-              <Text style={styles.successSubheadText}>Your order has been placed successfully</Text>
-            </View>
-
-            <View style={styles.summaryDetailsCard}>
-              <View style={styles.itemsSection}>
-                {ORDER_SUMMARY_ITEMS.map(item => (
-                  <View key={item.id} style={styles.invoiceItemRowLine}>
-                    <View style={styles.itemInfoLeft}>
-                      <Text style={styles.invoiceItemNameText}>{item.name}</Text>
-                      <Text style={styles.invoiceItemQtyText}>Qty: {item.qty}</Text>
-                    </View>
-                    <Text style={styles.invoiceItemPriceText}>{item.price}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.horizontalDivider} />
-
-              <View style={styles.costBreakdownSection}>
-                <View style={styles.summaryCostRow}>
-                  <Text style={styles.summaryLabelText}>Subtotal</Text>
-                  <Text style={styles.summaryValueText}>৳27.00</Text>
-                </View>
-
-                <View style={styles.summaryCostRow}>
-                  <Text style={styles.summaryLabelText}>Delivery charge</Text>
-                  <Text style={styles.summaryValueText}>৳45.00</Text>
-                </View>
-
-                <View style={[styles.summaryCostRow, {marginTop: 6}]}>
-                  <Text style={styles.totalLabelText}>Total</Text>
-                  <Text style={styles.totalValueText}>৳72.00</Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={styles.backToShopButton}
-                activeOpacity={0.9}
-                onPress={() => handleModalNavigation('OrderListHistory')}>
-                <Text style={styles.backToShopButtonText}>Track Order</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-
-          <View style={[styles.bottomTabBar, styles.successBottomTabs]}>
-            <TouchableOpacity style={styles.tabItem} onPress={() => handleModalNavigation('Home')}>
-              <Feather name="home" size={24} color="#A0A5BA" />
-              <Text style={styles.tabLabel}>Home</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.tabItem} onPress={() => handleModalNavigation('PharmacyShop')}>
-              <MaterialCommunityIcons name="clippy" size={24} color="#45A096" />
-              <Text style={[styles.tabLabel, styles.activeTabLabel]}>Pharmacy</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.tabItem} onPress={() => handleModalNavigation('MedicineList')}>
-              <MaterialCommunityIcons name="heart-pulse" size={24} color="#A0A5BA" />
-              <Text style={styles.tabLabel}>Medication</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.tabItem} onPress={() => handleModalNavigation('ReportsList')}>
-              <MaterialCommunityIcons name="file-document-outline" size={24} color="#A0A5BA" />
-              <Text style={styles.tabLabel}>Report</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.tabItem} onPress={() => handleModalNavigation('MyProfile')}>
-              <Feather name="user" size={24} color="#A0A5BA" />
-              <Text style={styles.tabLabel}>Profile</Text>
-            </TouchableOpacity>
+          <View style={styles.footerValueBlock}>
+            <Text style={styles.footerTotalCurrency}>+৳ 830</Text>
+            <Text style={styles.footerCentFraction}>00</Text>
           </View>
         </View>
-      </Modal>
+      </View>
     </View>
   );
 }
@@ -311,378 +319,462 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9FE',
+    backgroundColor: '#F7F9FC',
   },
-  headerContainer: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 16,
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#F9F9FE',
+    paddingBottom: 14,
+    backgroundColor: '#F9FAFC',
   },
-  backButton: {
-    padding: 2,
-  },
-  headerTitleText: {
+  headerTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#333333',
+    fontWeight: '700',
+    color: '#1A1C1E',
+  },
+  headerButton: {
+    padding: 2,
   },
   headerSpacer: {
     width: 28,
   },
-  scrollCanvasContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  checkoutMainCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 30,
-    padding: 16,
-    shadowColor: '#E0E4F0',
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: '#ECEFF7',
-  },
-  sectionBlock: {
-    width: '100%',
-  },
-  productRowLine: {
+  timelineContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingHorizontal: 36,
+    marginVertical: 18,
+    position: 'relative',
+  },
+  timelineLine: {
+    position: 'absolute',
+    top: 14,
+    left: 55,
+    right: 55,
+    height: 2,
+    backgroundColor: '#E2E8F0',
+    zIndex: 1,
+  },
+  stepWrapper: {
     alignItems: 'center',
-    marginVertical: 8,
-    paddingHorizontal: 4,
+    zIndex: 2,
   },
-  productInfoLeft: {
-    flex: 1,
+  stepCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  productNameText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2D3142',
-    marginBottom: 4,
+  stepActive: {
+    backgroundColor: '#4E929D',
   },
-  productQtyText: {
+  stepInactive: {
+    backgroundColor: '#E2E8F0',
+  },
+  stepTextActive: {
+    color: '#FFFFFF',
     fontSize: 13,
-    color: '#8A94A6',
+    fontWeight: '600',
+  },
+  stepTextInactive: {
+    color: '#7E8B97',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  stepLabel: {
+    fontSize: 11,
+    color: '#4F5E6D',
+    marginTop: 6,
     fontWeight: '500',
   },
-  productPriceText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2D3142',
-    textAlign: 'right',
+  guestBanner: {
+    backgroundColor: '#EDF9F6',
+    borderRadius: 12,
+    padding: 14,
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
-  horizontalDivider: {
-    height: 1,
-    backgroundColor: '#F1F3F7',
-    marginVertical: 14,
+  guestBannerText: {
+    fontSize: 13,
+    color: '#333D47',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  greenLink: {
+    color: '#00A884',
+    fontWeight: '600',
+  },
+  underlineText: {
+    textDecorationLine: 'underline',
+  },
+  cardSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#EAEFF5',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 2,
+    marginBottom: 14,
   },
-  sectionIcon: {
-    marginRight: 8,
-  },
-  sectionHeadingTitle: {
-    fontSize: 16,
+  sectionHeading: {
+    fontSize: 15,
     fontWeight: '700',
-    color: '#1E3A60',
-  },
-  mapSelectButton: {
-    marginLeft: 'auto',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#72C1B6',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    gap: 4,
-  },
-  mapSelectText: {
-    fontSize: 12,
-    color: '#45A096',
-    fontWeight: '600',
-  },
-  inputGroup: {
-    marginBottom: 12,
+    color: '#333D47',
   },
   inputLabel: {
     fontSize: 13,
-    color: '#8A94A6',
-    fontWeight: '500',
+    fontWeight: '600',
+    color: '#4F5E6D',
     marginBottom: 6,
-    paddingLeft: 2,
+    marginTop: 10,
   },
-  textInputWrapper: {
+  inputFieldBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F2F7',
-    borderRadius: 12,
-    height: 46,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#E6E9F0',
+    backgroundColor: '#ECEFF3',
+    borderRadius: 10,
+    height: 44,
+    paddingHorizontal: 12,
   },
-  textInput: {
+  fieldIcon: {
+    marginRight: 10,
+  },
+  textInputStyle: {
     flex: 1,
-    fontSize: 14,
-    color: '#495057',
+    fontSize: 13,
+    color: '#1A1C1E',
     fontWeight: '500',
     padding: 0,
   },
-  summaryBlock: {
-    marginBottom: 12,
-  },
-  summaryCostRow: {
+  chipsFormBlock: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 5,
-    paddingHorizontal: 2,
+    flexWrap: 'wrap',
+    backgroundColor: '#ECEFF3',
+    borderRadius: 10,
+    padding: 10,
+    gap: 12,
   },
-  summaryLabelText: {
-    fontSize: 14,
-    color: '#8A94A6',
+  inlineChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  chipFormLabel: {
+    fontSize: 12,
+    color: '#333D47',
     fontWeight: '500',
   },
-  summaryValueText: {
-    fontSize: 15,
-    color: '#2D3142',
+  mapPreviewCard: {
+    height: 120,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#ECEFF3',
+    marginTop: 4,
+    position: 'relative',
+  },
+  mapPreviewImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  mapPreviewPin: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -22,
+    marginLeft: -11,
+  },
+  deliveryAddressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    gap: 12,
+  },
+  addressTextRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  mapPinButton: {
+    paddingTop: 1,
+  },
+  deliveryAddressText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#1A1C1E',
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  radioOptionGroup: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  radioClickItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  radioLabelText: {
+    fontSize: 13,
+    color: '#333D47',
+    fontWeight: '500',
+  },
+  promoInputWrapper: {
+    flexDirection: 'row',
+    backgroundColor: '#ECEFF3',
+    borderRadius: 24,
+    height: 46,
+    alignItems: 'center',
+    paddingLeft: 16,
+    paddingRight: 4,
+    marginTop: 12,
+  },
+  promoInputField: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4F5E6D',
+    padding: 0,
+    letterSpacing: 0.5,
+  },
+  applyPromoBtn: {
+    backgroundColor: '#4E929D',
+    height: 38,
+    paddingHorizontal: 22,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  applyPromoBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
-  totalRow: {
+  orderSummaryTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 6,
+  },
+  orderSummaryTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#333D47',
+  },
+  summaryCounterItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  summaryRadioFake: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#C8D1DB',
+    marginRight: 12,
+  },
+  summaryRadioFakeActive: {
+    borderColor: '#47B39D',
+    backgroundColor: '#47B39D',
+  },
+  summaryUnitText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#4F5E6D',
+    fontWeight: '500',
+  },
+  summaryControlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  summaryCountVal: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1C1E',
+    minWidth: 16,
+    textAlign: 'center',
+  },
+  dividerLine: {
+    height: 1,
+    backgroundColor: '#ECEFF3',
+    marginVertical: 12,
+  },
+  productInvoiceBlock: {
+    flexDirection: 'row',
+    gap: 12,
     marginTop: 4,
   },
-  totalLabelText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1E3A60',
+  invoiceProductImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    resizeMode: 'cover',
   },
-  totalValueText: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#1E3A60',
-  },
-  confirmButton: {
-    backgroundColor: '#45A096',
-    width: '100%',
-    height: 54,
-    borderRadius: 27,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 4,
-    shadowColor: '#45A096',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  confirmButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  bottomTabBar: {
-    flexDirection: 'row',
-    minHeight: 74,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F2F7',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: width / 5,
-  },
-  tabLabel: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginTop: 5,
-    fontWeight: '500',
-  },
-  activeTabLabel: {
-    color: '#45A096',
-    fontWeight: '600',
-  },
-  modalBackdrop: {
+  invoiceMetaDetails: {
     flex: 1,
-    backgroundColor: 'rgba(26, 28, 35, 0.4)',
   },
-  successModalSheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '92%',
-    backgroundColor: '#F9F9FE',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    overflow: 'hidden',
-  },
-  modalHandle: {
-    width: 56,
-    height: 5,
-    borderRadius: 4,
-    backgroundColor: '#E4E7ED',
-    alignSelf: 'center',
-    marginTop: 10,
-  },
-  successHeaderContainer: {
+  invoiceTitleContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 8,
   },
-  headerIconButton: {
-    padding: 4,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoPlaceholder: {
+  invoiceRowSpaced: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 6,
   },
-  logoTextMain: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1E3A60',
-    marginLeft: 4,
-  },
-  logoTextSub: {
-    fontSize: 9,
-    fontWeight: '600',
-    color: '#49739B',
-    letterSpacing: 2,
-    marginTop: -2,
-  },
-  successScrollCanvasContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 160,
-  },
-  successBadgeContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-    marginBottom: 24,
-    paddingHorizontal: 16,
-  },
-  circularSuccessRing: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#59A699',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
-    shadowColor: '#45A096',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: 16,
-  },
-  successHeadlineText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#333333',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  successSubheadText: {
+  invoiceProductTitle: {
     fontSize: 14,
-    color: '#7D8797',
-    fontWeight: '400',
-    textAlign: 'center',
-    lineHeight: 20,
+    fontWeight: '700',
+    color: '#1A1C1E',
   },
-  summaryDetailsCard: {
-    backgroundColor: '#FFFFFF',
+  invoiceCurrencyValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1C1E',
+  },
+  invoiceDiscountsText: {
+    fontSize: 11,
+    color: '#7E8B97',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  lineThroughText: {
+    textDecorationLine: 'line-through',
+  },
+  invoiceLabelStandard: {
+    fontSize: 12,
+    color: '#4F5E6D',
+    fontWeight: '500',
+    marginTop: 3,
+  },
+  grandTotalContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  grandTotalLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1A1C1E',
+  },
+  grandTotalValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A1C1E',
+  },
+  trustBadgesRow: {
+    borderTopWidth: 1,
+    borderTopColor: '#ECEFF3',
+    paddingTop: 12,
+    gap: 6,
+  },
+  trustBadgeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  badgeShieldIcon: {
+    backgroundColor: '#47B39D',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  trustBadgeText: {
+    fontSize: 11,
+    color: '#7E8B97',
+    fontWeight: '500',
+    flex: 1,
+  },
+  primaryActionButton: {
+    backgroundColor: '#4E929D',
     borderRadius: 24,
-    padding: 16,
-    shadowColor: '#E0E4F0',
-    shadowOffset: {width: 0, height: 8},
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#F0F2F7',
+    marginHorizontal: 16,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 8,
   },
-  itemsSection: {
-    width: '100%',
+  primaryActionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
-  invoiceItemRowLine: {
+  totalStickyFooter: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderColor: '#ECEFF3',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -4},
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  footerDragTopHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  footerFlexRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 8,
-    paddingHorizontal: 4,
   },
-  itemInfoLeft: {
-    flex: 1,
+  footerTotalLabel: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#1A1C1E',
   },
-  invoiceItemNameText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2D3142',
-    marginBottom: 4,
-  },
-  invoiceItemQtyText: {
+  footerTaxSubtitle: {
     fontSize: 13,
-    color: '#8A94A6',
+    color: '#7E8B97',
     fontWeight: '500',
   },
-  invoiceItemPriceText: {
-    fontSize: 16,
+  footerValueBlock: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  footerTotalCurrency: {
+    fontSize: 22,
     fontWeight: '700',
-    color: '#2D3142',
-    textAlign: 'right',
+    color: '#4E929D',
   },
-  costBreakdownSection: {
-    width: '100%',
-  },
-  backToShopButton: {
-    backgroundColor: '#45A096',
-    width: '100%',
-    height: 54,
-    borderRadius: 27,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 4,
-    shadowColor: '#45A096',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  backToShopButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
+  footerCentFraction: {
+    fontSize: 11,
     fontWeight: '600',
-  },
-  successBottomTabs: {
-    backgroundColor: '#FFFFFF',
+    color: '#4E929D',
+    marginTop: 3,
+    marginLeft: 1,
   },
 });

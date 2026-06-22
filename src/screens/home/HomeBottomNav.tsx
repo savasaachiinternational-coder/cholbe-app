@@ -49,11 +49,12 @@ const styles = StyleSheet.create({
     minHeight: 72,
   },
   tabItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
     color: INACTIVE_COLOR,
     marginTop: 4,

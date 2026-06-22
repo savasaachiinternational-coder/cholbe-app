@@ -1,5 +1,20 @@
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {HomeScreen} from '../screens/home/HomeScreen';
+import {AdminHomeScreen} from '../screens/admin/AdminHomeScreen';
+import {AdminOrdersScreen} from '../screens/admin/AdminOrdersScreen';
+import {AdminVendorsScreen} from '../screens/admin/AdminVendorsScreen';
+import {AdminMedicinesScreen} from '../screens/admin/AdminMedicinesScreen';
+import {AdminInventoryScreen} from '../screens/admin/AdminInventoryScreen';
+import {AdminReportsScreen} from '../screens/admin/AdminReportsScreen';
+import {AdminUsersScreen} from '../screens/admin/AdminUsersScreen';
+import {AdminProfileScreen} from '../screens/admin/AdminProfileScreen';
+import {AdminPaymentsScreen} from '../screens/admin/AdminPaymentsScreen';
+import {VendorHomeScreen} from '../screens/vendor/VendorHomeScreen';
+import {VendorInventoryScreen} from '../screens/vendor/VendorInventoryScreen';
+import {VendorAddProductScreen} from '../screens/vendor/VendorAddProductScreen';
+import {VendorOrdersScreen} from '../screens/vendor/VendorOrdersScreen';
+import {VendorPaymentsScreen} from '../screens/vendor/VendorPaymentsScreen';
+import {VendorPharmacyProfileScreen} from '../screens/vendor/VendorPharmacyProfileScreen';
 import {MedicineListScreen} from '../screens/home/MedicineListScreen';
 import {BookVideoCallScreen} from '../screens/home/BookVideoCallScreen';
 import {ConsultationChatScreen} from '../screens/home/ConsultationChatScreen';
@@ -31,8 +46,10 @@ import {CameraReportScreen} from '../screens/home/CameraReportScreen';
 import {ViewReportDetailsScreen} from '../screens/home/ViewReportDetailsScreen';
 import {ReportUploadedSuccessScreen} from '../screens/home/ReportUploadedSuccessScreen';
 import {PharmacyShopScreen} from '../screens/home/PharmacyShopScreen';
+import {PharmacyDetailsScreen} from '../screens/home/PharmacyDetailsScreen';
 import {PharmacyCartOverlayScreen} from '../screens/home/PharmacyCartOverlayScreen';
 import {CartCheckoutDetailsScreen} from '../screens/home/CartCheckoutDetailsScreen';
+import {CartPaymentScreen} from '../screens/home/CartPaymentScreen';
 import {OrderTrackingScreen} from '../screens/home/OrderTrackingScreen';
 import {OrderListHistoryScreen} from '../screens/home/OrderListHistoryScreen';
 import {AddressMapPickerScreen} from '../screens/home/AddressMapPickerScreen';
@@ -51,6 +68,81 @@ export function RootNavigator() {
       initialRouteName="Home"
       screenOptions={{headerShown: false}}>
       <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen
+        name="AHome"
+        component={AdminHomeScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="AOrders"
+        component={AdminOrdersScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="AVendors"
+        component={AdminVendorsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="AMedicines"
+        component={AdminMedicinesScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="AInventory"
+        component={AdminInventoryScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="AReports"
+        component={AdminReportsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="AUsers"
+        component={AdminUsersScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="AProfile"
+        component={AdminProfileScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="APayments"
+        component={AdminPaymentsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="VHome"
+        component={VendorHomeScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="VInventory"
+        component={VendorInventoryScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="VAddProduct"
+        component={VendorAddProductScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="VOrders"
+        component={VendorOrdersScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="VPayments"
+        component={VendorPaymentsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="VProfile"
+        component={VendorPharmacyProfileScreen}
+        options={{animation: 'slide_from_right'}}
+      />
       <Stack.Screen
         name="MedicineList"
         component={MedicineListScreen}
@@ -217,6 +309,11 @@ export function RootNavigator() {
         options={{animation: 'slide_from_right'}}
       />
       <Stack.Screen
+        name="PharmacyDetails"
+        component={PharmacyDetailsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
         name="PharmacyCartOverlay"
         component={PharmacyCartOverlayScreen}
         options={{animation: 'slide_from_right'}}
@@ -224,6 +321,11 @@ export function RootNavigator() {
       <Stack.Screen
         name="CartCheckoutDetails"
         component={CartCheckoutDetailsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="CartPayment"
+        component={CartPaymentScreen}
         options={{animation: 'slide_from_right'}}
       />
       <Stack.Screen

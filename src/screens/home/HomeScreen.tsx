@@ -39,6 +39,14 @@ export function HomeScreen() {
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>('upcoming');
 
   const handleTabPress = (tab: BottomTabKey) => {
+    if (tab === 'vhome') {
+      navigation.navigate('VHome');
+      return;
+    }
+    if (tab === 'ahome') {
+      navigation.navigate('AHome');
+      return;
+    }
     if (tab === 'medication') {
       navigation.navigate('MedicineList');
       return;

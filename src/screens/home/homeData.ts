@@ -115,16 +115,20 @@ export type BottomTabKey =
   | 'pharmacy'
   | 'medication'
   | 'report'
-  | 'profile';
+  | 'profile'
+  | 'vhome'
+  | 'ahome';
 
 export const BOTTOM_TABS: {
   key: BottomTabKey;
   label: string;
-  icon: 'home' | 'plus-square' | 'activity' | 'file-text' | 'user';
+  icon: 'home' | 'plus-square' | 'activity' | 'file-text' | 'user' | 'briefcase' | 'shield';
 }[] = [
   {key: 'home', label: 'Home', icon: 'home'},
   {key: 'pharmacy', label: 'Pharmacy', icon: 'plus-square'},
   {key: 'medication', label: 'Medication', icon: 'activity'},
   {key: 'report', label: 'Report', icon: 'file-text'},
   {key: 'profile', label: 'Profile', icon: 'user'},
+  {key: 'vhome', label: 'VHome', icon: 'briefcase'},
+  {key: 'ahome', label: 'AHome', icon: 'shield'},
 ];

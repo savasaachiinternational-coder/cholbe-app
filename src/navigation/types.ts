@@ -1,5 +1,20 @@
 export type RootStackParamList = {
   Home: undefined;
+  AHome: undefined;
+  AOrders: undefined;
+  AVendors: undefined;
+  AMedicines: undefined;
+  AInventory: undefined;
+  AReports: undefined;
+  AUsers: undefined;
+  AProfile: undefined;
+  APayments: undefined;
+  VHome: undefined;
+  VInventory: undefined;
+  VAddProduct: undefined;
+  VOrders: undefined;
+  VPayments: undefined;
+  VProfile: undefined;
   MedicineList: undefined;
   ReportsList: undefined;
   DoctorList: undefined;
@@ -59,8 +74,18 @@ export type RootStackParamList = {
   ViewReportDetails: undefined;
   ReportUploadedSuccess: undefined;
   PharmacyShop: undefined;
+  PharmacyDetails:
+    | {
+        name?: string;
+        subtitle?: string;
+        imageUrl?: string;
+        price?: string;
+        oldPrice?: string;
+      }
+    | undefined;
   PharmacyCartOverlay: undefined;
   CartCheckoutDetails: undefined;
+  CartPayment: undefined;
   OrderTracking: undefined;
   OrderListHistory: undefined;
   AddressMapPicker: undefined;
