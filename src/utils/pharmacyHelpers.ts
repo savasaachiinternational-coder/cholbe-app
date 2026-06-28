@@ -1,19 +1,48 @@
+import {ImageSourcePropType} from 'react-native';
 import {API_ORIGIN} from '../config/api';
 import type {PharmacyProduct} from '../api/pharmacy';
 
+export const DEFAULT_PRODUCT_IMAGE = require('../assets/b2.png');
+
 export function formatBdt(amount: number | string) {
   const n = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return `৳${n.toFixed(2)}`;
+  if (!Number.isFinite(n)) {
+    return '৳0';
+  }
+  const hasFraction = Math.abs(n % 1) > 0.001;
+  return `৳${n.toLocaleString('en-BD', {
+    minimumFractionDigits: hasFraction ? 2 : 0,
+    maximumFractionDigits: hasFraction ? 2 : 0,
+  })}`;
+}
+
+export function getProductImageSource(url?: string | null): ImageSourcePropType {
+  const trimmed = url?.trim();
+  if (!trimmed || isUnreliableImageUrl(trimmed)) {
+    return DEFAULT_PRODUCT_IMAGE;
+  }
+  if (trimmed.startsWith('http')) {
+    return {uri: trimmed};
+  }
+  return {uri: `${API_ORIGIN}${trimmed}`};
+}
+
+function isUnreliableImageUrl(url: string) {
+  const lower = url.toLowerCase();
+  return (
+    lower.includes('via.placeholder.com') ||
+    lower.includes('placeholder.com/') ||
+    lower === 'null' ||
+    lower === 'undefined'
+  );
 }
 
 export function productImageUrl(url?: string | null) {
-  if (!url) {
-    return 'https://via.placeholder.com/300/4682B4/FFFFFF?text=Product';
+  const source = getProductImageSource(url);
+  if ('uri' in source && source.uri) {
+    return source.uri;
   }
-  if (url.startsWith('http')) {
-    return url;
-  }
-  return `${API_ORIGIN}${url}`;
+  return '';
 }
 
 export function productUnitPrice(product: PharmacyProduct) {

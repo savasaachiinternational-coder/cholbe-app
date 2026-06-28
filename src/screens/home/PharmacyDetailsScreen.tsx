@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,11 +19,13 @@ import type {RootStackParamList} from '../../navigation/types';
 import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
 import {cartApi} from '../../api/cart';
 import {ApiError} from '../../api/client';
+import {ProductImage} from '../../components/ProductImage';
 import {
+  discountPercent,
   formatBdt,
-  productImageUrl,
-  productUnitPrice,
   productListPrice,
+  productUnitPrice,
+  productVolumeLabel,
   unitTypeToVariant,
 } from '../../utils/pharmacyHelpers';
 
@@ -35,29 +36,32 @@ type TabKey = 'Summary' | 'Medicine Info';
 const {width} = Dimensions.get('window');
 const CARD_WIDTH = (width - 32 - 12) / 2;
 
-const THUMBNAILS = [
-  'https://via.placeholder.com/150/FFA500/FFFFFF?text=Cetirizine',
-  'https://via.placeholder.com/150/00FFFF/000000?text=Capsule',
-  'https://via.placeholder.com/150/32CD32/FFFFFF?text=Bottles',
-  'https://via.placeholder.com/150/8A2BE2/FFFFFF?text=Pills',
-];
-
 const VARIANTS: {key: VariantKey; label: string}[] = [
   {key: 'PC', label: '1 PC'},
   {key: 'Stripe', label: '1 Stripe = 10 pcs'},
   {key: 'Box', label: '1 Box = 10 Stripes'},
 ];
 
+function variantLabel(product: PharmacyProduct, key: VariantKey) {
+  if (key === 'PC') {
+    return product.unitType ? `1 ${product.unitType}` : '1 PC';
+  }
+  if (key === 'Stripe') {
+    return '1 Stripe = 10 pcs';
+  }
+  return '1 Box = 10 Stripes';
+}
+
 export function PharmacyDetailsScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const productId = route.params.productId;
   const [product, setProduct] = useState<PharmacyProduct | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<PharmacyProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('Summary');
   const [selectedVariant, setSelectedVariant] = useState<VariantKey>('Box');
-  const [activeThumbnail, setActiveThumbnail] = useState(0);
   const [quantities, setQuantities] = useState<Record<VariantKey, number>>({
     PC: 0,
     Stripe: 0,
@@ -69,6 +73,12 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
     try {
       const data = await pharmacyApi.getById(productId);
       setProduct(data);
+      const shop = await pharmacyApi.list(
+        data.category ? {category: data.category} : undefined,
+      );
+      setRelatedProducts(
+        shop.filter(item => item.id !== data.id).slice(0, 4),
+      );
       const variantKey =
         unitTypeToVariant(data.unitType) === 'BOX'
           ? 'Box'
@@ -91,7 +101,12 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
 
   const productName = product?.name ?? 'Product';
   const productType = product?.genericName ?? product?.category ?? 'Medicine';
-  const mainImage = productImageUrl(product?.imageUrl);
+  const salePrice = product ? productUnitPrice(product) : 0;
+  const listPrice = product ? productListPrice(product) : 0;
+  const hasDiscount = product?.discountPrice != null && salePrice < listPrice;
+  const medicineDescription =
+    product?.medicine?.description?.trim() ||
+    `${productName} is available from ${product?.vendor?.pharmacyName ?? 'our pharmacy'}. Please follow your doctor's advice before use.`;
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -138,84 +153,32 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
 
   const renderMedicineInfoContent = () => (
     <View style={styles.infoContentContainer}>
-      <Text style={styles.contentHeading}>Indications</Text>
-      <Text style={styles.contentText}>
-        Cetirizine is indicated for the relief of symptoms associated with seasonal & perennial
-        allergic rhinitis. It is also indicated for the treatment of the uncomplicated skin
-        manifestations of chronic idiopathic urticaria and allergen induced asthma.
-      </Text>
-      {renderBulletRow(
-        <Text style={styles.boldText}>
-          Take medication as per the advice of a registered doctor.
-        </Text>,
-      )}
-
-      <Text style={styles.contentHeading}>Dosage & Administration</Text>
-      <Text style={styles.contentSubtext}>Cetirizine oral dosage form:</Text>
-      {renderBulletRow(
+      <Text style={styles.contentHeading}>About this medicine</Text>
+      <Text style={styles.contentText}>{medicineDescription}</Text>
+      {product?.medicine?.medicineType ? (
         <>
-          <Text style={styles.mediumText}>Adults and Children 6 years and older: </Text>
-          1 tablet or 2 teaspoonfuls daily (or 1 teaspoonful twice daily).
-        </>,
-      )}
-      {renderBulletRow(
+          <Text style={styles.contentHeading}>Type</Text>
+          <Text style={styles.contentText}>{product.medicine.medicineType}</Text>
+        </>
+      ) : null}
+      {product?.brand || product?.medicine?.brand ? (
         <>
-          <Text style={styles.mediumText}>Children 2-6 years: </Text>
-          1 teaspoonful once daily or 1/2 teaspoonful twice daily.
-        </>,
-      )}
-      {renderBulletRow(
+          <Text style={styles.contentHeading}>Brand</Text>
+          <Text style={styles.contentText}>
+            {product.brand ?? product.medicine?.brand}
+          </Text>
+        </>
+      ) : null}
+      {product?.prescriptionRequired ? (
         <>
-          <Text style={styles.mediumText}>Children 6 months to 2 years: </Text>
-          1/2 teaspoonful once daily. The dose in children 12-23 months of age can be increased to
-          a maximum dose as 1/2 teaspoonful every 12 hours.
-        </>,
-      )}
-
-      <Text style={styles.contentTextSpaced}>
-        Cetirizine injectable dosage form: Cetirizine is a single use injectable product for
-        intravenous administration only. The recommended dosage regimen is once every 24 hours as
-        needed for treatment of acute urticaria. Administer Cetirizine as an intravenous push over
-        a period of 1 to 2 minutes. Cetirizine is not recommended in pediatric patients less than 6
-        years of age with impaired renal or hepatic function.
-      </Text>
-
-      {renderBulletRow(
-        <>
-          <Text style={styles.mediumText}>Adults and adolescents 12 years of age and older: </Text>
-          The recommended dosage is 10 mg administered by intravenous injection.
-        </>,
-      )}
-      {renderBulletRow(
-        <>
-          <Text style={styles.mediumText}>Children 6 to 11 years of age: </Text>
-          The recommended dosage is 5 mg or 10 mg depending on symptom severity administered by
-          intravenous injection.
-        </>,
-      )}
-      {renderBulletRow(
-        <>
-          <Text style={styles.mediumText}>Children 6 months to 5 years of age: </Text>
-          The recommended dosage is 2.5 mg administered by intravenous injection.
-        </>,
-      )}
-
-      <Text style={styles.contentHeading}>Interaction</Text>
-      <Text style={styles.contentText}>
-        No clinically significant drug interactions have been found with Theophylline,
-        Azithromycin, Pseudoephedrine, Ketoconazole or Erythromycin and with other drugs.
-        Contraindications
-      </Text>
-
-      <Text style={styles.contentHeading}>Side Effects</Text>
-      <Text style={styles.contentText}>
-        The most common side effects that occurred more frequently on Cetirizine is somnolence
-      </Text>
-
-      <Text style={styles.contentHeading}>Storage Conditions</Text>
-      <Text style={styles.contentText}>
-        Keep in a dry place away from light and heat. Keep out of the reach of children.
-      </Text>
+          <Text style={styles.contentHeading}>Prescription</Text>
+          {renderBulletRow(
+            <Text style={styles.boldText}>
+              Prescription is required for this product.
+            </Text>,
+          )}
+        </>
+      ) : null}
     </View>
   );
 
@@ -234,74 +197,86 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
         </View>
       </View>
 
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Alternative Brands for</Text>
-          <Text style={styles.sectionSubtitle}>{productName}</Text>
-        </View>
-        <TouchableOpacity style={styles.viewAllRow} activeOpacity={0.7}>
-          <Text style={styles.viewAllText}>View All</Text>
-          <Feather name="chevron-right" size={14} color="#7E8B97" />
-        </TouchableOpacity>
-      </View>
+      {relatedProducts.length > 0 ? (
+        <>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Alternative Brands for</Text>
+              <Text style={styles.sectionSubtitle}>{productName}</Text>
+            </View>
+            <TouchableOpacity style={styles.viewAllRow} activeOpacity={0.7}>
+              <Text style={styles.viewAllText}>View All</Text>
+              <Feather name="chevron-right" size={14} color="#7E8B97" />
+            </TouchableOpacity>
+          </View>
 
-      <View style={styles.grid}>{[0, 1].map(index => renderAlternativeCard(index))}</View>
+          <View style={styles.grid}>
+            {relatedProducts.map(item => renderAlternativeCard(item))}
+          </View>
+        </>
+      ) : null}
 
       <View style={styles.disclaimerContainer}>
         <Text style={styles.disclaimerTitle}>Disclaimer:</Text>
         <Text style={styles.disclaimerText}>
-          Cetirizine Hydrochloride is a potent H1 receptor antagonist without any significant
-          anticholinergic and antiserotonic effects. At pharmacologically active dose levels,
-          effect and does not cause behavioral changes...
-          <Text style={styles.blueLink}>Read More</Text>
+          {medicineDescription}
         </Text>
       </View>
     </>
   );
 
-  const renderAlternativeCard = (index: number) => {
-    const isOrangePack = index % 2 !== 0;
-    const imgUrl = isOrangePack
-      ? 'https://via.placeholder.com/150/FF8C00/FFFFFF?text=Orange+Pack'
-      : 'https://via.placeholder.com/150/4682B4/FFFFFF?text=Pills';
+  const renderAlternativeCard = (item: PharmacyProduct) => {
+    const pct = discountPercent(item);
 
     return (
       <TouchableOpacity
-        key={index}
+        key={item.id}
         style={styles.card}
         activeOpacity={0.85}
         onPress={() =>
           navigation.push('PharmacyDetails', {
-            productId: product.id,
+            productId: item.id,
           })
         }>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>-10%</Text>
-        </View>
-        <Image source={{uri: imgUrl}} style={styles.productImage} />
+        {pct != null ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>-{pct}%</Text>
+          </View>
+        ) : null}
+        <ProductImage imageUrl={item.imageUrl} style={styles.productImage} />
         <Text style={styles.productTitle} numberOfLines={1}>
-          Immunity support
+          {item.name}
         </Text>
-        <Text style={styles.productDesc}>Vitamin C + Zinc</Text>
+        <Text style={styles.productDesc}>
+          {item.genericName ?? item.brand ?? item.category ?? ''}
+        </Text>
         <View style={styles.cardMetaRow}>
           <View style={styles.sizeRow}>
             <Feather name="droplet" size={11} color="#7E8B97" />
-            <Text style={styles.sizeText}>60 ml</Text>
+            <Text style={styles.sizeText}>{productVolumeLabel(item)}</Text>
           </View>
           <Text style={styles.priceText}>
-            <Text style={styles.oldPrice}>$10 </Text>$120
+            {item.discountPrice != null ? (
+              <Text style={styles.oldPrice}>{formatBdt(productListPrice(item))} </Text>
+            ) : null}
+            {formatBdt(productUnitPrice(item))}
           </Text>
         </View>
         <TouchableOpacity
           style={styles.addToCartBtn}
           activeOpacity={0.8}
-          onPress={handleAddToCart}
+          onPress={async () => {
+            try {
+              await cartApi.addItem(item.id, 1, unitTypeToVariant(item.unitType));
+              navigation.navigate('PharmacyCartOverlay');
+            } catch (err) {
+              const message =
+                err instanceof ApiError ? err.message : 'Could not add to cart';
+              Alert.alert('Cart', message);
+            }
+          }}
           disabled={adding}>
-          {adding ? (
-            <ActivityIndicator color="#00A884" size="small" />
-          ) : (
-            <Text style={styles.addToCartBtnText}>Add to Cart</Text>
-          )}
+          <Text style={styles.addToCartBtnText}>Add to Cart</Text>
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -337,31 +312,27 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}>
           <View style={styles.mainImageCard}>
-            <Image source={{uri: mainImage}} style={styles.mainProductImage} />
+            <ProductImage
+              imageUrl={product.imageUrl}
+              style={styles.mainProductImage}
+              resizeMode="contain"
+            />
           </View>
 
           <View style={styles.thumbnailRow}>
-            {THUMBNAILS.map((uri, index) => (
-              <TouchableOpacity
-                key={uri}
-                style={[
-                  styles.thumbnailWrapper,
-                  index === activeThumbnail && styles.activeThumbnailBorder,
-                ]}
-                activeOpacity={0.8}
-                onPress={() => setActiveThumbnail(index)}>
-                <Image source={{uri}} style={styles.thumbnailImage} />
-              </TouchableOpacity>
-            ))}
+            <TouchableOpacity
+              style={[styles.thumbnailWrapper, styles.activeThumbnailBorder]}
+              activeOpacity={0.8}>
+              <ProductImage
+                imageUrl={product.imageUrl}
+                style={styles.thumbnailImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.dotsContainer}>
-            {THUMBNAILS.map((_, index) => (
-              <View
-                key={index}
-                style={[styles.dot, index === activeThumbnail && styles.activeDot]}
-              />
-            ))}
+            <View style={[styles.dot, styles.activeDot]} />
           </View>
 
           <View style={styles.tabsContainer}>
@@ -386,18 +357,28 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
               </View>
               <View style={styles.categoryBadge}>
                 <FontAwesome5 name="capsules" size={12} color="#FFFFFF" />
-                <Text style={styles.categoryBadgeText}>Medicines</Text>
+                <Text style={styles.categoryBadgeText}>
+                  {product.category ?? 'Medicines'}
+                </Text>
               </View>
             </View>
 
             <View style={styles.detailsBlock}>
               <Text style={styles.detailLine}>
-                Generics: <Text style={styles.blueLink}>Cetirizine Hydrochloride.</Text>
+                Generics:{' '}
+                <Text style={styles.blueLink}>
+                  {product.genericName ?? product.name}.
+                </Text>
               </Text>
               <Text style={styles.detailLine}>
-                Type: <Text style={styles.blueLink}>Antihistamine.</Text>
+                Type:{' '}
+                <Text style={styles.blueLink}>
+                  {product.medicine?.medicineType ?? product.category ?? 'Medicine'}.
+                </Text>
               </Text>
-              <Text style={styles.blueLink}>Ad-din Pharmaceuticals Ltd.</Text>
+              <Text style={styles.blueLink}>
+                {product.vendor?.pharmacyName ?? product.brand ?? 'Cholbe Pharmacy'}
+              </Text>
             </View>
           </View>
 
@@ -428,7 +409,7 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
                 ]}>
                 {selectedVariant === variant.key && <View style={styles.radioInnerCircle} />}
               </View>
-              <Text style={styles.variantLabel}>{variant.label}</Text>
+              <Text style={styles.variantLabel}>{variantLabel(product, variant.key)}</Text>
             </TouchableOpacity>
 
             <View style={styles.counterRow}>
@@ -452,13 +433,17 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
         <View style={styles.actionFooterRow}>
           <View style={styles.footerPriceBlock}>
             <View style={styles.priceFooterRow}>
-              <Text style={styles.footerPrice}>$80</Text>
-              <Text style={styles.footerOldPrice}>$120</Text>
+              <Text style={styles.footerPrice}>{formatBdt(salePrice)}</Text>
+              {hasDiscount ? (
+                <Text style={styles.footerOldPrice}>{formatBdt(listPrice)}</Text>
+              ) : null}
             </View>
-            <View style={styles.prescriptionContainer}>
-              <MaterialCommunityIcons name="clipboard-text-outline" size={14} color="#E26D6D" />
-              <Text style={styles.prescriptionText}>Prescription Required</Text>
-            </View>
+            {product.prescriptionRequired ? (
+              <View style={styles.prescriptionContainer}>
+                <MaterialCommunityIcons name="clipboard-text-outline" size={14} color="#E26D6D" />
+                <Text style={styles.prescriptionText}>Prescription Required</Text>
+              </View>
+            ) : null}
           </View>
 
           <TouchableOpacity

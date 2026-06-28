@@ -10,12 +10,13 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
+import {MedicationReviewContent} from '../../components/MedicationReviewContent';
+import {useMedicationDraft} from '../../context/MedicationDraftContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewDetails'>;
 
@@ -24,8 +25,9 @@ const {width} = Dimensions.get('window');
 export function ReviewDetailsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [morningReminder, setMorningReminder] = useState(true);
-  const [nightReminder, setNightReminder] = useState(true);
+  const {draft, patchDraft} = useMedicationDraft();
+  const [morningReminder, setMorningReminder] = useState(draft.reminderEnabled);
+  const [nightReminder, setNightReminder] = useState(draft.followUpEnabled);
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -65,121 +67,35 @@ export function ReviewDetailsScreen({navigation}: Props) {
         contentContainerStyle={styles.scrollCanvasContent}>
         <View style={styles.reviewMainCard}>
           <View style={styles.topPillRow}>
-            <View style={styles.alertMiniPill}>
-              <Feather name="bell" size={16} color="#7D8797" style={styles.bellIcon} />
-              <Text style={styles.alertPillText}>8:00 am</Text>
-              <Switch
-                trackColor={{false: '#E2E6EE', true: '#45A096'}}
-                thumbColor="#FFFFFF"
-                value={morningReminder}
-                onValueChange={setMorningReminder}
-                style={styles.pillSwitchScale}
-              />
-            </View>
-
-            <View style={styles.alertMiniPill}>
-              <Feather name="bell" size={16} color="#7D8797" style={styles.bellIcon} />
-              <Text style={styles.alertPillText}>8:00 am</Text>
-              <Switch
-                trackColor={{false: '#E2E6EE', true: '#45A096'}}
-                thumbColor="#FFFFFF"
-                value={nightReminder}
-                onValueChange={setNightReminder}
-                style={styles.pillSwitchScale}
-              />
-            </View>
-          </View>
-
-          <View style={styles.metaTitleBlock}>
-            <Text style={styles.medicineNameText}>Amlodipine 5mg</Text>
-            <Text style={styles.medicineSubtext}>Time to take 2times daily</Text>
-          </View>
-
-          <View style={styles.infoBlockRow}>
-            <View style={styles.iconColumn}>
-              <Feather name="clock" size={20} color="#45A096" />
-            </View>
-            <View style={styles.detailsColumn}>
-              <Text style={styles.sectionLabelText}>Times</Text>
-              <View style={styles.timelineItem}>
-                <View style={styles.orangeDot} />
-                <Text style={styles.timelineContentText}>
-                  8:00 AM (Before Meal 30 min)
-                </Text>
+            {draft.times.slice(0, 2).map((time, index) => (
+              <View key={`${time}-${index}`} style={styles.alertMiniPill}>
+                <Feather name="bell" size={16} color="#7D8797" style={styles.bellIcon} />
+                <Text style={styles.alertPillText}>{time}</Text>
+                <Switch
+                  trackColor={{false: '#E2E6EE', true: '#45A096'}}
+                  thumbColor="#FFFFFF"
+                  value={index === 0 ? morningReminder : nightReminder}
+                  onValueChange={value => {
+                    if (index === 0) {
+                      setMorningReminder(value);
+                      patchDraft({reminderEnabled: value});
+                    } else {
+                      setNightReminder(value);
+                      patchDraft({followUpEnabled: value});
+                    }
+                  }}
+                  style={styles.pillSwitchScale}
+                />
               </View>
-              <View style={styles.timelineItem}>
-                <View style={styles.orangeDot} />
-                <Text style={styles.timelineContentText}>8:30 PM (After Meal)</Text>
-              </View>
-            </View>
+            ))}
           </View>
 
-          <View style={styles.dividerLine} />
+          <MedicationReviewContent styles={styles} />
 
-          <View style={styles.infoBlockRow}>
-            <View style={styles.iconColumn}>
-              <MaterialCommunityIcons
-                name="calendar-month-outline"
-                size={20}
-                color="#45A096"
-              />
-            </View>
-            <View style={styles.detailsColumn}>
-              <Text style={styles.inlineInfoValueText}>
-                Starts : <Text style={styles.boldSpan}>April 24 2024</Text> Ends :{' '}
-                <Text style={styles.boldSpan}>May 24 2024</Text>
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.dividerLine} />
-
-          <View style={styles.infoBlockRow}>
-            <View style={styles.iconColumn}>
-              <MaterialCommunityIcons name="refresh" size={20} color="#45A096" />
-            </View>
-            <View style={styles.detailsColumn}>
-              <Text style={styles.inlineInfoValueText}>
-                Repeats : <Text style={styles.boldSpan}>Monthly</Text>
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.dividerLine} />
-
-          <View style={styles.infoBlockRow}>
-            <View style={styles.iconColumn}>
-              <Feather name="eye" size={18} color="#45A096" />
-            </View>
-            <View style={styles.detailsColumn}>
-              <Text style={styles.inlineInfoValueText}>
-                Follow-up : <Text style={styles.boldSpan}>30 min before</Text>
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.dividerLine} />
-
-          <View style={[styles.infoBlockRow, styles.refillBlock]}>
-            <View style={styles.iconColumn}>
-              <MaterialCommunityIcons name="pill" size={20} color="#45A096" />
-            </View>
-            <View style={styles.detailsColumn}>
-              <Text style={styles.sectionLabelText}>Reminder to refill Inventory :</Text>
-              <View style={styles.timelineItem}>
-                <View style={styles.orangeDot} />
-                <Text style={styles.timelineContentText}>10 pc</Text>
-              </View>
-              <View style={styles.timelineItem}>
-                <View style={styles.orangeDot} />
-                <Text style={styles.timelineContentText}>
-                  8:30 PM 25-10-2025 (Remind Me when)
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.editButton}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('AddMedicationForm')}>
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -249,6 +165,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     gap: 12,
     marginBottom: 24,
+    flexWrap: 'wrap',
   },
   alertMiniPill: {
     flexDirection: 'row',
@@ -328,6 +245,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#5A6578',
     fontWeight: '500',
+    flex: 1,
   },
   dividerLine: {
     height: 1,

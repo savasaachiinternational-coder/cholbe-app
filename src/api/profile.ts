@@ -35,6 +35,7 @@ export type FamilyMember = {
   gender: string | null;
   relationship: string;
   phone: string | null;
+  avatarUrl?: string | null;
 };
 
 export type EmergencyContact = {
@@ -77,8 +78,35 @@ export const profileApi = {
     gender?: string;
     relationship: string;
     phone?: string;
+    avatarUrl?: string;
   }) {
     return apiRequest('/profile/family-members', {method: 'POST', auth: true, body: payload});
+  },
+
+  updateFamilyMember(
+    id: string,
+    payload: {
+      name: string;
+      age?: number;
+      gender?: string;
+      relationship: string;
+      phone?: string;
+      avatarUrl?: string;
+    },
+  ) {
+    return apiRequest(`/profile/family-members/${id}`, {
+      method: 'PATCH',
+      auth: true,
+      body: payload,
+    });
+  },
+
+  removeFamilyMember(id: string) {
+    return apiRequest(`/profile/family-members/${id}`, {method: 'DELETE', auth: true});
+  },
+
+  removeEmergencyContact(id: string) {
+    return apiRequest(`/profile/emergency-contacts/${id}`, {method: 'DELETE', auth: true});
   },
 
   addEmergencyContact(payload: { name: string; relation: string; phone: string }) {

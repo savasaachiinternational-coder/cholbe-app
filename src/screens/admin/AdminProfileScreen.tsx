@@ -90,9 +90,20 @@ export function AdminProfileScreen({navigation}: Props) {
     {iconName: 'lock', label: 'Change Password'},
     {
       iconName: 'account-group-outline',
-      label: 'Manage Admins',
+      label: 'Manage Users',
       useMaterialIcon: true,
       onPress: () => navigation.navigate('AUsers'),
+    },
+    {
+      iconName: 'stethoscope',
+      label: 'Manage Doctors',
+      useMaterialIcon: true,
+      onPress: () => navigation.navigate('AUsers', {initialFilter: 'Doctors'}),
+    },
+    {
+      iconName: 'layers',
+      label: 'Specialties',
+      onPress: () => navigation.navigate('AUsers', {initialFilter: 'Specialties'}),
     },
     {
       iconName: 'archive',

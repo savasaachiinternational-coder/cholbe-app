@@ -1,26 +1,28 @@
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
-import {
-  SAVED_PRESCRIPTION_GRID,
-  SAVED_PRESCRIPTION_ROW1,
-  type SavedPrescriptionItem,
-  type SavedPrescriptionType,
-} from './savedPrescriptionData';
+import {prescriptionsApi, type Prescription} from '../../api/prescriptions';
+import {useMedicationDraft} from '../../context/MedicationDraftContext';
+import {API_ORIGIN} from '../../config/api';
+import {ApiError} from '../../api/client';
+import {imageUri} from '../../utils/fileAsset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SavedPrescription'>;
 
@@ -31,40 +33,39 @@ const AVAILABLE_WIDTH = width - HORIZONTAL_PADDING * 2;
 const WIDTH_THREE_COLUMNS = (AVAILABLE_WIDTH - GRID_GAP * 2) / 3;
 const WIDTH_FOUR_COLUMNS = (AVAILABLE_WIDTH - GRID_GAP * 3) / 4;
 
-function getTypeIcon(type: SavedPrescriptionType) {
-  if (type.includes('prescription')) {
-    return (
-      <MaterialCommunityIcons
-        name="file-document-text-outline"
-        size={28}
-        color="#A0A5BA"
-      />
-    );
-  }
-  if (type === 'doctor') {
-    return (
-      <MaterialCommunityIcons name="account-doctor" size={28} color="#A0A5BA" />
-    );
-  }
-  if (type === 'kit') {
-    return (
-      <MaterialCommunityIcons name="first-aid-kit" size={28} color="#A0A5BA" />
-    );
-  }
-  if (type.includes('surgery')) {
-    return (
-      <MaterialCommunityIcons name="hospital-building" size={28} color="#A0A5BA" />
-    );
-  }
-  return (
-    <MaterialCommunityIcons name="storefront-outline" size={28} color="#A0A5BA" />
-  );
+function prescriptionImage(fileUrl: string) {
+  return imageUri(fileUrl, API_ORIGIN);
 }
 
 export function SavedPrescriptionScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [selectedId, setSelectedId] = useState<string | null>('r1-1');
+  const {loadPrescriptionDraft} = useMedicationDraft();
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [continuing, setContinuing] = useState(false);
+
+  const loadPrescriptions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await prescriptionsApi.list();
+      setPrescriptions(data);
+      setSelectedId(data[0]?.id ?? null);
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load prescriptions';
+      Alert.alert('Saved Prescription', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPrescriptions();
+    }, [loadPrescriptions]),
+  );
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -86,19 +87,47 @@ export function SavedPrescriptionScreen({navigation}: Props) {
     navigation.navigate('Home');
   };
 
-  const renderItemBox = (item: SavedPrescriptionItem, boxWidth: number) => {
+  const handleContinue = async () => {
+    if (!selectedId) {
+      Alert.alert('Saved Prescription', 'Please select a prescription.');
+      return;
+    }
+    setContinuing(true);
+    try {
+      await loadPrescriptionDraft(selectedId);
+      navigation.navigate('ReviewDetails');
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load prescription';
+      Alert.alert('Saved Prescription', message);
+    } finally {
+      setContinuing(false);
+    }
+  };
+
+  const renderItemBox = (item: Prescription, boxWidth: number) => {
     const isSelected = selectedId === item.id;
+    const label = item.medicines[0]?.name ?? item.fileName ?? 'Prescription';
+
     return (
       <TouchableOpacity
         key={item.id}
         style={[styles.gridItem, {width: boxWidth, height: boxWidth * 0.9}]}
         activeOpacity={0.8}
         onPress={() => setSelectedId(item.id)}>
-        <View style={styles.imageMockPlaceholder}>{getTypeIcon(item.type)}</View>
+        <View style={styles.imageMockPlaceholder}>
+          <Image source={{uri: prescriptionImage(item.fileUrl)}} style={styles.thumbImage} />
+          <Text style={styles.thumbLabel} numberOfLines={2}>
+            {label}
+          </Text>
+        </View>
         {isSelected && <View style={styles.selectedIndicatorBorder} />}
       </TouchableOpacity>
     );
   };
+
+  const row1 = prescriptions.slice(0, 3);
+  const rest = prescriptions.slice(3);
 
   return (
     <View style={styles.container}>
@@ -113,28 +142,39 @@ export function SavedPrescriptionScreen({navigation}: Props) {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollCanvasContent}>
-        <View style={styles.threeColumnGridRow}>
-          {SAVED_PRESCRIPTION_ROW1.map(item =>
-            renderItemBox(item, WIDTH_THREE_COLUMNS),
-          )}
-        </View>
+      {loading ? (
+        <ActivityIndicator color="#45A096" style={styles.loader} />
+      ) : prescriptions.length === 0 ? (
+        <Text style={styles.emptyText}>
+          No saved prescriptions yet. Scan one from Camera or Gallery.
+        </Text>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollCanvasContent}>
+          {row1.length > 0 ? (
+            <View style={styles.threeColumnGridRow}>
+              {row1.map(item => renderItemBox(item, WIDTH_THREE_COLUMNS))}
+            </View>
+          ) : null}
 
-        <View style={styles.fourColumnGridWrapper}>
-          {SAVED_PRESCRIPTION_GRID.map(item =>
-            renderItemBox(item, WIDTH_FOUR_COLUMNS),
-          )}
-        </View>
-      </ScrollView>
+          <View style={styles.fourColumnGridWrapper}>
+            {rest.map(item => renderItemBox(item, WIDTH_FOUR_COLUMNS))}
+          </View>
+        </ScrollView>
+      )}
 
       <View style={[styles.footerActionContainer, {bottom: 74 + insets.bottom}]}>
         <TouchableOpacity
           style={styles.continueButton}
           activeOpacity={0.9}
-          onPress={() => navigation.navigate('ReviewDetails')}>
-          <Text style={styles.continueButtonText}>Continue</Text>
+          disabled={continuing || !selectedId}
+          onPress={handleContinue}>
+          {continuing ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.continueButtonText}>Continue</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -166,6 +206,13 @@ const styles = StyleSheet.create({
     color: '#333333',
   },
   headerSpacer: {width: 28},
+  loader: {marginTop: 40},
+  emptyText: {
+    textAlign: 'center',
+    color: '#7D8797',
+    marginTop: 40,
+    paddingHorizontal: 24,
+  },
   scrollCanvasContent: {
     paddingHorizontal: HORIZONTAL_PADDING,
     paddingTop: 12,
@@ -189,12 +236,22 @@ const styles = StyleSheet.create({
   },
   imageMockPlaceholder: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#EBEFF5',
   },
+  thumbImage: {
+    width: '100%',
+    height: '70%',
+    resizeMode: 'cover',
+  },
+  thumbLabel: {
+    fontSize: 10,
+    color: '#5A6578',
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    textAlign: 'center',
+  },
   selectedIndicatorBorder: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     borderWidth: 3,
     borderColor: '#45A096',
     borderRadius: 8,

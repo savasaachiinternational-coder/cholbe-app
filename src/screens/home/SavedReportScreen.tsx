@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -7,18 +9,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
-import {
-  SAVED_REPORT_GRID,
-  SAVED_REPORT_ROW1,
-  type SavedReportItem,
-  type SavedReportType,
-} from './savedReportData';
+import {reportsApi, type HealthReport} from '../../api/reports';
+import {ApiError} from '../../api/client';
+import {ReportFilePreview} from '../../components/ReportFilePreview';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SavedReport'>;
 
@@ -29,44 +29,49 @@ const AVAILABLE_WIDTH = width - HORIZONTAL_PADDING * 2;
 const WIDTH_THREE_COLUMNS = (AVAILABLE_WIDTH - GRID_GAP * 2) / 3;
 const WIDTH_FOUR_COLUMNS = (AVAILABLE_WIDTH - GRID_GAP * 3) / 4;
 
-function getTypeIcon(type: SavedReportType) {
-  if (type.includes('report_document')) {
-    return (
-      <MaterialCommunityIcons
-        name="file-document-text-outline"
-        size={28}
-        color="#A0A5BA"
-      />
-    );
-  }
-  if (type === 'lab_tech') {
-    return (
-      <MaterialCommunityIcons
-        name="account-search-outline"
-        size={28}
-        color="#A0A5BA"
-      />
-    );
-  }
-  if (type === 'microscope') {
-    return <MaterialCommunityIcons name="microscope" size={28} color="#A0A5BA" />;
-  }
-  if (type.includes('room') || type.includes('bed')) {
-    return (
-      <MaterialCommunityIcons name="hospital-building" size={28} color="#A0A5BA" />
-    );
-  }
-  return (
-    <MaterialCommunityIcons name="badge-account-outline" size={28} color="#A0A5BA" />
-  );
-}
-
 export function SavedReportScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [selectedId, setSelectedId] = useState<string | null>('rep1-1');
+  const [reports, setReports] = useState<HealthReport[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const renderItemBox = (item: SavedReportItem, boxWidth: number) => {
+  const loadReports = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await reportsApi.list();
+      setReports(data);
+      setSelectedId(data[0]?.id ?? null);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load reports';
+      Alert.alert('Saved Report', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReports();
+    }, [loadReports]),
+  );
+
+  const handleContinue = () => {
+    const selected = reports.find(report => report.id === selectedId);
+    if (!selected) {
+      Alert.alert('Saved Report', 'Please select a saved report.');
+      return;
+    }
+    navigation.navigate('UploadReportDetails', {
+      existingFileUrl: selected.fileUrl,
+      existingFileName: selected.title,
+      reportTitle: selected.title,
+      reportType: selected.reportType,
+      provider: selected.provider ?? undefined,
+    });
+  };
+
+  const renderItemBox = (item: HealthReport, boxWidth: number) => {
     const isSelected = selectedId === item.id;
     return (
       <TouchableOpacity
@@ -74,11 +79,26 @@ export function SavedReportScreen({navigation}: Props) {
         style={[styles.gridItem, {width: boxWidth, height: boxWidth * 0.9}]}
         activeOpacity={0.8}
         onPress={() => setSelectedId(item.id)}>
-        <View style={styles.imageMockPlaceholder}>{getTypeIcon(item.type)}</View>
+        <View style={styles.imageMockPlaceholder}>
+          <ReportFilePreview
+            fileUrl={item.fileUrl}
+            mimeType={item.mimeType}
+            fileName={item.fileName}
+            size={Math.round(boxWidth * 0.72)}
+            rounded={false}
+            style={styles.thumbPreview}
+          />
+          <Text style={styles.thumbLabel} numberOfLines={2}>
+            {item.title}
+          </Text>
+        </View>
         {isSelected && <View style={styles.selectedIndicatorBorder} />}
       </TouchableOpacity>
     );
   };
+
+  const row1 = reports.slice(0, 3);
+  const rest = reports.slice(3);
 
   return (
     <View style={styles.container}>
@@ -93,23 +113,41 @@ export function SavedReportScreen({navigation}: Props) {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollCanvasContent}>
-        <View style={styles.threeColumnGridRow}>
-          {SAVED_REPORT_ROW1.map(item => renderItemBox(item, WIDTH_THREE_COLUMNS))}
+      {loading ? (
+        <ActivityIndicator color="#45A096" style={styles.loader} />
+      ) : reports.length === 0 ? (
+        <View style={styles.emptyState}>
+          <MaterialCommunityIcons
+            name="file-document-outline"
+            size={40}
+            color="#A0A5BA"
+          />
+          <Text style={styles.emptyText}>
+            No saved reports yet. Upload one from Camera or Gallery.
+          </Text>
         </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollCanvasContent}>
+          {row1.length > 0 ? (
+            <View style={styles.threeColumnGridRow}>
+              {row1.map(item => renderItemBox(item, WIDTH_THREE_COLUMNS))}
+            </View>
+          ) : null}
 
-        <View style={styles.fourColumnGridWrapper}>
-          {SAVED_REPORT_GRID.map(item => renderItemBox(item, WIDTH_FOUR_COLUMNS))}
-        </View>
-      </ScrollView>
+          <View style={styles.fourColumnGridWrapper}>
+            {rest.map(item => renderItemBox(item, WIDTH_FOUR_COLUMNS))}
+          </View>
+        </ScrollView>
+      )}
 
       <View style={[styles.footerActionContainer, {bottom: 74 + insets.bottom}]}>
         <TouchableOpacity
-          style={styles.continueButton}
+          style={[styles.continueButton, !selectedId && styles.continueDisabled]}
           activeOpacity={0.9}
-          onPress={() => navigation.navigate('UploadReportDetails')}>
+          disabled={!selectedId}
+          onPress={handleContinue}>
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
@@ -178,6 +216,17 @@ const styles = StyleSheet.create({
     color: '#333333',
   },
   headerSpacer: {width: 28},
+  loader: {marginTop: 40},
+  emptyState: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    gap: 12,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#7D8797',
+  },
   scrollCanvasContent: {
     paddingHorizontal: HORIZONTAL_PADDING,
     paddingTop: 12,
@@ -201,12 +250,21 @@ const styles = StyleSheet.create({
   },
   imageMockPlaceholder: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#EBEFF5',
   },
+  thumbPreview: {
+    width: '100%',
+    height: '70%',
+  },
+  thumbLabel: {
+    fontSize: 10,
+    color: '#5A6578',
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    textAlign: 'center',
+  },
   selectedIndicatorBorder: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     borderWidth: 3,
     borderColor: '#45A096',
     borderRadius: 8,
@@ -226,6 +284,9 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  continueDisabled: {
+    opacity: 0.5,
   },
   continueButtonText: {
     color: '#FFFFFF',

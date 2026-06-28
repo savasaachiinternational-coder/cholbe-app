@@ -48,6 +48,7 @@ export function UploadReportOptionsMenuScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [selectedOption, setSelectedOption] = useState<UploadOption>('camera');
+  const bottomNavHeight = 74 + insets.bottom;
 
   const handleContinue = () => {
     if (selectedOption === 'camera') {
@@ -93,7 +94,11 @@ export function UploadReportOptionsMenuScreen({navigation}: Props) {
         <Text style={styles.screenTitle}>Upload Report</Text>
       </View>
 
-      <View style={styles.contentCard}>
+      <View
+        style={[
+          styles.contentCard,
+          {paddingBottom: bottomNavHeight + 88},
+        ]}>
         <View style={styles.gridWrapper}>
           {UPLOAD_OPTIONS.map(opt => {
             const active = selectedOption === opt.key;
@@ -113,7 +118,9 @@ export function UploadReportOptionsMenuScreen({navigation}: Props) {
             );
           })}
         </View>
+      </View>
 
+      <View style={[styles.footerActionContainer, {bottom: bottomNavHeight}]}>
         <TouchableOpacity
           style={styles.continueButton}
           activeOpacity={0.9}
@@ -224,7 +231,7 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: -10},
     shadowOpacity: 0.4,
     shadowRadius: 15,
-    elevation: 8,
+    elevation: 4,
   },
   gridWrapper: {
     flexDirection: 'row',
@@ -272,13 +279,23 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 30,
   },
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  footerActionContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F2F7',
+    zIndex: 20,
+    elevation: 20,
   },
   bottomTabBar: {
     flexDirection: 'row',
@@ -292,6 +309,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    zIndex: 10,
   },
   tabItem: {
     alignItems: 'center',

@@ -13,7 +13,13 @@ export type PharmacyProduct = {
   imageUrl: string | null;
   prescriptionRequired: boolean;
   vendor?: { pharmacyName: string; address: string | null };
-  medicine?: { id: string; name: string } | null;
+  medicine?: {
+    id: string;
+    name: string;
+    description?: string | null;
+    medicineType?: string | null;
+    brand?: string | null;
+  } | null;
 };
 
 export const pharmacyApi = {

@@ -51,5 +51,12 @@ export type AdminVendorFilter = (typeof ADMIN_VENDOR_FILTERS)[number];
 export const ADMIN_MEDICINE_FILTERS = ['All', 'Active', 'Inactive', 'Out of Stock'] as const;
 export type AdminMedicineFilter = (typeof ADMIN_MEDICINE_FILTERS)[number];
 
-export const ADMIN_USER_FILTERS = ['All', 'Customers', 'Vendors', 'Blocked'] as const;
+export const ADMIN_USER_FILTERS = [
+  'All',
+  'Customers',
+  'Vendors',
+  'Doctors',
+  'Specialties',
+  'Blocked',
+] as const;
 export type AdminUserFilter = (typeof ADMIN_USER_FILTERS)[number];

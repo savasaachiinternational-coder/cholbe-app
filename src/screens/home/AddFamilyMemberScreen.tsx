@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {launchImageLibrary} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
@@ -17,6 +19,9 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {profileApi} from '../../api/profile';
+import {uploadAvatarAsset} from '../../api/uploads';
+import {imageUri} from '../../utils/fileAsset';
+import {API_ORIGIN} from '../../config/api';
 import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddFamilyMember'>;
@@ -34,7 +39,25 @@ export function AddFamilyMemberScreen({navigation}: Props) {
   const [gender, setGender] = useState<GenderOption>('Male');
   const [relationship, setRelationship] = useState('');
   const [phone, setPhone] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const pickPhoto = async () => {
+    const result = await launchImageLibrary({mediaType: 'photo', selectionLimit: 1});
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
+    setUploadingPhoto(true);
+    try {
+      const uploaded = await uploadAvatarAsset(asset);
+      setAvatarUrl(uploaded.fileUrl);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not upload photo';
+      Alert.alert('Upload photo', message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -69,6 +92,7 @@ export function AddFamilyMemberScreen({navigation}: Props) {
         gender,
         age: age ? Number(age) : undefined,
         phone: phone.trim() || undefined,
+        avatarUrl: avatarUrl ?? undefined,
       });
       navigation.goBack();
     } catch (err) {
@@ -99,10 +123,25 @@ export function AddFamilyMemberScreen({navigation}: Props) {
           {paddingBottom: insets.bottom + 110},
         ]}
         keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={styles.uploadPhotoDashedCard} activeOpacity={0.85}>
-          <View style={styles.cameraIconContainer}>
-            <Feather name="camera" size={22} color="#0D9488" />
-          </View>
+        <TouchableOpacity
+          style={styles.uploadPhotoDashedCard}
+          activeOpacity={0.85}
+          onPress={pickPhoto}
+          disabled={uploadingPhoto}>
+          {avatarUrl ? (
+            <Image
+              source={{uri: imageUri(avatarUrl, API_ORIGIN)}}
+              style={styles.uploadedAvatar}
+            />
+          ) : (
+            <View style={styles.cameraIconContainer}>
+              {uploadingPhoto ? (
+                <ActivityIndicator color="#0D9488" />
+              ) : (
+                <Feather name="camera" size={22} color="#0D9488" />
+              )}
+            </View>
+          )}
           <Text style={styles.uploadPhotoHeadingText}>Upload Photo</Text>
           <Text style={styles.uploadPhotoSubtext}>Up to 5MB</Text>
         </TouchableOpacity>
@@ -285,6 +324,12 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontWeight: '500',
     marginTop: 2,
+  },
+  uploadedAvatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginBottom: 8,
   },
   formCardBlock: {
     backgroundColor: '#FFFFFF',

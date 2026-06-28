@@ -21,9 +21,10 @@ import type { RootStackParamList } from '../../navigation/types';
 import { addressesApi, type Address } from '../../api/addresses';
 import { authApi } from '../../api/auth';
 import { cartApi } from '../../api/cart';
-import { getStoredUser } from '../../api/tokenStorage';
+import { getStoredUser, hasSession } from '../../api/tokenStorage';
 import { ApiError } from '../../api/client';
 import { formatBdt } from '../../utils/pharmacyHelpers';
+import { looksLikeCoordinates, reverseGeocode } from '../../utils/geocoding';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CartCheckoutDetails'>;
 type VariantKey = 'PC' | 'Stripe' | 'Box';
@@ -87,6 +88,7 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
   >([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
   const [userPhone, setUserPhone] = useState('');
   const [regionCity, setRegionCity] = useState('Dhaka');
@@ -96,6 +98,8 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
   const [latitude, setLatitude] = useState(DEFAULT_LAT);
   const [longitude, setLongitude] = useState(DEFAULT_LNG);
   const addressLoadedRef = useRef(false);
+  const preserveFormRef = useRef(false);
+  const loadGenerationRef = useRef(0);
   const deliveryCharge = 30;
   const grandTotal = cartSubtotal + deliveryCharge;
 
@@ -118,12 +122,18 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
   }, []);
 
   const loadAddressAndUser = useCallback(async () => {
+    const generation = ++loadGenerationRef.current;
     setLoading(true);
     try {
-      const [addresses, user] = await Promise.all([
+      const [addresses, user, loggedIn] = await Promise.all([
         addressesApi.list(),
         getStoredUser(),
+        hasSession(),
       ]);
+      setIsLoggedIn(loggedIn);
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
       const selected =
         addresses.find(a => a.id === route.params?.addressId) ??
         addresses.find(a => a.isDefault) ??
@@ -133,21 +143,31 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
       if (selected?.label === 'Office') setAddressCategory('Office');
       else if (selected?.label === 'Home') setAddressCategory('Home');
 
-      const region = parseRegion(selected?.region);
-      setRegionCity(region.city);
-      setRegionArea(region.area);
-      setRegionSector(region.sector);
-      setFormattedAddress(selected?.formattedAddress ?? '');
-      setLatitude(selected?.latitude ?? DEFAULT_LAT);
-      setLongitude(selected?.longitude ?? DEFAULT_LNG);
-      setUserName(user?.fullName ?? '');
-      setUserPhone(user?.phone ?? '');
+      if (!preserveFormRef.current) {
+        const region = parseRegion(selected?.region);
+        setRegionCity(region.city);
+        setRegionArea(region.area);
+        setRegionSector(region.sector);
+        const savedAddress = selected?.formattedAddress ?? '';
+        setFormattedAddress(
+          looksLikeCoordinates(savedAddress) ? '' : savedAddress,
+        );
+        setLatitude(selected?.latitude ?? DEFAULT_LAT);
+        setLongitude(selected?.longitude ?? DEFAULT_LNG);
+        setUserName(user?.fullName ?? '');
+        setUserPhone(user?.phone ?? '');
+      }
     } catch (err) {
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
       const message =
         err instanceof ApiError ? err.message : 'Could not load checkout';
       Alert.alert('Checkout', message);
     } finally {
-      setLoading(false);
+      if (generation === loadGenerationRef.current) {
+        setLoading(false);
+      }
     }
   }, [route.params?.addressId]);
 
@@ -163,18 +183,66 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     addressLoadedRef.current = false;
+    preserveFormRef.current = false;
     void loadAddressAndUser().then(() => {
       addressLoadedRef.current = true;
     });
   }, [route.params?.addressId, loadAddressAndUser]);
 
   useEffect(() => {
-    const { pickedLatitude, pickedLongitude } = route.params ?? {};
-    if (pickedLatitude != null && pickedLongitude != null) {
-      setLatitude(pickedLatitude);
-      setLongitude(pickedLongitude);
+    const params = route.params ?? {};
+    if (params.pickedLatitude != null && params.pickedLongitude != null) {
+      preserveFormRef.current = true;
+      setLatitude(params.pickedLatitude);
+      setLongitude(params.pickedLongitude);
     }
-  }, [route.params?.pickedLatitude, route.params?.pickedLongitude]);
+    if (params.pickedUserName != null) {
+      setUserName(params.pickedUserName);
+    }
+    if (params.pickedUserPhone != null) {
+      setUserPhone(params.pickedUserPhone);
+    }
+    if (params.pickedFormattedAddress != null) {
+      setFormattedAddress(
+        looksLikeCoordinates(params.pickedFormattedAddress)
+          ? ''
+          : params.pickedFormattedAddress,
+      );
+    }
+    if (params.pickedRegionCity) {
+      setRegionCity(params.pickedRegionCity);
+    }
+    if (params.pickedRegionArea) {
+      setRegionArea(params.pickedRegionArea);
+    }
+    if (params.pickedRegionSector) {
+      setRegionSector(params.pickedRegionSector);
+    }
+  }, [
+    route.params?.pickedLatitude,
+    route.params?.pickedLongitude,
+    route.params?.pickedFormattedAddress,
+    route.params?.pickedRegionCity,
+    route.params?.pickedRegionArea,
+    route.params?.pickedRegionSector,
+    route.params?.pickedUserName,
+    route.params?.pickedUserPhone,
+  ]);
+
+  useEffect(() => {
+    if (!formattedAddress || !looksLikeCoordinates(formattedAddress)) {
+      return;
+    }
+    void reverseGeocode(latitude, longitude, {
+      city: regionCity,
+      area: regionArea,
+      sector: regionSector,
+    }).then(result => {
+      setFormattedAddress(current =>
+        looksLikeCoordinates(current) ? result.formattedAddress : current,
+      );
+    });
+  }, [formattedAddress, latitude, longitude, regionCity, regionArea, regionSector]);
 
   const saveShippingDetails = useCallback(async (): Promise<Address> => {
     const trimmedName = userName.trim();
@@ -260,8 +328,21 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
 
   const formatQuantity = (value: number) => value.toString().padStart(2, '0');
 
-  const openAddressMap = () =>
-    navigation.navigate('AddressMapPicker', { addressId: address?.id });
+  const openAddressMap = () => {
+    preserveFormRef.current = true;
+    loadGenerationRef.current += 1;
+    navigation.navigate('AddressMapPicker', {
+      addressId: address?.id,
+      initialLatitude: latitude,
+      initialLongitude: longitude,
+      draftFormattedAddress: formattedAddress,
+      draftRegionCity: regionCity,
+      draftRegionArea: regionArea,
+      draftRegionSector: regionSector,
+      draftUserName: userName,
+      draftUserPhone: userPhone,
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -307,15 +388,17 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        <View style={styles.guestBanner}>
-          <Text style={styles.guestBannerText}>
-            Order now as a guest.{' '}
-            <Text style={styles.greenLink}>Enjoy Free Home Delivery</Text> on
-            your first order after{' '}
-            <Text style={[styles.greenLink, styles.underlineText]}>Log in</Text>{' '}
-            !
-          </Text>
-        </View>
+        {!isLoggedIn ? (
+          <View style={styles.guestBanner}>
+            <Text style={styles.guestBannerText}>
+              Order now as a guest.{' '}
+              <Text style={styles.greenLink}>Enjoy Free Home Delivery</Text> on
+              your first order after{' '}
+              <Text style={[styles.greenLink, styles.underlineText]}>Log in</Text>{' '}
+              !
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.cardSection}>
           <View style={styles.sectionHeaderRow}>
@@ -344,7 +427,10 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
             <TextInput
               style={styles.textInputStyle}
               value={userName}
-              onChangeText={setUserName}
+              onChangeText={value => {
+                preserveFormRef.current = true;
+                setUserName(value);
+              }}
               placeholder="Recipient name"
               placeholderTextColor="#9AA6B2"
             />
@@ -361,7 +447,10 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
             <TextInput
               style={styles.textInputStyle}
               value={userPhone}
-              onChangeText={setUserPhone}
+              onChangeText={value => {
+                preserveFormRef.current = true;
+                setUserPhone(value);
+              }}
               keyboardType="phone-pad"
               placeholder="Phone number"
               placeholderTextColor="#9AA6B2"
@@ -440,7 +529,10 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
               <TextInput
                 style={styles.addressInput}
                 value={formattedAddress}
-                onChangeText={setFormattedAddress}
+                onChangeText={value => {
+                  preserveFormRef.current = true;
+                  setFormattedAddress(value);
+                }}
                 placeholder="House, road, area"
                 placeholderTextColor="#9AA6B2"
                 multiline

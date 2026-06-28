@@ -11,9 +11,11 @@ export type ScheduleItem = {
   detail: string;
   icon: 'pill' | 'insulin';
   active?: boolean;
+  taken?: boolean;
   showDismiss?: boolean;
   showCheck?: boolean;
   scheduleId?: string;
+  scheduledTime?: string;
 };
 
 export type ScheduleGroup = {
@@ -117,20 +119,16 @@ export type BottomTabKey =
   | 'pharmacy'
   | 'medication'
   | 'report'
-  | 'profile'
-  | 'vhome'
-  | 'ahome';
+  | 'profile';
 
 export const BOTTOM_TABS: {
   key: BottomTabKey;
   label: string;
-  icon: 'home' | 'plus-square' | 'activity' | 'file-text' | 'user' | 'briefcase' | 'shield';
+  icon: 'home' | 'plus-square' | 'activity' | 'file-text' | 'user';
 }[] = [
   {key: 'home', label: 'Home', icon: 'home'},
   {key: 'pharmacy', label: 'Pharmacy', icon: 'plus-square'},
   {key: 'medication', label: 'Medication', icon: 'activity'},
   {key: 'report', label: 'Report', icon: 'file-text'},
   {key: 'profile', label: 'Profile', icon: 'user'},
-  {key: 'vhome', label: 'VHome', icon: 'briefcase'},
-  {key: 'ahome', label: 'AHome', icon: 'shield'},
 ];

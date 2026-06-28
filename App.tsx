@@ -3,13 +3,14 @@ import {
   DefaultTheme,
   NavigationContainer,
 } from '@react-navigation/native';
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {StatusBar, useColorScheme} from 'react-native';
 import {
   SafeAreaProvider,
   initialWindowMetrics,
 } from 'react-native-safe-area-context';
-import {hasSession, getStoredUser} from './src/api/tokenStorage';
+import {hasSession, getStoredUser, clearSession} from './src/api/tokenStorage';
+import {setLogoutHandler} from './src/auth/sessionControl';
 import {getHomeRouteForRole} from './src/navigation/roleRoutes';
 import type {RootStackParamList} from './src/navigation/types';
 import {CreateHealthProfileScreen} from './src/screens/auth/CreateHealthProfileScreen';
@@ -24,6 +25,7 @@ import {MedicalHistoryScreen} from './src/screens/auth/MedicalHistoryScreen';
 import {PatientInformationScreen} from './src/screens/auth/PatientInformationScreen';
 import {VerificationScreen} from './src/screens/auth/VerificationScreen';
 import {RootNavigator} from './src/navigation/RootNavigator';
+import {MedicationDraftProvider} from './src/context/MedicationDraftContext';
 import {OnboardingScreen} from './src/screens/onboarding/OnboardingScreen';
 import {SplashScreen} from './src/screens/onboarding/SplashScreen';
 
@@ -166,6 +168,15 @@ function App() {
     [enterMainApp],
   );
 
+  const handleLogout = useCallback(async () => {
+    await clearSession();
+    setPhase('signIn');
+  }, []);
+
+  useEffect(() => {
+    setLogoutHandler(handleLogout);
+  }, [handleLogout]);
+
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <StatusBar
@@ -245,7 +256,9 @@ function App() {
       )}
       {phase === 'main' && (
         <NavigationContainer theme={isDarkMode ? DarkTheme : navigationTheme}>
-          <RootNavigator initialRouteName={initialRoute} />
+          <MedicationDraftProvider>
+            <RootNavigator initialRouteName={initialRoute} />
+          </MedicationDraftProvider>
         </NavigationContainer>
       )}
     </SafeAreaProvider>

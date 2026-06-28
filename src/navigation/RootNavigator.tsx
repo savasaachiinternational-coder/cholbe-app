@@ -9,6 +9,11 @@ import {AdminReportsScreen} from '../screens/admin/AdminReportsScreen';
 import {AdminUsersScreen} from '../screens/admin/AdminUsersScreen';
 import {AdminProfileScreen} from '../screens/admin/AdminProfileScreen';
 import {AdminPaymentsScreen} from '../screens/admin/AdminPaymentsScreen';
+import {AdminDoctorsScreen} from '../screens/admin/AdminDoctorsScreen';
+import {AdminDoctorEditScreen} from '../screens/admin/AdminDoctorEditScreen';
+import {AdminAppointmentsScreen} from '../screens/admin/AdminAppointmentsScreen';
+import {AdminReviewsScreen} from '../screens/admin/AdminReviewsScreen';
+import {AdminSpecialtiesScreen} from '../screens/admin/AdminSpecialtiesScreen';
 import {VendorHomeScreen} from '../screens/vendor/VendorHomeScreen';
 import {VendorInventoryScreen} from '../screens/vendor/VendorInventoryScreen';
 import {VendorAddProductScreen} from '../screens/vendor/VendorAddProductScreen';
@@ -115,6 +120,31 @@ export function RootNavigator({initialRouteName = 'Home'}: RootNavigatorProps) {
       <Stack.Screen
         name="APayments"
         component={AdminPaymentsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="ADoctors"
+        component={AdminDoctorsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="ADoctorEdit"
+        component={AdminDoctorEditScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="AAppointments"
+        component={AdminAppointmentsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="AReviews"
+        component={AdminReviewsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="ASpecialties"
+        component={AdminSpecialtiesScreen}
         options={{animation: 'slide_from_right'}}
       />
       <Stack.Screen

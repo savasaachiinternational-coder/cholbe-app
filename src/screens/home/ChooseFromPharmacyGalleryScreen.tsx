@@ -1,18 +1,26 @@
-import {useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {launchImageLibrary} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {uploadFile} from '../../api/uploads';
+import {checkoutSession} from '../../checkout/checkoutSession';
+import {ApiError} from '../../api/client';
+import {pickedFileFromAsset} from '../../utils/fileAsset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseFromPharmacyGallery'>;
 
@@ -21,53 +29,85 @@ const NUM_COLUMNS = 4;
 const GRID_SPACING = 8;
 const CARD_WIDTH = (width - 32 - GRID_SPACING * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
 
-const PHARMACY_GALLERY_DATA = Array.from({length: 28}).map((_, index) => {
-  const mod = index % 4;
-  if (mod === 0) {
-    return {id: String(index), type: 'prescription_paper' as const};
-  }
-  if (mod === 1) {
-    return {id: String(index), type: 'doctor_notes' as const};
-  }
-  if (mod === 2) {
-    return {id: String(index), type: 'capsules' as const};
-  }
-  return {id: String(index), type: 'pharmacy_shelf' as const};
-});
+type GalleryItem = {
+  id: string;
+  uri: string;
+  fileName: string;
+  mimeType: string;
+};
 
 export function ChooseFromPharmacyGalleryScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [selectedImageId, setSelectedImageId] = useState<string | null>('0');
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const renderGalleryItem = ({item}: {item: (typeof PHARMACY_GALLERY_DATA)[0]}) => {
+  const openDeviceGallery = useCallback(async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      selectionLimit: 12,
+    });
+    const assets = result.assets ?? [];
+    if (!assets.length) return;
+
+    const deviceItems = assets
+      .map((asset, index) => {
+        const picked = pickedFileFromAsset(asset, 'prescription');
+        if (!picked) return null;
+        return {
+          id: `device-${index}`,
+          uri: picked.uri,
+          fileName: picked.fileName,
+          mimeType: picked.mimeType,
+        };
+      })
+      .filter((item): item is GalleryItem => item !== null);
+
+    if (!deviceItems.length) return;
+    setItems(deviceItems);
+    setSelectedImageId(deviceItems[0]?.id ?? null);
+  }, []);
+
+  useEffect(() => {
+    openDeviceGallery();
+  }, [openDeviceGallery]);
+
+  const handleContinue = async () => {
+    const selected = items.find(item => item.id === selectedImageId);
+    if (!selected) {
+      Alert.alert('Gallery', 'Please select a prescription image.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const uploaded = await uploadFile(
+        '/uploads/prescription',
+        selected.uri,
+        selected.fileName,
+        selected.mimeType,
+      );
+      checkoutSession.setPrescriptionUrl(uploaded.fileUrl);
+      navigation.navigate('CartCheckoutDetails');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not upload prescription';
+      Alert.alert('Upload prescription', message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const renderGalleryItem = ({item}: {item: GalleryItem}) => {
     const isSelected = selectedImageId === item.id;
-
     return (
       <TouchableOpacity
         style={[styles.imageCard, {width: CARD_WIDTH, height: CARD_WIDTH}]}
         activeOpacity={0.8}
         onPress={() => setSelectedImageId(item.id)}>
         <View style={styles.imagePlaceholderBox}>
-          {item.type === 'prescription_paper' && (
-            <MaterialCommunityIcons name="file-document-text-outline" size={32} color="#A0A5BA" />
-          )}
-          {item.type === 'doctor_notes' && (
-            <MaterialCommunityIcons name="sticker-text-outline" size={32} color="#A0A5BA" />
-          )}
-          {item.type === 'capsules' && (
-            <MaterialCommunityIcons
-              name="pill"
-              size={32}
-              color="#A0A5BA"
-              style={styles.rotatedPill}
-            />
-          )}
-          {item.type === 'pharmacy_shelf' && (
-            <MaterialCommunityIcons name="storefront-outline" size={32} color="#A0A5BA" />
-          )}
+          <Image source={{uri: item.uri}} style={styles.previewImage} />
         </View>
-
         {isSelected && <View style={styles.selectedOverlayBorder} />}
       </TouchableOpacity>
     );
@@ -83,28 +123,39 @@ export function ChooseFromPharmacyGalleryScreen({navigation}: Props) {
           <Text style={styles.headerTitleText}>Choose From Gallery</Text>
         </View>
 
-        <TouchableOpacity style={styles.dropdownFilterPill} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.dropdownFilterPill} activeOpacity={0.8} onPress={openDeviceGallery}>
           <Text style={styles.dropdownFilterText}>All Images</Text>
           <Feather name="chevron-down" size={14} color="#FFFFFF" style={styles.filterChevron} />
         </TouchableOpacity>
       </View>
 
       <FlatList
-        data={PHARMACY_GALLERY_DATA}
+        data={items}
         renderItem={renderGalleryItem}
         keyExtractor={item => item.id}
         numColumns={NUM_COLUMNS}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.galleryGridContent, {paddingBottom: 130 + insets.bottom}]}
         columnWrapperStyle={styles.galleryRowWrapper}
+        ListEmptyComponent={
+          <TouchableOpacity style={styles.emptyPickerCard} activeOpacity={0.8} onPress={openDeviceGallery}>
+            <MaterialCommunityIcons name="image-plus" size={36} color="#A0A5BA" />
+            <Text style={styles.emptyText}>Tap to choose a prescription image</Text>
+          </TouchableOpacity>
+        }
       />
 
       <View style={[styles.footerActionContainer, {bottom: 74 + insets.bottom}]}>
         <TouchableOpacity
-          style={[styles.continueButton, !selectedImageId && styles.continueDisabled]}
+          style={[styles.continueButton, (!selectedImageId || uploading) && styles.continueDisabled]}
           activeOpacity={0.9}
-          onPress={() => navigation.navigate('CartCheckoutDetails')}>
-          <Text style={styles.continueButtonText}>Continue</Text>
+          disabled={!selectedImageId || uploading}
+          onPress={handleContinue}>
+          {uploading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.continueButtonText}>Continue</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -163,25 +214,17 @@ const styles = StyleSheet.create({
   filterChevron: {marginLeft: 4},
   galleryGridContent: {paddingHorizontal: 16, paddingTop: 8},
   galleryRowWrapper: {justifyContent: 'flex-start', gap: GRID_SPACING, marginBottom: GRID_SPACING},
-  imageCard: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    position: 'relative',
-    backgroundColor: '#EAECEF',
-  },
-  imagePlaceholderBox: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#EBEFF5',
-  },
-  rotatedPill: {transform: [{rotate: '-45deg'}]},
+  imageCard: {borderRadius: 8, overflow: 'hidden', position: 'relative', backgroundColor: '#EAECEF'},
+  imagePlaceholderBox: {flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#EBEFF5'},
+  previewImage: {width: '100%', height: '100%'},
   selectedOverlayBorder: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     borderWidth: 3,
     borderColor: '#45A096',
     borderRadius: 8,
   },
+  emptyPickerCard: {alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 12},
+  emptyText: {fontSize: 13, color: '#7D8797'},
   footerActionContainer: {
     position: 'absolute',
     left: 0,
@@ -198,7 +241,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  continueDisabled: {opacity: 0.85},
+  continueDisabled: {opacity: 0.5},
   continueButtonText: {color: '#FFFFFF', fontSize: 18, fontWeight: '600'},
   bottomTabBar: {
     flexDirection: 'row',

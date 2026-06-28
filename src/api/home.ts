@@ -11,9 +11,12 @@ export type PatientHomeDashboard = {
     scheduleId: string;
     medicineName: string;
     dose: string | null;
+    scheduledTime: string;
+    canMarkTaken: boolean;
     minutesUntil: number;
     minutesUntilLabel: string;
   } | null;
+  allDosesTakenToday: boolean;
   medicationStats: { taken: number; missed: number; remaining: number; total: number };
   healthVitals: {
     bloodPressure: { value: string; checkedAgo: string } | null;
@@ -27,6 +30,11 @@ export type PatientHomeDashboard = {
     times: string[];
     mealTiming: string | null;
     instruction: string | null;
+    todayLogs: Array<{
+      status: string;
+      scheduledTime: string | null;
+      loggedAt: string;
+    }>;
   }>;
   relatedProducts: Array<{
     id: string;

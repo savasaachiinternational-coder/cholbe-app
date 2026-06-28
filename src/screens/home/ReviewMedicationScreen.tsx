@@ -1,4 +1,7 @@
+import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -12,6 +15,9 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {MedicationReviewContent} from '../../components/MedicationReviewContent';
+import {useMedicationDraft} from '../../context/MedicationDraftContext';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewMedication'>;
 
@@ -20,6 +26,22 @@ const {width} = Dimensions.get('window');
 export function ReviewMedicationScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const {saveSchedule} = useMedicationDraft();
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveSchedule();
+      navigation.navigate('MedicineList');
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not save medication';
+      Alert.alert('Save failed', message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -55,93 +77,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollCanvasContent}>
         <View style={styles.reviewDetailsCard}>
-          <View style={styles.metaTitleBlock}>
-            <Text style={styles.medicineNameText}>Amlodipine 5mg</Text>
-            <Text style={styles.medicineSubtext}>Time to take 2times daily</Text>
-          </View>
-
-          <View style={styles.innerWhiteBox}>
-            <View style={styles.infoBlockRow}>
-              <View style={styles.iconColumn}>
-                <Feather name="clock" size={20} color="#45A096" />
-                <View style={styles.verticalTimelineTrackerLine} />
-              </View>
-              <View style={styles.detailsColumn}>
-                <Text style={styles.sectionLabelText}>Times</Text>
-
-                <View style={styles.timelineItem}>
-                  <View style={styles.orangeNodeDot} />
-                  <Text style={styles.timelineContentText}>
-                    8:00 AM (Before Meal 30 min)
-                  </Text>
-                </View>
-
-                <View style={styles.timelineItem}>
-                  <View style={styles.orangeNodeDot} />
-                  <Text style={styles.timelineContentText}>8:30 PM (After Meal)</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.infoBlockRow}>
-              <View style={styles.iconColumn}>
-                <MaterialCommunityIcons
-                  name="calendar-month-outline"
-                  size={20}
-                  color="#45A096"
-                />
-              </View>
-              <View style={styles.detailsColumn}>
-                <Text style={styles.inlineInfoValueText}>
-                  Starts : <Text style={styles.boldSpan}>April 24 2024</Text> Ends :{' '}
-                  <Text style={styles.boldSpan}>May 24 2024</Text>
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.infoBlockRow}>
-              <View style={styles.iconColumn}>
-                <MaterialCommunityIcons name="refresh" size={20} color="#45A096" />
-              </View>
-              <View style={styles.detailsColumn}>
-                <Text style={styles.inlineInfoValueText}>
-                  Repeats : <Text style={styles.boldSpan}>Monthly</Text>
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.infoBlockRow}>
-              <View style={styles.iconColumn}>
-                <Feather name="eye" size={18} color="#45A096" />
-              </View>
-              <View style={styles.detailsColumn}>
-                <Text style={styles.inlineInfoValueText}>
-                  Follow-up : <Text style={styles.boldSpan}>30 min before</Text>
-                </Text>
-              </View>
-            </View>
-
-            <View style={[styles.infoBlockRow, styles.inventoryRow]}>
-              <View style={styles.iconColumn}>
-                <MaterialCommunityIcons name="pill" size={20} color="#45A096" />
-              </View>
-              <View style={styles.detailsColumn}>
-                <Text style={styles.sectionLabelText}>Reminder to refill Inventory :</Text>
-
-                <View style={styles.timelineItem}>
-                  <View style={styles.orangeNodeDot} />
-                  <Text style={styles.timelineContentText}>10 pc</Text>
-                </View>
-
-                <View style={styles.timelineItem}>
-                  <View style={styles.orangeNodeDot} />
-                  <Text style={styles.timelineContentText}>
-                    8:30 PM 25-10-2025 (Remind Me when)
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
+          <MedicationReviewContent styles={styles} />
         </View>
       </ScrollView>
 
@@ -156,8 +92,13 @@ export function ReviewMedicationScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.saveButton}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.saveButtonText}>Save Medication</Text>
+          disabled={saving}
+          onPress={handleSave}>
+          {saving ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Medication</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -170,7 +111,10 @@ export function ReviewMedicationScreen({navigation}: Props) {
           <Text style={styles.tabLabel}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.tabItem}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('PharmacyShop')}>
           <MaterialCommunityIcons name="clippy" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Pharmacy</Text>
         </TouchableOpacity>
@@ -292,34 +236,17 @@ const styles = StyleSheet.create({
     color: '#7D8797',
     fontWeight: '400',
   },
-  innerWhiteBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: 14,
-    shadowColor: '#E0E4F0',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 2,
-  },
   infoBlockRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 20,
     position: 'relative',
+    paddingLeft: 8,
   },
   iconColumn: {
     width: 36,
     alignItems: 'center',
     paddingTop: 2,
-  },
-  verticalTimelineTrackerLine: {
-    position: 'absolute',
-    top: 26,
-    bottom: -20,
-    width: 1,
-    backgroundColor: '#E2E6EE',
   },
   detailsColumn: {
     flex: 1,
@@ -346,7 +273,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 6,
   },
-  orangeNodeDot: {
+  orangeDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -357,8 +284,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#495057',
     fontWeight: '500',
+    flex: 1,
   },
-  inventoryRow: {marginBottom: 8},
+  dividerLine: {
+    height: 1,
+    backgroundColor: '#F0F2F7',
+    marginVertical: 8,
+  },
+  refillBlock: {marginBottom: 8},
   dualActionFooterContainer: {
     position: 'absolute',
     left: 0,

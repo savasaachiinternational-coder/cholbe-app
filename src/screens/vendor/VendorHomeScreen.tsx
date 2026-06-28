@@ -20,7 +20,8 @@ import {vendorApi} from '../../api/vendor';
 import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
-import {productImageUrl} from '../../utils/pharmacyHelpers';
+import {ProductImage} from '../../components/ProductImage';
+import {formatBdt} from '../../utils/pharmacyHelpers';
 import {VendorBottomNav} from './VendorBottomNav';
 import type {VendorOrderStatus} from './vendorNav';
 
@@ -68,8 +69,7 @@ type DashboardData = {
 };
 
 function formatTk(amount: string | number) {
-  const n = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return `Tk${Number.isFinite(n) ? n.toLocaleString('en-BD', {maximumFractionDigits: 0}) : '0'}`;
+  return formatBdt(amount);
 }
 
 function discountLabel(product: VendorProduct) {
@@ -154,8 +154,8 @@ export function VendorHomeScreen({navigation}: Props) {
     const discount = discountLabel(product);
     return (
       <View key={product.id} style={styles.inventoryCard}>
-        <Image
-          source={{uri: productImageUrl(product.imageUrl)}}
+        <ProductImage
+          imageUrl={product.imageUrl}
           style={styles.inventoryImage}
         />
         <View style={styles.inventoryDetails}>

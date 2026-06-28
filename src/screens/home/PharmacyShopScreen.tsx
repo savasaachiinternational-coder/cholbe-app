@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,12 +20,12 @@ import type {RootStackParamList} from '../../navigation/types';
 import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
 import {cartApi} from '../../api/cart';
 import {ApiError} from '../../api/client';
+import {ProductImage} from '../../components/ProductImage';
 import {
   discountPercent,
   formatBdt,
   groupProductsForShop,
   matchesShopCategory,
-  productImageUrl,
   productUnitPrice,
   productListPrice,
   productVolumeLabel,
@@ -104,7 +103,6 @@ export function PharmacyShopScreen({navigation}: Props) {
 
   const renderProductCard = (product: PharmacyProduct) => {
     const pct = discountPercent(product);
-    const imgUrl = productImageUrl(product.imageUrl);
 
     return (
       <View key={product.id} style={styles.card}>
@@ -117,7 +115,7 @@ export function PharmacyShopScreen({navigation}: Props) {
             </View>
           )}
 
-          <Image source={{uri: imgUrl}} style={styles.productImage} />
+          <ProductImage imageUrl={product.imageUrl} style={styles.productImage} />
 
           <View style={styles.infoContainer}>
             <Text style={styles.productTitle} numberOfLines={1}>

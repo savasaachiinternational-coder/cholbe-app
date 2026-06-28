@@ -1,8 +1,9 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +21,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import {reportsApi, type ReportType} from '../../api/reports';
 import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
+import {DatePickerField} from '../../components/MedicationPickers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UploadReportDetails'>;
 
@@ -32,22 +34,39 @@ const REPORT_TYPES: {label: string; value: ReportType}[] = [
   {label: 'Other', value: 'OTHER'},
 ];
 
-export function UploadReportDetailsScreen({navigation}: Props) {
+export function UploadReportDetailsScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const initial = route.params;
 
-  const [fileAsset, setFileAsset] = useState<Asset | null>(null);
-  const [reportType, setReportType] = useState<ReportType>('LAB');
-  const [title, setTitle] = useState('Hemoglobin');
+  const [fileAsset, setFileAsset] = useState<Asset | null>(
+    initial?.fileUri
+      ? {
+          uri: initial.fileUri,
+          fileName: initial.fileName,
+          type: initial.mimeType,
+        }
+      : null,
+  );
+  const [existingFileUrl, setExistingFileUrl] = useState(initial?.existingFileUrl);
+  const [reportType, setReportType] = useState<ReportType>(
+    initial?.reportType ?? 'LAB',
+  );
+  const [title, setTitle] = useState(initial?.reportTitle ?? '');
   const [reportDate, setReportDate] = useState(
     new Date().toISOString().slice(0, 10),
   );
-  const [provider, setProvider] = useState('Devcare Lab');
-  const [tip, setTip] = useState(
-    'Blood Sugar is slightly high. Please maintain diet and continue medication.',
-  );
+  const [provider, setProvider] = useState(initial?.provider ?? '');
+  const [tip, setTip] = useState('');
   const [loading, setLoading] = useState(false);
   const [typePickerOpen, setTypePickerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!title && (fileAsset?.fileName || initial?.existingFileName)) {
+      const sourceName = fileAsset?.fileName ?? initial?.existingFileName ?? '';
+      setTitle(sourceName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '));
+    }
+  }, [fileAsset?.fileName, initial?.existingFileName, title]);
 
   const handleBrowse = async () => {
     const result = await launchImageLibrary({
@@ -56,11 +75,12 @@ export function UploadReportDetailsScreen({navigation}: Props) {
     });
     if (result.assets?.[0]) {
       setFileAsset(result.assets[0]);
+      setExistingFileUrl(undefined);
     }
   };
 
   const handleUpload = async () => {
-    if (!fileAsset?.uri) {
+    if (!fileAsset?.uri && !existingFileUrl) {
       Alert.alert('Upload report', 'Please select a file first.');
       return;
     }
@@ -70,12 +90,20 @@ export function UploadReportDetailsScreen({navigation}: Props) {
     }
     setLoading(true);
     try {
-      const uploaded = await uploadFile(
-        '/uploads/report',
-        fileAsset.uri,
-        fileAsset.fileName ?? 'report.jpg',
-        fileAsset.type ?? 'image/jpeg',
-      );
+      const uploaded = fileAsset?.uri
+        ? await uploadFile(
+            '/uploads/report',
+            fileAsset.uri,
+            fileAsset.fileName ?? 'report.jpg',
+            fileAsset.type ?? 'image/jpeg',
+          )
+        : {
+            fileUrl: existingFileUrl!,
+            fileName: initial?.existingFileName ?? title.trim(),
+            mimeType: initial?.mimeType ?? 'image/jpeg',
+            size: 0,
+          };
+
       await reportsApi.create({
         title: title.trim(),
         reportType,
@@ -120,11 +148,18 @@ export function UploadReportDetailsScreen({navigation}: Props) {
             <View style={styles.uploadIconWrapper}>
               <Feather name="download" size={28} color="#FFFFFF" />
             </View>
+            {fileAsset?.uri ? (
+              <Image source={{uri: fileAsset.uri}} style={styles.selectedPreview} />
+            ) : null}
             <Text style={styles.uploadTitleText}>
-              {fileAsset?.fileName ?? 'Upload your Report here'}
+              {fileAsset?.fileName ??
+                initial?.existingFileName ??
+                'Upload your Report here'}
             </Text>
             <TouchableOpacity activeOpacity={0.7} onPress={handleBrowse}>
-              <Text style={styles.browseHereText}>Browse Here</Text>
+              <Text style={styles.browseHereText}>
+                {existingFileUrl && !fileAsset?.uri ? 'Replace file' : 'Browse Here'}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -167,19 +202,12 @@ export function UploadReportDetailsScreen({navigation}: Props) {
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Date of Report</Text>
-            <View style={styles.dateSelectorBox}>
-              <TextInput
-                style={[styles.dateText, styles.dateInput]}
-                value={reportDate}
-                onChangeText={setReportDate}
-                placeholder="YYYY-MM-DD"
-              />
-              <MaterialCommunityIcons
-                name="calendar-month-outline"
-                size={20}
-                color="#333333"
-              />
-            </View>
+            <DatePickerField
+              label="Date of Report"
+              value={reportDate}
+              onChange={setReportDate}
+              style={styles.dateSelectorBox}
+            />
           </View>
 
           <View style={styles.inputGroup}>
@@ -205,7 +233,14 @@ export function UploadReportDetailsScreen({navigation}: Props) {
               />
               <Text style={styles.tipTitleText}>Tip</Text>
             </View>
-            <Text style={styles.tipBodyText}>{tip}</Text>
+            <TextInput
+              style={styles.tipInput}
+              value={tip}
+              onChangeText={setTip}
+              placeholder="Add notes about this report (optional)"
+              placeholderTextColor="#8A94A6"
+              multiline
+            />
           </View>
         </View>
       </ScrollView>
@@ -349,6 +384,13 @@ const styles = StyleSheet.create({
     color: '#7D8797',
     fontWeight: '400',
     marginBottom: 2,
+    marginTop: 8,
+  },
+  selectedPreview: {
+    width: '88%',
+    height: 120,
+    borderRadius: 12,
+    resizeMode: 'cover',
   },
   browseHereText: {
     fontSize: 16,
@@ -442,6 +484,14 @@ const styles = StyleSheet.create({
     color: '#5A6578',
     lineHeight: 18,
     fontWeight: '400',
+  },
+  tipInput: {
+    fontSize: 13,
+    color: '#5A6578',
+    lineHeight: 18,
+    minHeight: 56,
+    textAlignVertical: 'top',
+    padding: 0,
   },
   dualActionFooterContainer: {
     position: 'absolute',

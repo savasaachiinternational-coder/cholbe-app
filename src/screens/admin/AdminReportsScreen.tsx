@@ -18,6 +18,7 @@ import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
+import {formatBdt} from '../../utils/pharmacyHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AReports'>;
 
@@ -37,7 +38,7 @@ const BAR_WIDTH = 13;
 const BAR_GAP = 7;
 
 function formatRevenue(value: number) {
-  return `Tk ${Math.round(value || 0).toLocaleString()}`;
+  return formatBdt(value || 0);
 }
 
 function buildBarData(medicines: {quantitySold: number | null}[]) {

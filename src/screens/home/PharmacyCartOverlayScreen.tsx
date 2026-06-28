@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,9 +19,9 @@ import type {RootStackParamList} from '../../navigation/types';
 import {cartApi, type CartItem} from '../../api/cart';
 import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
 import {ApiError} from '../../api/client';
+import {ProductImage} from '../../components/ProductImage';
 import {
   formatBdt,
-  productImageUrl,
   productUnitPrice,
   unitTypeToVariant,
 } from '../../utils/pharmacyHelpers';
@@ -104,8 +103,8 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
       <View style={styles.gridWrapper}>
         {products.map(product => (
           <View key={product.id} style={styles.productCard}>
-            <Image
-              source={{uri: productImageUrl(product.imageUrl)}}
+            <ProductImage
+              imageUrl={product.imageUrl}
               style={styles.productThumb}
             />
             <View style={styles.productInfoBlock}>

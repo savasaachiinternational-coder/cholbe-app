@@ -29,6 +29,7 @@ import {
 } from './profileData';
 import {profileApi, type ProfileOverview} from '../../api/profile';
 import {ApiError} from '../../api/client';
+import {performLogout} from '../../auth/sessionControl';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - 44) / 2;
@@ -121,6 +122,7 @@ export function MyProfileScreen({navigation}: Props) {
       doctorName,
       specialty,
       appointmentId,
+      doctorId: assignedDoctorId,
     });
   };
 
@@ -143,6 +145,19 @@ export function MyProfileScreen({navigation}: Props) {
 
   const smsPhone = (phone: string) => {
     Linking.openURL(`sms:${phone.replace(/\s/g, '')}`);
+  };
+
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to sign out?', [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: () => {
+          void performLogout();
+        },
+      },
+    ]);
   };
 
   if (loading && !overview) {
@@ -541,6 +556,22 @@ export function MyProfileScreen({navigation}: Props) {
             <View style={styles.settingsTextContent}>
               <Text style={styles.settingsTitleText}>Language</Text>
               <Text style={styles.settingsSubText}>English</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color="#94A3B8" />
+          </TouchableOpacity>
+
+          <View style={styles.settingsInnerSeparatorLine} />
+
+          <TouchableOpacity
+            style={styles.settingsRowItem}
+            activeOpacity={0.8}
+            onPress={handleLogout}>
+            <View style={[styles.settingsIconWrapper, styles.logoutIconBg]}>
+              <Feather name="log-out" size={20} color="#DC2626" />
+            </View>
+            <View style={styles.settingsTextContent}>
+              <Text style={styles.settingsTitleTextLogout}>Logout</Text>
+              <Text style={styles.settingsSubText}>Sign out of your account</Text>
             </View>
             <Feather name="chevron-right" size={18} color="#94A3B8" />
           </TouchableOpacity>
@@ -1151,6 +1182,9 @@ const styles = StyleSheet.create({
   langIconBg: {
     backgroundColor: '#F1F5F9',
   },
+  logoutIconBg: {
+    backgroundColor: '#FEE2E2',
+  },
   settingsTextContent: {
     marginLeft: 12,
     flex: 1,
@@ -1159,6 +1193,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#1E293B',
+  },
+  settingsTitleTextLogout: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#DC2626',
   },
   settingsSubText: {
     fontSize: 11,

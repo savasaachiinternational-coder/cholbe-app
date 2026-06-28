@@ -1,10 +1,22 @@
-import {Dimensions, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {useState} from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {launchCamera} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {pickedFileFromAsset} from '../../utils/fileAsset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CameraReport'>;
 const {width} = Dimensions.get('window');
@@ -12,6 +24,50 @@ const {width} = Dimensions.get('window');
 export function CameraReportScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [pickedFile, setPickedFile] = useState<{
+    uri: string;
+    fileName: string;
+    mimeType: string;
+  } | null>(null);
+  const [capturing, setCapturing] = useState(false);
+  const [cameraType, setCameraType] = useState<'back' | 'front'>('back');
+
+  const capturePhoto = async () => {
+    setCapturing(true);
+    try {
+      const result = await launchCamera({
+        mediaType: 'photo',
+        cameraType,
+        saveToPhotos: false,
+        quality: 0.85,
+      });
+      const asset = result.assets?.[0];
+      if (!asset?.uri) {
+        if (result.didCancel) return;
+        Alert.alert('Camera', 'Could not capture photo.');
+        return;
+      }
+      const picked = pickedFileFromAsset(asset, 'report');
+      if (!picked) return;
+      setPreviewUri(picked.uri);
+      setPickedFile(picked);
+    } finally {
+      setCapturing(false);
+    }
+  };
+
+  const continueToDetails = () => {
+    if (!pickedFile) {
+      Alert.alert('Camera', 'Please capture a report photo first.');
+      return;
+    }
+    navigation.navigate('UploadReportDetails', {
+      fileUri: pickedFile.uri,
+      fileName: pickedFile.fileName,
+      mimeType: pickedFile.mimeType,
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -27,23 +83,34 @@ export function CameraReportScreen({navigation}: Props) {
       </View>
 
       <View style={styles.cameraViewport}>
-        <View style={[styles.cornerFrame, styles.topLeftCorner]} />
-        <View style={[styles.cornerFrame, styles.topRightCorner]} />
-        <View style={[styles.cornerFrame, styles.bottomLeftCorner]} />
-        <View style={[styles.cornerFrame, styles.bottomRightCorner]} />
-
-        <View style={styles.focusReticleContainer}>
-          <MaterialCommunityIcons
-            name="scan-helper"
-            size={48}
-            color="#7D8797"
-            style={styles.reticleIcon}
-          />
-        </View>
+        {previewUri ? (
+          <Image source={{uri: previewUri}} style={styles.previewImage} />
+        ) : (
+          <>
+            <View style={[styles.cornerFrame, styles.topLeftCorner]} />
+            <View style={[styles.cornerFrame, styles.topRightCorner]} />
+            <View style={[styles.cornerFrame, styles.bottomLeftCorner]} />
+            <View style={[styles.cornerFrame, styles.bottomRightCorner]} />
+            <View style={styles.focusReticleContainer}>
+              <MaterialCommunityIcons
+                name="scan-helper"
+                size={48}
+                color="#7D8797"
+                style={styles.reticleIcon}
+              />
+            </View>
+          </>
+        )}
       </View>
 
       <View style={[styles.shutterControlPanel, {paddingBottom: 8 + insets.bottom}]}>
-        <TouchableOpacity style={styles.sideActionCircle} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.sideActionCircle}
+          activeOpacity={0.7}
+          disabled={capturing}
+          onPress={() =>
+            setCameraType(current => (current === 'back' ? 'front' : 'back'))
+          }>
           <MaterialCommunityIcons
             name="camera-flip-outline"
             size={24}
@@ -51,14 +118,23 @@ export function CameraReportScreen({navigation}: Props) {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.shutterOuterRing} activeOpacity={0.85}>
-          <View style={styles.shutterInnerCircle} />
+        <TouchableOpacity
+          style={styles.shutterOuterRing}
+          activeOpacity={0.85}
+          disabled={capturing}
+          onPress={capturePhoto}>
+          {capturing ? (
+            <ActivityIndicator color="#333333" />
+          ) : (
+            <View style={styles.shutterInnerCircle} />
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.sideActionCircle}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('UploadReportDetails')}>
+          disabled={!pickedFile || capturing}
+          onPress={continueToDetails}>
           <MaterialCommunityIcons
             name="check-circle-outline"
             size={24}
@@ -141,6 +217,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
   cornerFrame: {
     position: 'absolute',
     width: 60,
@@ -176,7 +257,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 18,
   },
   focusReticleContainer: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
   },

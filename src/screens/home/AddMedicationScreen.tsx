@@ -1,13 +1,15 @@
 import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {launchImageLibrary} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -16,6 +18,9 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
+import {useMedicationDraft} from '../../context/MedicationDraftContext';
+import {ApiError} from '../../api/client';
+import {pickedFileFromAsset} from '../../utils/fileAsset';
 
 const {width} = Dimensions.get('window');
 
@@ -24,9 +29,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AddMedication'>;
 export function AddMedicationScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const {resetDraft, uploadAndScan} = useMedicationDraft();
   const [selectedOption, setSelectedOption] = useState<
     'manual' | 'upload' | null
   >(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -46,6 +53,36 @@ export function AddMedicationScreen({navigation}: Props) {
       return;
     }
     navigation.navigate('Home');
+  };
+
+  const browsePrescription = async () => {
+    setSelectedOption('upload');
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      selectionLimit: 1,
+    });
+    const asset = result.assets?.[0];
+    if (!asset) return;
+    const picked = pickedFileFromAsset(asset, 'prescription');
+    if (!picked) return;
+
+    setUploading(true);
+    try {
+      resetDraft({source: 'gallery'});
+      await uploadAndScan(
+        picked.uri,
+        picked.fileName,
+        picked.mimeType,
+        'gallery',
+      );
+      navigation.navigate('ReviewDetails');
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not upload prescription';
+      Alert.alert('Upload prescription', message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -113,25 +150,36 @@ export function AddMedicationScreen({navigation}: Props) {
             <Feather name="download" size={28} color="#FFFFFF" />
           </View>
           <Text style={styles.uploadTitleText}>Upload your Prescription here</Text>
-          <Text style={styles.browseHereText}>Browse Here</Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={browsePrescription}>
+            <Text style={styles.browseHereText}>
+              {uploading ? 'Uploading...' : 'Browse Here'}
+            </Text>
+          </TouchableOpacity>
         </TouchableOpacity>
+      </View>
 
+      <View style={[styles.footerActionContainer, {bottom: 74 + insets.bottom}]}>
         <TouchableOpacity
           style={[
             styles.continueButton,
-            !selectedOption && styles.continueButtonDisabled,
+            (!selectedOption || uploading) && styles.continueButtonDisabled,
           ]}
           activeOpacity={0.9}
+          disabled={!selectedOption || uploading}
           onPress={() => {
             if (selectedOption === 'manual') {
+              resetDraft({source: 'manual'});
               navigation.navigate('AddMedicationForm');
               return;
             }
             if (selectedOption === 'upload') {
+              resetDraft({source: 'camera'});
               navigation.navigate('UploadReport');
             }
           }}>
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>
+            {uploading ? 'Uploading...' : 'Continue'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -200,6 +248,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 36,
     paddingHorizontal: 24,
     paddingTop: 48,
+    paddingBottom: 24,
     shadowColor: '#E0E4F0',
     shadowOffset: {width: 0, height: -10},
     shadowOpacity: 0.4,
@@ -269,16 +318,25 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 30,
   },
   continueButtonDisabled: {
-    opacity: 0.8,
+    opacity: 0.5,
   },
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  footerActionContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F2F7',
+    zIndex: 9,
   },
   bottomNavWrap: {
     position: 'absolute',

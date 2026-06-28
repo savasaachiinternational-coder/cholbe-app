@@ -20,6 +20,8 @@ import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
+import {AdminMenuModal} from './AdminMenuModal';
+import {formatBdt} from '../../utils/pharmacyHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AHome'>;
 
@@ -48,7 +50,7 @@ type DashboardData = {
 
 function formatRevenue(value: string | number) {
   const n = typeof value === 'string' ? parseFloat(value) : value;
-  return `Tk ${Math.round(n || 0).toLocaleString()}`;
+  return formatBdt(n || 0);
 }
 
 function ChartLineSegment({
@@ -143,6 +145,7 @@ export function AdminHomeScreen({navigation}: Props) {
   const insets = useSafeAreaInsets();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -183,7 +186,7 @@ export function AdminHomeScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.headerButton}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('Home')}>
+          onPress={() => setMenuOpen(true)}>
           <Feather name="menu" size={24} color="#1A1C1E" />
         </TouchableOpacity>
         <View style={styles.logoContainer}>
@@ -240,6 +243,27 @@ export function AdminHomeScreen({navigation}: Props) {
           ))
         )}
 
+        <View style={styles.quickLinksRow}>
+          <TouchableOpacity
+            style={styles.quickLinkCard}
+            onPress={() => navigation.navigate('ADoctors')}>
+            <Feather name="user-check" size={20} color="#0D9488" />
+            <Text style={styles.quickLinkText}>Doctors</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickLinkCard}
+            onPress={() => navigation.navigate('AAppointments')}>
+            <Feather name="calendar" size={20} color="#0D9488" />
+            <Text style={styles.quickLinkText}>Appointments</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickLinkCard}
+            onPress={() => navigation.navigate('AReviews')}>
+            <Feather name="star" size={20} color="#0D9488" />
+            <Text style={styles.quickLinkText}>Reviews</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.chartSectionCard}>
           <View style={styles.chartHeaderRow}>
             <Text style={styles.chartSectionHeadingText}>Order Overview</Text>
@@ -280,6 +304,11 @@ export function AdminHomeScreen({navigation}: Props) {
       </ScrollView>
 
       <AdminBottomNav activeTab="home" bottomInset={insets.bottom} navigation={navigation} />
+      <AdminMenuModal
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        navigation={navigation}
+      />
     </View>
   );
 }
@@ -402,6 +431,28 @@ const styles = StyleSheet.create({
     color: '#00A884',
     fontWeight: '600',
     marginTop: 4,
+  },
+  quickLinksRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
+  quickLinkCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    alignItems: 'center',
+    gap: 8,
+  },
+  quickLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1E293B',
+    textAlign: 'center',
   },
   chartSectionCard: {
     backgroundColor: '#FFFFFF',

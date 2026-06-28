@@ -1,4 +1,5 @@
 import type {Appointment} from '../appointments';
+import {formatBdt} from '../../utils/pharmacyHelpers';
 
 export type AppointmentDetail = {
   id: string;
@@ -38,8 +39,7 @@ function formatDateLabel(date: Date): string {
 
 function formatFee(fee: string | number): string {
   const amount = typeof fee === 'string' ? Number(fee) : fee;
-  if (Number.isNaN(amount)) return `BDT ${fee}`;
-  return `BDT ${amount}`;
+  return Number.isNaN(amount) ? String(fee) : formatBdt(amount);
 }
 
 function countdownFrom(date: Date): {label: string; minutes: number} {

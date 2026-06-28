@@ -6,9 +6,14 @@ export type RootStackParamList = {
   AMedicines: undefined;
   AInventory: undefined;
   AReports: undefined;
-  AUsers: undefined;
+  AUsers: {initialFilter?: 'All' | 'Customers' | 'Vendors' | 'Doctors' | 'Specialties' | 'Blocked'} | undefined;
   AProfile: undefined;
   APayments: undefined;
+  ADoctors: undefined;
+  ADoctorEdit: {doctorId: string};
+  ASpecialties: undefined;
+  AAppointments: undefined;
+  AReviews: undefined;
   VHome: undefined;
   VInventory: undefined;
   VAddProduct: undefined;
@@ -28,6 +33,7 @@ export type RootStackParamList = {
     doctorName?: string;
     specialty?: string;
     appointmentId?: string;
+    doctorId?: string;
   };
   WaitingRoom: {
     appointmentId: string;
@@ -42,6 +48,7 @@ export type RootStackParamList = {
   MyProfile: undefined;
   ConsultationSummary:
     | {
+        appointmentId?: string;
         doctorName?: string;
         specialty?: string;
       }
@@ -62,12 +69,23 @@ export type RootStackParamList = {
   ReviewDetails: undefined;
   ReviewMedication: undefined;
   AddReportMenu: undefined;
-  UploadReportDetails: undefined;
+  UploadReportDetails:
+    | {
+        fileUri?: string;
+        fileName?: string;
+        mimeType?: string;
+        existingFileUrl?: string;
+        existingFileName?: string;
+        reportTitle?: string;
+        reportType?: 'LAB' | 'PRESCRIPTION' | 'IMAGING' | 'OTHER';
+        provider?: string;
+      }
+    | undefined;
   UploadReportOptionsMenu: undefined;
   ChooseFromReportGallery: undefined;
   SavedReport: undefined;
   CameraReport: undefined;
-  ViewReportDetails: undefined;
+  ViewReportDetails: {reportId: string};
   ReportUploadedSuccess: undefined;
   PharmacyShop: undefined;
   PharmacyDetails: {productId: string};
@@ -77,6 +95,12 @@ export type RootStackParamList = {
         addressId?: string;
         pickedLatitude?: number;
         pickedLongitude?: number;
+        pickedFormattedAddress?: string;
+        pickedRegionCity?: string;
+        pickedRegionArea?: string;
+        pickedRegionSector?: string;
+        pickedUserName?: string;
+        pickedUserPhone?: string;
       }
     | undefined;
   CartPayment: {addressId: string; notes?: string};
@@ -87,6 +111,12 @@ export type RootStackParamList = {
         addressId?: string;
         initialLatitude?: number;
         initialLongitude?: number;
+        draftFormattedAddress?: string;
+        draftRegionCity?: string;
+        draftRegionArea?: string;
+        draftRegionSector?: string;
+        draftUserName?: string;
+        draftUserPhone?: string;
       }
     | undefined;
   OrderCompletedDetails: {orderId: string};

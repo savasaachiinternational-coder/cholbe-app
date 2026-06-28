@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,8 +17,9 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
-import {TIME_SLOTS, type PaymentMethod} from './bookVideoCallData';
+import {type PaymentMethod} from './bookVideoCallData';
 import {appointmentsApi} from '../../api/appointments';
+import {doctorsApi, type DoctorAvailabilityDate} from '../../api/doctors';
 import {ApiError} from '../../api/client';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -36,10 +37,36 @@ export function BookVideoCallScreen({navigation, route}: Props) {
   const baseFee = route.params?.consultationFee ?? 'BDT 800';
 
   const [duration, setDuration] = useState<'15' | '30'>('15');
-  const [day, setDay] = useState<'today' | 'tomorrow'>('today');
-  const [selectedTime, setSelectedTime] = useState('10:30 AM');
+  const [consultationType, setConsultationType] = useState<'VIDEO' | 'AUDIO' | 'CHAT'>('VIDEO');
+  const [availableDates, setAvailableDates] = useState<DoctorAvailabilityDate[]>([]);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [selectedTime, setSelectedTime] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bkash');
   const [booking, setBooking] = useState(false);
+  const [loadingAvailability, setLoadingAvailability] = useState(true);
+
+  useEffect(() => {
+    if (!doctorId) return;
+    setLoadingAvailability(true);
+    doctorsApi
+      .availableDates(doctorId)
+      .then(dates => {
+        setAvailableDates(dates);
+        const first = dates.find(d => d.available);
+        if (first) setSelectedDate(first.date);
+      })
+      .catch(() => setAvailableDates([]))
+      .finally(() => setLoadingAvailability(false));
+  }, [doctorId]);
+
+  useEffect(() => {
+    if (!doctorId || !selectedDate) return;
+    doctorsApi.availableSlots(doctorId, selectedDate).then(res => {
+      setTimeSlots(res.slots);
+      setSelectedTime(prev => (res.slots.includes(prev) ? prev : res.slots[0] ?? ''));
+    });
+  }, [doctorId, selectedDate]);
 
   const consultationFee = useMemo(() => {
     if (baseFee.startsWith('BDT')) {
@@ -50,14 +77,11 @@ export function BookVideoCallScreen({navigation, route}: Props) {
 
   const durationLabel = duration === '15' ? '15 Minutes' : '30 Minutes';
 
-  const scheduledDateIso = useMemo(() => {
-    const d = new Date();
-    if (day === 'tomorrow') {
-      d.setDate(d.getDate() + 1);
-    }
-    d.setHours(10, 30, 0, 0);
-    return d.toISOString();
-  }, [day]);
+  const selectedDateLabel = useMemo(() => {
+    if (!selectedDate) return 'Select date';
+    const d = new Date(`${selectedDate}T12:00:00`);
+    return d.toLocaleDateString('en-GB', {weekday: 'long', day: 'numeric', month: 'short'});
+  }, [selectedDate]);
 
   const confirmBooking = async () => {
     if (!doctorId) {
@@ -65,15 +89,28 @@ export function BookVideoCallScreen({navigation, route}: Props) {
       navigation.navigate('DoctorList');
       return;
     }
+    if (!selectedDate || !selectedTime) {
+      Alert.alert('Booking', 'Please select an available date and time slot.');
+      return;
+    }
     setBooking(true);
     try {
       const appointment = await appointmentsApi.book({
         doctorId,
-        scheduledDate: scheduledDateIso,
+        scheduledDate: selectedDate,
         timeSlot: selectedTime,
         durationMin: duration === '30' ? 30 : 15,
-        paymentMethod,
+        paymentMethod: paymentMethod.toUpperCase(),
+        consultationType,
       });
+      if (consultationType === 'CHAT') {
+        navigation.replace('ConsultationChat', {
+          appointmentId: appointment.id,
+          doctorName: appointment.doctor.user.fullName,
+          specialty: appointment.doctor.specialty,
+        });
+        return;
+      }
       navigation.replace('WaitingRoom', {
         appointmentId: appointment.id,
         doctorName: appointment.doctor.user.fullName,
@@ -122,6 +159,7 @@ export function BookVideoCallScreen({navigation, route}: Props) {
           activeOpacity={0.7}
           onPress={() =>
             navigation.navigate('ConsultationChat', {
+              doctorId,
               doctorName,
               specialty,
             })
@@ -149,6 +187,54 @@ export function BookVideoCallScreen({navigation, route}: Props) {
               <Text style={styles.onlineStatusText}>Online</Text>
             </View>
           </View>
+        </View>
+
+        <View style={styles.segmentContainer}>
+          <TouchableOpacity
+            style={[
+              styles.segmentTab,
+              consultationType === 'VIDEO' && styles.segmentActiveTab,
+            ]}
+            onPress={() => setConsultationType('VIDEO')}
+            activeOpacity={0.8}>
+            <Text
+              style={[
+                styles.segmentTabText,
+                consultationType === 'VIDEO' && styles.segmentActiveTabText,
+              ]}>
+              Video Call
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.segmentTab,
+              consultationType === 'AUDIO' && styles.segmentActiveTab,
+            ]}
+            onPress={() => setConsultationType('AUDIO')}
+            activeOpacity={0.8}>
+            <Text
+              style={[
+                styles.segmentTabText,
+                consultationType === 'AUDIO' && styles.segmentActiveTabText,
+              ]}>
+              Audio Call
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.segmentTab,
+              consultationType === 'CHAT' && styles.segmentActiveTab,
+            ]}
+            onPress={() => setConsultationType('CHAT')}
+            activeOpacity={0.8}>
+            <Text
+              style={[
+                styles.segmentTabText,
+                consultationType === 'CHAT' && styles.segmentActiveTabText,
+              ]}>
+              Chat
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.segmentContainer}>
@@ -207,43 +293,55 @@ export function BookVideoCallScreen({navigation, route}: Props) {
           </View>
           <View style={[styles.metaRow, styles.metaRowSpaced]}>
             <Feather name="calendar" size={14} color="#14B8A6" />
-            <Text style={styles.metaRowText}>Taken: Monday,12 Feb</Text>
+            <Text style={styles.metaRowText}>Taken: {selectedDateLabel}</Text>
           </View>
         </View>
 
-        <View style={[styles.segmentContainer, styles.daySegment]}>
-          <TouchableOpacity
-            style={[styles.segmentTab, day === 'today' && styles.segmentActiveTab]}
-            onPress={() => setDay('today')}
-            activeOpacity={0.8}>
-            <Text
-              style={[
-                styles.segmentTabText,
-                day === 'today' && styles.segmentActiveTabText,
-              ]}>
-              Today Apr 26
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.segmentTab,
-              day === 'tomorrow' && styles.segmentActiveTab,
-            ]}
-            onPress={() => setDay('tomorrow')}
-            activeOpacity={0.8}>
-            <Text
-              style={[
-                styles.segmentTabText,
-                day === 'tomorrow' && styles.segmentActiveTabText,
-              ]}>
-              Tomorrow
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.blockSectionTitle}>Select Date</Text>
+        {loadingAvailability ? (
+          <ActivityIndicator color="#14B8A6" style={{marginVertical: 12}} />
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daySegment}>
+            {availableDates.map(item => {
+              const d = new Date(`${item.date}T12:00:00`);
+              const label = d.toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+              });
+              const active = selectedDate === item.date;
+              return (
+                <TouchableOpacity
+                  key={item.date}
+                  style={[
+                    styles.segmentTab,
+                    styles.dateChip,
+                    active && styles.segmentActiveTab,
+                    !item.available && styles.dateChipDisabled,
+                  ]}
+                  disabled={!item.available}
+                  onPress={() => setSelectedDate(item.date)}
+                  activeOpacity={0.8}>
+                  <Text
+                    style={[
+                      styles.segmentTabText,
+                      active && styles.segmentActiveTabText,
+                      !item.available && styles.dateChipDisabledText,
+                    ]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
 
         <Text style={styles.blockSectionTitle}>Available Time Slot</Text>
         <View style={styles.slotsGrid}>
-          {TIME_SLOTS.map(slot => (
+          {timeSlots.length === 0 ? (
+            <Text style={styles.disclaimerText}>No slots available for this date.</Text>
+          ) : (
+            timeSlots.map(slot => (
             <TouchableOpacity
               key={slot}
               style={[
@@ -261,7 +359,8 @@ export function BookVideoCallScreen({navigation, route}: Props) {
                 {slot}
               </Text>
             </TouchableOpacity>
-          ))}
+            ))
+          )}
         </View>
 
         <Text style={styles.blockSectionTitle}>Payment Method</Text>
@@ -448,6 +547,19 @@ const styles = StyleSheet.create({
   },
   daySegment: {
     marginTop: 20,
+    marginBottom: 16,
+  },
+  dateChip: {
+    marginRight: 8,
+    minWidth: 96,
+    flex: 0,
+  },
+  dateChipDisabled: {
+    opacity: 0.45,
+    backgroundColor: '#F1F5F9',
+  },
+  dateChipDisabledText: {
+    color: '#94A3B8',
   },
   segmentTab: {
     flex: 1,

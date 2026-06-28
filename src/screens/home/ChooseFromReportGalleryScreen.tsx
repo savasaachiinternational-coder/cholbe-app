@@ -1,18 +1,23 @@
-import {useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {launchImageLibrary} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {pickedFileFromAsset} from '../../utils/fileAsset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseFromReportGallery'>;
 
@@ -21,62 +26,72 @@ const NUM_COLUMNS = 4;
 const GRID_SPACING = 8;
 const CARD_WIDTH = (width - 32 - GRID_SPACING * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
 
-type GalleryType = 'document_text' | 'doctor_profile' | 'medical_kit' | 'hospital_room';
-type ReportGalleryItem = {id: string; type: GalleryType};
-
-const REPORT_GALLERY_DATA: ReportGalleryItem[] = Array.from({length: 28}).map(
-  (_, index) => {
-    const mod = index % 4;
-    if (mod === 0) {
-      return {id: String(index), type: 'document_text'};
-    }
-    if (mod === 1) {
-      return {id: String(index), type: 'doctor_profile'};
-    }
-    if (mod === 2) {
-      return {id: String(index), type: 'medical_kit'};
-    }
-    return {id: String(index), type: 'hospital_room'};
-  },
-);
-
-function getTypeIcon(type: GalleryType) {
-  if (type === 'document_text') {
-    return (
-      <MaterialCommunityIcons
-        name="file-document-text-outline"
-        size={32}
-        color="#A0A5BA"
-      />
-    );
-  }
-  if (type === 'doctor_profile') {
-    return (
-      <MaterialCommunityIcons name="account-doctor" size={32} color="#A0A5BA" />
-    );
-  }
-  if (type === 'medical_kit') {
-    return (
-      <MaterialCommunityIcons name="first-aid-kit" size={32} color="#A0A5BA" />
-    );
-  }
-  return <MaterialCommunityIcons name="hospital-building" size={32} color="#A0A5BA" />;
-}
+type GalleryItem = {
+  id: string;
+  uri: string;
+  fileName: string;
+  mimeType: string;
+};
 
 export function ChooseFromReportGalleryScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [selectedImageId, setSelectedImageId] = useState<string | null>('0');
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
 
-  const renderGalleryItem = ({item}: {item: ReportGalleryItem}) => {
+  const openDeviceGallery = useCallback(async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      selectionLimit: 12,
+    });
+    const assets = result.assets ?? [];
+    if (!assets.length) return;
+
+    const deviceItems = assets
+      .map((asset, index) => {
+        const picked = pickedFileFromAsset(asset, 'report');
+        if (!picked) return null;
+        return {
+          id: `device-${index}`,
+          uri: picked.uri,
+          fileName: picked.fileName,
+          mimeType: picked.mimeType,
+        };
+      })
+      .filter((item): item is GalleryItem => item !== null);
+
+    if (!deviceItems.length) return;
+    setItems(deviceItems);
+    setSelectedImageId(deviceItems[0]?.id ?? null);
+  }, []);
+
+  useEffect(() => {
+    openDeviceGallery();
+  }, [openDeviceGallery]);
+
+  const handleContinue = () => {
+    const selected = items.find(item => item.id === selectedImageId);
+    if (!selected) {
+      Alert.alert('Gallery', 'Please select a report image to continue.');
+      return;
+    }
+    navigation.navigate('UploadReportDetails', {
+      fileUri: selected.uri,
+      fileName: selected.fileName,
+      mimeType: selected.mimeType,
+    });
+  };
+
+  const renderGalleryItem = ({item}: {item: GalleryItem}) => {
     const isSelected = selectedImageId === item.id;
-
     return (
       <TouchableOpacity
         style={[styles.imageCard, {width: CARD_WIDTH, height: CARD_WIDTH}]}
         activeOpacity={0.8}
         onPress={() => setSelectedImageId(item.id)}>
-        <View style={styles.imagePlaceholderBox}>{getTypeIcon(item.type)}</View>
+        <View style={styles.imagePlaceholderBox}>
+          <Image source={{uri: item.uri}} style={styles.previewImage} />
+        </View>
         {isSelected && <View style={styles.selectedOverlayBorder} />}
       </TouchableOpacity>
     );
@@ -95,27 +110,39 @@ export function ChooseFromReportGalleryScreen({navigation}: Props) {
           <Text style={styles.headerTitleText}>Choose From Gallery</Text>
         </View>
 
-        <TouchableOpacity style={styles.dropdownFilterPill} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.dropdownFilterPill}
+          activeOpacity={0.8}
+          onPress={openDeviceGallery}>
           <Text style={styles.dropdownFilterText}>All Images</Text>
           <Feather name="chevron-down" size={14} color="#FFFFFF" style={styles.dropdownIcon} />
         </TouchableOpacity>
       </View>
 
       <FlatList
-        data={REPORT_GALLERY_DATA}
+        data={items}
         renderItem={renderGalleryItem}
         keyExtractor={item => item.id}
         numColumns={NUM_COLUMNS}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.galleryGridContent}
         columnWrapperStyle={styles.galleryRowWrapper}
+        ListEmptyComponent={
+          <TouchableOpacity
+            style={styles.emptyPickerCard}
+            activeOpacity={0.8}
+            onPress={openDeviceGallery}>
+            <MaterialCommunityIcons name="image-plus" size={36} color="#A0A5BA" />
+            <Text style={styles.emptyText}>Tap to choose from your gallery</Text>
+          </TouchableOpacity>
+        }
       />
 
       <View style={[styles.footerActionContainer, {bottom: 74 + insets.bottom}]}>
         <TouchableOpacity
           style={styles.continueButton}
           activeOpacity={0.9}
-          onPress={() => navigation.navigate('UploadReportDetails')}>
+          onPress={handleContinue}>
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
@@ -223,11 +250,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#EBEFF5',
   },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+  },
   selectedOverlayBorder: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     borderWidth: 3,
     borderColor: '#45A096',
     borderRadius: 8,
+  },
+  emptyPickerCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#7D8797',
   },
   footerActionContainer: {
     position: 'absolute',

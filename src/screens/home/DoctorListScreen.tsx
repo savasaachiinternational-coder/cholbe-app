@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -20,7 +21,9 @@ import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {DOCTOR_CATEGORIES} from './doctorListData';
 import {doctorsApi, type Doctor} from '../../api/doctors';
+import {specialtiesApi, type Specialty} from '../../api/specialties';
 import {ApiError} from '../../api/client';
+import {formatBdt} from '../../utils/pharmacyHelpers';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 44) / 2;
@@ -31,7 +34,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'DoctorList'>;
 
 function formatFee(fee: string | number): string {
   const amount = typeof fee === 'string' ? Number(fee) : fee;
-  return Number.isNaN(amount) ? `BDT ${fee}` : `BDT ${amount}`;
+  return Number.isNaN(amount) ? String(fee) : formatBdt(amount);
 }
 
 export function DoctorListScreen({navigation}: Props) {
@@ -39,15 +42,28 @@ export function DoctorListScreen({navigation}: Props) {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    specialtiesApi.list().then(setSpecialties).catch(() => setSpecialties([]));
+  }, []);
+
+  const categoryItems = useMemo(() => {
+    if (specialties.length > 0) {
+      return specialties.map(s => ({ key: s.id, label: s.name }));
+    }
+    return DOCTOR_CATEGORIES.map(c => ({ key: c.id, label: c.name }));
+  }, [specialties]);
 
   const loadDoctors = useCallback(async () => {
     setLoading(true);
     try {
       const data = await doctorsApi.list({
         search: searchQuery.trim() || undefined,
-        category: activeCategory ?? undefined,
+        category: activeCategory && !specialties.length ? activeCategory : undefined,
+        specialtyId: specialties.length && activeCategory ? activeCategory : undefined,
       });
       setDoctors(data);
     } catch (err) {
@@ -148,23 +164,23 @@ export function DoctorListScreen({navigation}: Props) {
         </View>
 
         <View style={styles.categoriesGrid}>
-          {DOCTOR_CATEGORIES.map(cat => (
+          {categoryItems.map(cat => (
             <TouchableOpacity
-              key={cat.id}
+              key={cat.key}
               style={[
                 styles.categoryCard,
                 {width: CATEGORY_WIDTH},
-                activeCategory === cat.name && styles.categoryCardActive,
+                activeCategory === cat.key && styles.categoryCardActive,
               ]}
               activeOpacity={0.8}
               onPress={() =>
-                setActiveCategory(prev => (prev === cat.name ? null : cat.name))
+                setActiveCategory(prev => (prev === cat.key ? null : cat.key))
               }>
               <View style={styles.categoryIconWrapper}>
-                <Feather name={cat.icon} size={24} color="#64748B" />
+                <Feather name="activity" size={24} color="#64748B" />
               </View>
               <Text style={styles.categoryLabel} numberOfLines={1}>
-                {cat.name}
+                {cat.label}
               </Text>
             </TouchableOpacity>
           ))}
@@ -201,6 +217,14 @@ export function DoctorListScreen({navigation}: Props) {
                   <Text style={styles.doctorDegreeText} numberOfLines={2}>
                     {doc.degree ?? 'Licensed specialist'}
                   </Text>
+                  {(doc.reviewCount ?? 0) > 0 ? (
+                    <View style={styles.ratingRow}>
+                      <FontAwesome name="star" size={10} color="#FBBF24" />
+                      <Text style={styles.ratingText}>
+                        {Number(doc.reviewAverage ?? 0).toFixed(1)} ({doc.reviewCount})
+                      </Text>
+                    </View>
+                  ) : null}
                   <Text style={styles.feeText}>{formatFee(doc.fee)}</Text>
                   <TouchableOpacity
                     style={styles.appointmentButton}
@@ -389,6 +413,13 @@ const styles = StyleSheet.create({
     color: '#0D9488',
     marginBottom: 8,
   },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginBottom: 4,
+  },
+  ratingText: {fontSize: 10, color: '#64748B'},
   appointmentButton: {
     backgroundColor: '#0D9488',
     borderRadius: 8,

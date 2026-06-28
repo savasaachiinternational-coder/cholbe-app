@@ -7,18 +7,48 @@ export type MedicationSchedule = {
   instruction: string | null;
   mealTiming: string | null;
   times: string[];
+  frequency: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  reminderEnabled: boolean;
+  reminderBeforeMinutes: number | null;
+  followUpEnabled: boolean;
+  followUpMinutes: number | null;
+  followUpTime: string | null;
+  refillEnabled: boolean;
+  inventoryCount: number | null;
+  refillDate: string | null;
+  refillTime: string | null;
+  caregiverName: string | null;
+  prescriptionId: string | null;
   isActive: boolean;
   createdAt: string;
 };
 
+export type CreateMedicationSchedulePayload = {
+  medicineName: string;
+  dose?: string;
+  instruction?: string;
+  mealTiming?: string;
+  times?: string[];
+  frequency?: string;
+  startDate?: string;
+  endDate?: string;
+  reminderEnabled?: boolean;
+  reminderBeforeMinutes?: number;
+  followUpEnabled?: boolean;
+  followUpMinutes?: number;
+  followUpTime?: string;
+  refillEnabled?: boolean;
+  inventoryCount?: number;
+  refillDate?: string;
+  refillTime?: string;
+  caregiverName?: string;
+  prescriptionId?: string;
+};
+
 export const medicationSchedulesApi = {
-  create(payload: {
-    medicineName: string;
-    dose?: string;
-    instruction?: string;
-    mealTiming?: string;
-    times?: string[];
-  }) {
+  create(payload: CreateMedicationSchedulePayload) {
     return apiRequest('/medication-schedules', {
       method: 'POST',
       auth: true,
@@ -30,15 +60,23 @@ export const medicationSchedulesApi = {
     return apiRequest<MedicationSchedule[]>('/medication-schedules', {auth: true});
   },
 
-  logDose(scheduleId: string, status: 'taken' | 'missed' | 'snoozed', snoozeMinutes?: number) {
+  logDose(
+    scheduleId: string,
+    status: 'taken' | 'missed' | 'snoozed',
+    options?: {snoozeMinutes?: number; scheduledTime?: string},
+  ) {
     return apiRequest(`/medication-schedules/${scheduleId}/log`, {
       method: 'POST',
       auth: true,
-      body: { status, snoozeMinutes },
+      body: {
+        status,
+        snoozeMinutes: options?.snoozeMinutes,
+        scheduledTime: options?.scheduledTime,
+      },
     });
   },
 
-  update(scheduleId: string, payload: { isActive?: boolean }) {
+  update(scheduleId: string, payload: {isActive?: boolean}) {
     return apiRequest<MedicationSchedule>(`/medication-schedules/${scheduleId}`, {
       method: 'PATCH',
       auth: true,

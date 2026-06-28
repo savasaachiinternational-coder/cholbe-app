@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {launchImageLibrary} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
@@ -19,6 +20,9 @@ import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {authApi} from '../../api/auth';
 import {profileApi, type EmergencyContact} from '../../api/profile';
+import {uploadAvatarAsset} from '../../api/uploads';
+import {imageUri} from '../../utils/fileAsset';
+import {API_ORIGIN} from '../../config/api';
 import {ApiError} from '../../api/client';
 import {useFocusEffect} from '@react-navigation/native';
 
@@ -37,6 +41,8 @@ export function EditProfileScreen({navigation}: Props) {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
@@ -54,6 +60,7 @@ export function EditProfileScreen({navigation}: Props) {
       setAddress(overview.defaultAddress?.formattedAddress ?? '');
       setPhone(user.phone ?? '');
       setEmail(user.email ?? '');
+      setAvatarUrl(user.avatarUrl ?? null);
       setEmergencyContacts(patient?.emergencyContacts ?? []);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not load profile';
@@ -89,12 +96,29 @@ export function EditProfileScreen({navigation}: Props) {
     navigation.navigate('Home');
   };
 
+  const pickPhoto = async () => {
+    const result = await launchImageLibrary({mediaType: 'photo', selectionLimit: 1});
+    const asset = result.assets?.[0];
+    if (!asset?.uri) return;
+    setUploadingPhoto(true);
+    try {
+      const uploaded = await uploadAvatarAsset(asset);
+      setAvatarUrl(uploaded.fileUrl);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not upload photo';
+      Alert.alert('Upload photo', message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const saveProfile = async () => {
     setSaving(true);
     try {
       await authApi.updateMe({
         fullName: name.trim() || undefined,
         phone: phone.trim() || undefined,
+        avatarUrl: avatarUrl ?? undefined,
       });
       await profileApi.updatePatient({
         age: age ? Number(age) : undefined,
@@ -140,9 +164,24 @@ export function EditProfileScreen({navigation}: Props) {
         keyboardShouldPersistTaps="handled">
         <View style={styles.avatarSection}>
           <View style={styles.avatarWrapper}>
-            <Image source={PROFILE_AVATAR} style={styles.profileAvatar} />
-            <TouchableOpacity style={styles.avatarCameraBadge} activeOpacity={0.8}>
-              <Feather name="camera" size={14} color="#0D9488" />
+            <Image
+              source={
+                avatarUrl
+                  ? {uri: imageUri(avatarUrl, API_ORIGIN)}
+                  : PROFILE_AVATAR
+              }
+              style={styles.profileAvatar}
+            />
+            <TouchableOpacity
+              style={styles.avatarCameraBadge}
+              activeOpacity={0.8}
+              onPress={pickPhoto}
+              disabled={uploadingPhoto}>
+              {uploadingPhoto ? (
+                <ActivityIndicator size="small" color="#0D9488" />
+              ) : (
+                <Feather name="camera" size={14} color="#0D9488" />
+              )}
             </TouchableOpacity>
           </View>
         </View>

@@ -38,6 +38,7 @@ export const appointmentsApi = {
     timeSlot: string;
     durationMin?: number;
     paymentMethod?: string;
+    consultationType?: 'VIDEO' | 'AUDIO' | 'CHAT';
   }) {
     return apiRequest<Appointment>('/appointments', {
       method: 'POST',
