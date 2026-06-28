@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -16,42 +19,52 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {ADMIN_USER_FILTERS, type AdminUserFilter} from './adminNav';
+import {adminApi} from '../../api/admin';
+import {type PublicUser} from '../../api/auth';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AUsers'>;
 
-type UserRecord = {
-  name: string;
-  email: string;
-  phone: string;
-  joinDate: string;
-};
+function filterParams(filter: AdminUserFilter) {
+  if (filter === 'Customers') return {role: 'CUSTOMER'};
+  if (filter === 'Vendors') return {role: 'VENDOR'};
+  if (filter === 'Blocked') return {status: 'BLOCKED'};
+  return undefined;
+}
 
-const MOCK_USERS: UserRecord[] = Array.from({length: 7}, () => ({
-  name: 'Rayhan Ullah',
-  email: 'rayhan@gmail.com',
-  phone: '01677589448',
-  joinDate: '18 May,2027',
-}));
+function formatJoinDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
 
-function UserCard({item, isLast}: {item: UserRecord; isLast: boolean}) {
+function UserCard({item, isLast}: {item: PublicUser; isLast: boolean}) {
   return (
     <View style={[styles.userCardRow, isLast && styles.userCardRowLast]}>
       <Image
-        source={{uri: 'https://via.placeholder.com/52/E2E8F0/000000?text=User'}}
+        source={{
+          uri:
+            item.avatarUrl ??
+            'https://via.placeholder.com/52/E2E8F0/000000?text=User',
+        }}
         style={styles.userAvatar}
       />
 
       <View style={styles.metaInfoColumn}>
-        <Text style={styles.userNameText}>{item.name}</Text>
-        <Text style={styles.userEmailText}>{item.email}</Text>
+        <Text style={styles.userNameText}>{item.fullName}</Text>
+        <Text style={styles.userEmailText}>{item.email ?? '—'}</Text>
 
         <View style={styles.phoneInlineRow}>
           <Feather name="phone" size={12} color="#7E8B97" />
-          <Text style={styles.userPhoneText}>{item.phone}</Text>
+          <Text style={styles.userPhoneText}>{item.phone ?? '—'}</Text>
         </View>
       </View>
 
-      <Text style={styles.joinDateText}>{item.joinDate}</Text>
+      <Text style={styles.joinDateText}>{formatJoinDate(item.createdAt)}</Text>
     </View>
   );
 }
@@ -60,6 +73,40 @@ export function AdminUsersScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<AdminUserFilter>('Customers');
+  const [users, setUsers] = useState<PublicUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = filterParams(activeFilter);
+      const data = await adminApi.users(params?.role, params?.status);
+      setUsers(data as PublicUser[]);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load users';
+      Alert.alert('Users', message);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeFilter]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUsers();
+    }, [loadUsers]),
+  );
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      u =>
+        u.fullName.toLowerCase().includes(q) ||
+        (u.email?.toLowerCase().includes(q) ?? false) ||
+        (u.phone?.includes(q) ?? false),
+    );
+  }, [users, search]);
 
   return (
     <View style={styles.container}>
@@ -91,6 +138,8 @@ export function AdminUsersScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
             <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
@@ -118,13 +167,19 @@ export function AdminUsersScreen({navigation}: Props) {
         </ScrollView>
 
         <View style={styles.directoryContainerCard}>
-          {MOCK_USERS.map((user, index) => (
-            <UserCard
-              key={`${user.email}-${index}`}
-              item={user}
-              isLast={index === MOCK_USERS.length - 1}
-            />
-          ))}
+          {loading ? (
+            <ActivityIndicator color="#4E929D" style={styles.loader} />
+          ) : filteredUsers.length === 0 ? (
+            <Text style={styles.emptyText}>No users found.</Text>
+          ) : (
+            filteredUsers.map((user, index) => (
+              <UserCard
+                key={user.id}
+                item={user}
+                isLast={index === filteredUsers.length - 1}
+              />
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -212,6 +267,14 @@ const styles = StyleSheet.create({
     borderColor: '#ECEFF3',
     paddingTop: 8,
     paddingBottom: 4,
+    minHeight: 120,
+  },
+  loader: {marginVertical: 32},
+  emptyText: {
+    textAlign: 'center',
+    color: '#9AA6B2',
+    fontSize: 14,
+    paddingVertical: 32,
   },
   userCardRow: {
     flexDirection: 'row',

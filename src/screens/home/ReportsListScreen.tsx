@@ -1,23 +1,57 @@
-import {Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {useCallback, useState} from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {reportsApi, type HealthReport} from '../../api/reports';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReportsList'>;
 const {width} = Dimensions.get('window');
 
+function formatReportDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('en-GB').replace(/\//g, '-');
+}
+
 export function ReportsListScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const reportListData = [
-    {id: '1', title: 'Hemoglobin', provider: 'Devcare Lab', date: '25-10-2025'},
-    {id: '2', title: 'Hemoglobin', provider: 'Devcare Lab', date: '25-10-2025'},
-    {id: '3', title: 'Hemoglobin', provider: 'Devcare Lab', date: '25-10-2025'},
-    {id: '4', title: 'Hemoglobin', provider: 'Devcare Lab', date: '25-10-2025'},
-  ];
+  const [items, setItems] = useState<HealthReport[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadReports = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await reportsApi.list();
+      setItems(data);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load reports';
+      Alert.alert('Reports', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReports();
+    }, [loadReports]),
+  );
 
   return (
     <View style={styles.container}>
@@ -68,7 +102,12 @@ export function ReportsListScreen({navigation}: Props) {
           <Text style={styles.uploadReportBarText}>Upload Report</Text>
         </TouchableOpacity>
 
-        {reportListData.map(item => (
+        {loading ? (
+          <ActivityIndicator color="#45A096" style={styles.loader} />
+        ) : items.length === 0 ? (
+          <Text style={styles.emptyText}>No reports yet. Tap Upload Report.</Text>
+        ) : (
+          items.map(item => (
           <View key={item.id} style={styles.reportListCard}>
             <View style={styles.documentIconContainer}>
               <MaterialCommunityIcons name="file-document-outline" size={24} color="#7D8797" />
@@ -78,12 +117,14 @@ export function ReportsListScreen({navigation}: Props) {
               <Text style={styles.reportCardTitle}>{item.title}</Text>
               <View style={styles.metaLabelRow}>
                 <View style={styles.orangeListDot} />
-                <Text style={styles.metaLabelText}>{item.provider}</Text>
+                <Text style={styles.metaLabelText}>{item.provider ?? '—'}</Text>
               </View>
             </View>
 
             <View style={styles.cardRightColumn}>
-              <Text style={styles.dateTimestampText}>{item.date}</Text>
+              <Text style={styles.dateTimestampText}>
+                {formatReportDate(item.reportDate)}
+              </Text>
               <TouchableOpacity
                 style={styles.viewReportButton}
                 activeOpacity={0.7}
@@ -92,7 +133,8 @@ export function ReportsListScreen({navigation}: Props) {
               </TouchableOpacity>
             </View>
           </View>
-        ))}
+          ))
+        )}
       </ScrollView>
 
       <TouchableOpacity
@@ -218,6 +260,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loader: {marginVertical: 24},
+  emptyText: {
+    textAlign: 'center',
+    color: '#8A94A6',
+    fontSize: 14,
+    marginTop: 8,
   },
   reportListCard: {
     backgroundColor: '#FFFFFF',

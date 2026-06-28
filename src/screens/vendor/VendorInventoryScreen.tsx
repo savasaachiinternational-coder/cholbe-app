@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,47 +10,157 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {vendorProductsApi} from '../../api/vendorProducts';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {productImageUrl} from '../../utils/pharmacyHelpers';
 import {VendorBottomNav} from './VendorBottomNav';
 import {FILTER_CATEGORIES} from './vendorNav';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VInventory'>;
 
+type VendorProduct = {
+  id: string;
+  name: string;
+  genericName?: string | null;
+  category?: string | null;
+  unitPrice: string | number;
+  discountPrice?: string | number | null;
+  stockQuantity: number;
+  unitType?: string | null;
+  imageUrl?: string | null;
+  isActive: boolean;
+};
+
+function formatTk(amount: string | number) {
+  const n = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return `TK ${Number.isFinite(n) ? n.toLocaleString('en-BD', {maximumFractionDigits: 0}) : '0'}`;
+}
+
+function discountLabel(product: VendorProduct) {
+  if (!product.discountPrice) return null;
+  const unit = typeof product.unitPrice === 'string' ? parseFloat(product.unitPrice) : product.unitPrice;
+  const disc = typeof product.discountPrice === 'string' ? parseFloat(product.discountPrice) : product.discountPrice;
+  if (disc >= unit) return null;
+  return `(-${Math.round((1 - disc / unit) * 100)}%)`;
+}
+
+function matchesCategory(product: VendorProduct, category: string) {
+  if (category === 'All Items') return true;
+  if (category === 'Medicines') {
+    return ['Tablet', 'Capsule', 'Syrup', 'Injection', 'Inhaler', 'Medicines'].includes(
+      product.category ?? '',
+    );
+  }
+  return (product.category ?? '') === category;
+}
+
 export function VendorInventoryScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('All Items');
+  const [products, setProducts] = useState<VendorProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const renderInventoryCard = (index: number) => (
-    <View key={index} style={styles.inventoryCard}>
-      <Image
-        source={{uri: 'https://via.placeholder.com/80x60/ECEFF3/000000?text=Medicine'}}
-        style={styles.inventoryImage}
-      />
-      <View style={styles.inventoryDetails}>
-        <Text style={styles.itemTitle}>Aamdocal Plus 50</Text>
-        <Text style={styles.itemMetaText}>Generic: Amlodipine Besylate</Text>
-        <Text style={styles.itemMetaText}>In Stock: 150 Boxes</Text>
-        <Text style={styles.itemPriceText}>
-          Price: TK 120/box <Text style={styles.discountText}>(-5%)</Text>
-        </Text>
+  const loadProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await vendorProductsApi.list();
+      setProducts(data as VendorProduct[]);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load inventory';
+      Alert.alert('Inventory', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        <View style={styles.tagBadge}>
-          <Feather name="edit-2" size={10} color="#1A1C1E" />
-          <Text style={styles.tagBadgeText}>Medicines</Text>
-        </View>
-      </View>
-
-      <View style={styles.statusToggleActive}>
-        <View style={styles.statusToggleInner} />
-      </View>
-    </View>
+  useFocusEffect(
+    useCallback(() => {
+      loadProducts();
+    }, [loadProducts]),
   );
+
+  const toggleActive = useCallback(
+    async (product: VendorProduct) => {
+      setTogglingId(product.id);
+      try {
+        await vendorProductsApi.updateStatus(product.id, !product.isActive);
+        setProducts(prev =>
+          prev.map(p => (p.id === product.id ? {...p, isActive: !p.isActive} : p)),
+        );
+      } catch (err) {
+        const message = err instanceof ApiError ? err.message : 'Could not update product';
+        Alert.alert('Inventory', message);
+      } finally {
+        setTogglingId(null);
+      }
+    },
+    [],
+  );
+
+  const filteredProducts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter(p => {
+      if (!matchesCategory(p, activeCategory)) return false;
+      if (!q) return true;
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.genericName?.toLowerCase().includes(q) ?? false)
+      );
+    });
+  }, [products, activeCategory, search]);
+
+  const renderInventoryCard = (product: VendorProduct) => {
+    const discount = discountLabel(product);
+    const isToggling = togglingId === product.id;
+
+    return (
+      <View key={product.id} style={styles.inventoryCard}>
+        <Image
+          source={{uri: productImageUrl(product.imageUrl)}}
+          style={styles.inventoryImage}
+        />
+        <View style={styles.inventoryDetails}>
+          <Text style={styles.itemTitle}>{product.name}</Text>
+          {product.genericName ? (
+            <Text style={styles.itemMetaText}>Generic: {product.genericName}</Text>
+          ) : null}
+          <Text style={styles.itemMetaText}>
+            In Stock: {product.stockQuantity} {product.unitType ?? 'units'}
+          </Text>
+          <Text style={styles.itemPriceText}>
+            Price: {formatTk(product.discountPrice ?? product.unitPrice)}
+            {product.unitType ? `/${product.unitType.toLowerCase()}` : ''}
+            {discount ? <Text style={styles.discountText}> {discount}</Text> : null}
+          </Text>
+
+          {product.category ? (
+            <View style={styles.tagBadge}>
+              <Feather name="edit-2" size={10} color="#1A1C1E" />
+              <Text style={styles.tagBadgeText}>{product.category}</Text>
+            </View>
+          ) : null}
+        </View>
+
+        <TouchableOpacity
+          activeOpacity={0.7}
+          disabled={isToggling}
+          onPress={() => toggleActive(product)}
+          style={product.isActive ? styles.statusToggleActive : styles.statusToggleInactive}>
+          {product.isActive ? <View style={styles.statusToggleInner} /> : null}
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -88,6 +200,8 @@ export function VendorInventoryScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
           <TouchableOpacity style={styles.filterIconButton} activeOpacity={0.7}>
             <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
@@ -115,7 +229,13 @@ export function VendorInventoryScreen({navigation}: Props) {
         </ScrollView>
 
         <View style={styles.listStack}>
-          {Array.from({length: 12}, (_, index) => renderInventoryCard(index + 1))}
+          {loading ? (
+            <ActivityIndicator color="#4E929D" style={styles.loader} />
+          ) : filteredProducts.length === 0 ? (
+            <Text style={styles.emptyText}>No products found.</Text>
+          ) : (
+            filteredProducts.map(renderInventoryCard)
+          )}
         </View>
       </ScrollView>
 
@@ -131,6 +251,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 4,
+  },
+  loader: {
+    marginVertical: 24,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#7E8B97',
+    fontSize: 13,
+    marginVertical: 12,
   },
   header: {
     flexDirection: 'row',
@@ -286,6 +415,15 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     borderWidth: 1.5,
     borderColor: '#47B39D',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusToggleInactive: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
     justifyContent: 'center',
     alignItems: 'center',
   },

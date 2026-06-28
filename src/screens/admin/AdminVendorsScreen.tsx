@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,10 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {adminApi} from '../../api/admin';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
@@ -19,23 +24,67 @@ import {ADMIN_VENDOR_FILTERS, type AdminVendorFilter} from './adminNav';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AVendors'>;
 
+type ApiVendor = {
+  id: string;
+  pharmacyName: string;
+  phone: string | null;
+  approvalStatus: string;
+  createdAt: string;
+  user: {fullName: string; email: string | null; phone: string | null};
+};
+
 type VendorRecord = {
   id: string;
   name: string;
   pharmacy: string;
   phone: string;
   timeAgo: string;
+  approvalStatus: string;
 };
 
-const MOCK_VENDORS: VendorRecord[] = Array.from({length: 6}, (_, index) => ({
-  id: String(index + 1),
-  name: 'Rayhan Ullah',
-  pharmacy: 'Medicare Pharmacy',
-  phone: '01677589448',
-  timeAgo: '2 min ago',
-}));
+function filterToApiStatus(filter: AdminVendorFilter): string | undefined {
+  if (filter === 'All') return undefined;
+  if (filter === 'Pending') return 'PENDING';
+  if (filter === 'Approved') return 'APPROVED';
+  if (filter === 'Rejected') return 'REJECTED';
+  return undefined;
+}
 
-function VendorCard({item}: {item: VendorRecord}) {
+function formatTimeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day ago`;
+}
+
+function mapVendor(record: ApiVendor): VendorRecord {
+  return {
+    id: record.id,
+    name: record.user.fullName,
+    pharmacy: record.pharmacyName,
+    phone: record.user.phone ?? record.phone ?? '—',
+    timeAgo: formatTimeAgo(record.createdAt),
+    approvalStatus: record.approvalStatus,
+  };
+}
+
+function VendorCard({
+  item,
+  onApprove,
+  onReject,
+  updating,
+}: {
+  item: VendorRecord;
+  onApprove: () => void;
+  onReject: () => void;
+  updating: boolean;
+}) {
+  const showActions = item.approvalStatus === 'PENDING';
+
   return (
     <View style={styles.vendorCard}>
       <Text style={styles.timeAgoText}>{item.timeAgo}</Text>
@@ -58,16 +107,26 @@ function VendorCard({item}: {item: VendorRecord}) {
         </View>
       </View>
 
-      <View style={styles.actionButtonsRow}>
-        <TouchableOpacity style={[styles.actionBtn, styles.btnApprove]} activeOpacity={0.85}>
-          <Feather name="check-circle" size={14} color="#FFFFFF" />
-          <Text style={styles.actionBtnText}>Approve</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, styles.btnReject]} activeOpacity={0.85}>
-          <Feather name="x-circle" size={14} color="#FFFFFF" />
-          <Text style={styles.actionBtnText}>Reject</Text>
-        </TouchableOpacity>
-      </View>
+      {showActions && (
+        <View style={styles.actionButtonsRow}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.btnApprove]}
+            activeOpacity={0.85}
+            disabled={updating}
+            onPress={onApprove}>
+            <Feather name="check-circle" size={14} color="#FFFFFF" />
+            <Text style={styles.actionBtnText}>Approve</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.btnReject]}
+            activeOpacity={0.85}
+            disabled={updating}
+            onPress={onReject}>
+            <Feather name="x-circle" size={14} color="#FFFFFF" />
+            <Text style={styles.actionBtnText}>Reject</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -76,6 +135,56 @@ export function AdminVendorsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<AdminVendorFilter>('Pending');
+  const [vendors, setVendors] = useState<VendorRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+
+  const loadVendors = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminApi.vendors(filterToApiStatus(activeFilter));
+      setVendors((data as ApiVendor[]).map(mapVendor));
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load vendors';
+      Alert.alert('Vendors', message);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeFilter]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadVendors();
+    }, [loadVendors]),
+  );
+
+  const updateStatus = useCallback(
+    async (vendorId: string, approvalStatus: 'APPROVED' | 'REJECTED') => {
+      setUpdatingId(vendorId);
+      try {
+        await adminApi.updateVendorStatus(vendorId, approvalStatus);
+        await loadVendors();
+      } catch (err) {
+        const message = err instanceof ApiError ? err.message : 'Could not update vendor';
+        Alert.alert('Vendors', message);
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [loadVendors],
+  );
+
+  const filteredVendors = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return vendors;
+    return vendors.filter(
+      v =>
+        v.name.toLowerCase().includes(q) ||
+        v.pharmacy.toLowerCase().includes(q) ||
+        v.phone.includes(q),
+    );
+  }, [vendors, search]);
 
   return (
     <View style={styles.container}>
@@ -107,6 +216,8 @@ export function AdminVendorsScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
             <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
@@ -134,9 +245,21 @@ export function AdminVendorsScreen({navigation}: Props) {
         </ScrollView>
 
         <View style={styles.cardsVerticalStack}>
-          {MOCK_VENDORS.map((record, index) => (
-            <VendorCard key={`${record.id}-${index}`} item={record} />
-          ))}
+          {loading ? (
+            <ActivityIndicator color="#4E929D" style={styles.loader} />
+          ) : filteredVendors.length === 0 ? (
+            <Text style={styles.emptyText}>No vendors found.</Text>
+          ) : (
+            filteredVendors.map(record => (
+              <VendorCard
+                key={record.id}
+                item={record}
+                updating={updatingId === record.id}
+                onApprove={() => updateStatus(record.id, 'APPROVED')}
+                onReject={() => updateStatus(record.id, 'REJECTED')}
+              />
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -218,6 +341,13 @@ const styles = StyleSheet.create({
   },
   cardsVerticalStack: {
     gap: 12,
+  },
+  loader: {marginVertical: 32},
+  emptyText: {
+    textAlign: 'center',
+    color: '#9AA6B2',
+    fontSize: 14,
+    paddingVertical: 32,
   },
   vendorCard: {
     backgroundColor: '#FFFFFF',

@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,10 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {vendorApi} from '../../api/vendor';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {VendorBottomNav} from './VendorBottomNav';
@@ -19,67 +24,71 @@ import {ORDER_FILTER_CHIPS, type VendorOrderStatus} from './vendorNav';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VOrders'>;
 
+type ApiOrder = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentMethod: string;
+  addressSnapshot?: {formattedAddress?: string; region?: string} | null;
+  customer?: {fullName: string; phone?: string | null};
+  items: {name: string}[];
+};
+
 type OrderItem = {
+  id: string;
   customer: string;
   orderId: string;
   phone: string;
   location: string;
   productTitle: string;
-  generic: string;
   paymentMethod: string;
   status: VendorOrderStatus;
+  rawStatus: string;
 };
 
-const MOCK_ORDERS = {
-  recent: [
-    {
-      customer: 'Habibur Rahman',
-      orderId: '#RK123457',
-      phone: '01677589448',
-      location: 'House 14 Road 06, Uttara Sector 12,Dhaka North,Dhaka',
-      productTitle: 'Aamdocal Plus 50',
-      generic: 'Amlodipine Besylate',
-      paymentMethod: 'Cash on Delivery',
-      status: 'Pending',
-    },
-    {
-      customer: 'Habibur Rahman',
-      orderId: '#RK123457',
-      phone: '01677589448',
-      location: 'House 14 Road 06, Uttara Sector 12,Dhaka North,Dhaka',
-      productTitle: 'Aamdocal Plus 50',
-      generic: 'Amlodipine Besylate',
-      paymentMethod: 'Nagad',
-      status: 'Pending',
-    },
-  ] satisfies OrderItem[],
-  accepted: [
-    {
-      customer: 'Rahman Uddin',
-      orderId: '#RK123458',
-      phone: '01677589448',
-      location: 'House 14 Road 06, Uttara Sector 12,Dhaka North,Dhaka',
-      productTitle: 'Aamdocal Plus 50',
-      generic: 'Amlodipine Besylate',
-      paymentMethod: 'Cash on Delivery',
-      status: 'Accepted',
-    },
-  ] satisfies OrderItem[],
-  delivered: [
-    {
-      customer: 'Rahman Uddin',
-      orderId: '#RK123458',
-      phone: '01677589448',
-      location: 'House 14 Road 06, Uttara Sector 12,Dhaka North,Dhaka',
-      productTitle: 'Aamdocal Plus 50',
-      generic: 'Amlodipine Besylate',
-      paymentMethod: 'bKash',
-      status: 'Delivered',
-    },
-  ] satisfies OrderItem[],
+function mapOrderStatus(status: string): VendorOrderStatus {
+  if (status === 'PENDING') return 'Pending';
+  if (status === 'DELIVERED') return 'Delivered';
+  if (status === 'CONFIRMED' || status === 'PREPARING' || status === 'ON_THE_WAY') return 'Accepted';
+  return 'Pending';
+}
+
+function paymentMethodLabel(method: string) {
+  if (method === 'BKASH') return 'bKash';
+  if (method === 'NAGAD') return 'Nagad';
+  if (method === 'CARD') return 'Credit Card';
+  return 'Cash on Delivery';
+}
+
+function orderLocation(order: ApiOrder) {
+  const snap = order.addressSnapshot;
+  if (!snap) return '—';
+  return snap.formattedAddress ?? snap.region ?? '—';
+}
+
+function toOrderItem(order: ApiOrder): OrderItem {
+  return {
+    id: order.id,
+    customer: order.customer?.fullName ?? '—',
+    orderId: order.orderNumber,
+    phone: order.customer?.phone ?? '—',
+    location: orderLocation(order),
+    productTitle: order.items[0]?.name ?? '—',
+    paymentMethod: paymentMethodLabel(order.paymentMethod),
+    status: mapOrderStatus(order.status),
+    rawStatus: order.status,
+  };
+}
+
+type OrderCardProps = {
+  order: OrderItem;
+  updating: boolean;
+  onAccept: (id: string) => void;
+  onDecline: (id: string) => void;
+  onReadyPickup: (id: string) => void;
 };
 
-function OrderCard({order}: {order: OrderItem}) {
+function OrderCard({order, updating, onAccept, onDecline, onReadyPickup}: OrderCardProps) {
   return (
     <View style={styles.orderCardContainer}>
       <Text style={styles.customerText}>Customer : {order.customer}</Text>
@@ -94,7 +103,6 @@ function OrderCard({order}: {order: OrderItem}) {
         />
         <View style={styles.productInfo}>
           <Text style={styles.productTitle}>{order.productTitle}</Text>
-          <Text style={styles.genericText}>Generic: {order.generic}</Text>
           <Text style={styles.statusText}>Status: {order.status}</Text>
           <Text style={styles.paymentText}>Payment: {order.paymentMethod}</Text>
         </View>
@@ -102,19 +110,31 @@ function OrderCard({order}: {order: OrderItem}) {
 
       {order.status === 'Pending' ? (
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={[styles.actionBtn, styles.btnAccept]} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.btnAccept]}
+            activeOpacity={0.85}
+            disabled={updating}
+            onPress={() => onAccept(order.id)}>
             <Feather name="check-circle" size={14} color="#FFFFFF" />
             <Text style={styles.btnTextWhite}>Accept</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, styles.btnDecline]} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.btnDecline]}
+            activeOpacity={0.85}
+            disabled={updating}
+            onPress={() => onDecline(order.id)}>
             <Feather name="x-circle" size={14} color="#FFFFFF" />
             <Text style={styles.btnTextWhite}>Declined</Text>
           </TouchableOpacity>
         </View>
       ) : null}
 
-      {order.status === 'Accepted' ? (
-        <TouchableOpacity style={styles.readyPickupBtn} activeOpacity={0.85}>
+      {order.status === 'Accepted' && order.rawStatus !== 'ON_THE_WAY' ? (
+        <TouchableOpacity
+          style={styles.readyPickupBtn}
+          activeOpacity={0.85}
+          disabled={updating}
+          onPress={() => onReadyPickup(order.id)}>
           <MaterialCommunityIcons name="hammer-wrench" size={14} color="#4E929D" />
           <Text style={styles.readyPickupText}>Ready for Pickup</Text>
         </TouchableOpacity>
@@ -146,6 +166,74 @@ export function VendorOrdersScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeChip, setActiveChip] = useState<string>('Accepted');
+  const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await vendorApi.orders();
+      setOrders(data as ApiOrder[]);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load orders';
+      Alert.alert('Orders', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [loadOrders]),
+  );
+
+  const updateOrderStatus = useCallback(
+    async (orderId: string, status: string) => {
+      setUpdatingOrderId(orderId);
+      try {
+        await vendorApi.updateOrderStatus(orderId, status);
+        await loadOrders();
+      } catch (err) {
+        const message = err instanceof ApiError ? err.message : 'Could not update order';
+        Alert.alert('Order', message);
+      } finally {
+        setUpdatingOrderId(null);
+      }
+    },
+    [loadOrders],
+  );
+
+  const mappedOrders = useMemo(() => orders.map(toOrderItem), [orders]);
+
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let list = mappedOrders;
+
+    if (activeChip === 'Pending') {
+      list = list.filter(o => o.status === 'Pending');
+    } else if (activeChip === 'Accepted') {
+      list = list.filter(o => o.status === 'Accepted');
+    } else if (activeChip === 'Declined') {
+      list = list.filter(o => o.rawStatus === 'CANCELLED');
+    }
+
+    if (!q) return list;
+    return list.filter(
+      o =>
+        o.customer.toLowerCase().includes(q) ||
+        o.orderId.toLowerCase().includes(q) ||
+        o.phone.includes(q),
+    );
+  }, [mappedOrders, activeChip, search]);
+
+  const recentOrders = filteredOrders.filter(o => o.status === 'Pending');
+  const acceptedOrders = filteredOrders.filter(o => o.status === 'Accepted');
+  const deliveredOrders = filteredOrders.filter(o => o.status === 'Delivered');
+
+  const showSections = activeChip === 'Last 1 Weeks' || activeChip === 'Accepted';
 
   return (
     <View style={styles.container}>
@@ -177,6 +265,8 @@ export function VendorOrdersScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
             <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
@@ -203,20 +293,82 @@ export function VendorOrdersScreen({navigation}: Props) {
           })}
         </ScrollView>
 
-        <SectionHeader title="Recent Order Requests" />
-        {MOCK_ORDERS.recent.map((order, index) => (
-          <OrderCard key={`recent-${index}`} order={order} />
-        ))}
+        {loading ? (
+          <ActivityIndicator color="#4E929D" style={styles.loader} />
+        ) : (
+          <>
+            {(showSections || activeChip === 'Pending') && recentOrders.length > 0 ? (
+              <>
+                <SectionHeader title="Recent Order Requests" />
+                {recentOrders.map(order => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    updating={updatingOrderId === order.id}
+                    onAccept={id => updateOrderStatus(id, 'CONFIRMED')}
+                    onDecline={id => updateOrderStatus(id, 'CANCELLED')}
+                    onReadyPickup={id => updateOrderStatus(id, 'ON_THE_WAY')}
+                  />
+                ))}
+              </>
+            ) : null}
 
-        <SectionHeader title="Accepted Requests" />
-        {MOCK_ORDERS.accepted.map((order, index) => (
-          <OrderCard key={`accepted-${index}`} order={order} />
-        ))}
+            {(showSections || activeChip === 'Accepted') && acceptedOrders.length > 0 ? (
+              <>
+                <SectionHeader title="Accepted Requests" />
+                {acceptedOrders.map(order => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    updating={updatingOrderId === order.id}
+                    onAccept={id => updateOrderStatus(id, 'CONFIRMED')}
+                    onDecline={id => updateOrderStatus(id, 'CANCELLED')}
+                    onReadyPickup={id => updateOrderStatus(id, 'ON_THE_WAY')}
+                  />
+                ))}
+              </>
+            ) : null}
 
-        <SectionHeader title="Delivered" />
-        {MOCK_ORDERS.delivered.map((order, index) => (
-          <OrderCard key={`delivered-${index}`} order={order} />
-        ))}
+            {(showSections || activeChip === 'Declined') &&
+            filteredOrders.some(o => o.rawStatus === 'CANCELLED') ? (
+              <>
+                <SectionHeader title="Declined" />
+                {filteredOrders
+                  .filter(o => o.rawStatus === 'CANCELLED')
+                  .map(order => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      updating={updatingOrderId === order.id}
+                      onAccept={id => updateOrderStatus(id, 'CONFIRMED')}
+                      onDecline={id => updateOrderStatus(id, 'CANCELLED')}
+                      onReadyPickup={id => updateOrderStatus(id, 'ON_THE_WAY')}
+                    />
+                  ))}
+              </>
+            ) : null}
+
+            {showSections && deliveredOrders.length > 0 ? (
+              <>
+                <SectionHeader title="Delivered" />
+                {deliveredOrders.map(order => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    updating={updatingOrderId === order.id}
+                    onAccept={id => updateOrderStatus(id, 'CONFIRMED')}
+                    onDecline={id => updateOrderStatus(id, 'CANCELLED')}
+                    onReadyPickup={id => updateOrderStatus(id, 'ON_THE_WAY')}
+                  />
+                ))}
+              </>
+            ) : null}
+
+            {!loading && filteredOrders.length === 0 ? (
+              <Text style={styles.emptyText}>No orders found.</Text>
+            ) : null}
+          </>
+        )}
       </ScrollView>
 
       <VendorBottomNav activeTab="orders" bottomInset={insets.bottom} navigation={navigation} />
@@ -231,6 +383,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 4,
+  },
+  loader: {
+    marginVertical: 24,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#7E8B97',
+    fontSize: 13,
+    marginVertical: 12,
   },
   header: {
     flexDirection: 'row',
@@ -360,11 +521,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#1A1C1E',
-  },
-  genericText: {
-    fontSize: 11,
-    color: '#7E8B97',
-    marginTop: 1,
   },
   statusText: {
     fontSize: 11,

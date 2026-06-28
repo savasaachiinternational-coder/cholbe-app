@@ -1,5 +1,7 @@
 import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +16,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {authApi} from '../../api/auth';
+import {ApiError} from '../../api/client';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -26,6 +30,27 @@ export function ForgotPasswordScreen({onBack, onContinue}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleContinue = async () => {
+    if (!emailOrPhone.trim()) {
+      Alert.alert('Forgot password', 'Enter your email or phone number.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await authApi.forgotPassword(emailOrPhone.trim());
+      if (res.debugCode) {
+        Alert.alert('OTP sent', `Dev code: ${res.debugCode}`);
+      }
+      onContinue(emailOrPhone.trim());
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not send OTP';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -93,10 +118,15 @@ export function ForgotPasswordScreen({onBack, onContinue}: Props) {
 
             <View style={styles.footerSection}>
               <TouchableOpacity
-                style={styles.continueButton}
+                style={[styles.continueButton, loading && styles.buttonDisabled]}
                 activeOpacity={0.85}
-                onPress={() => onContinue(emailOrPhone)}>
-                <Text style={styles.continueButtonText}>Continue</Text>
+                disabled={loading}
+                onPress={handleContinue}>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -205,6 +235,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   continueButtonText: {
     color: '#FFFFFF',

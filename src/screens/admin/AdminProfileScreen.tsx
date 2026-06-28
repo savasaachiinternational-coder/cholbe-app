@@ -1,4 +1,7 @@
+import {useCallback, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -6,15 +9,24 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {authApi} from '../../api/auth';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AProfile'>;
+
+type AdminUser = {
+  fullName: string;
+  role: string;
+  avatarUrl: string | null;
+};
 
 type SettingItem = {
   iconName: string;
@@ -22,6 +34,11 @@ type SettingItem = {
   useMaterialIcon?: boolean;
   onPress?: () => void;
 };
+
+function roleLabel(role: string) {
+  if (role === 'ADMIN') return 'Super Administrator';
+  return role.charAt(0) + role.slice(1).toLowerCase();
+}
 
 function SettingRow({item, isLast}: {item: SettingItem; isLast: boolean}) {
   return (
@@ -45,6 +62,28 @@ function SettingRow({item, isLast}: {item: SettingItem; isLast: boolean}) {
 export function AdminProfileScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await authApi.getMe();
+      const user = data as AdminUser;
+      setAdmin(user);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load profile';
+      Alert.alert('Profile', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile]),
+  );
 
   const menuItems: SettingItem[] = [
     {iconName: 'user', label: 'Profile Information'},
@@ -91,15 +130,27 @@ export function AdminProfileScreen({navigation}: Props) {
           {paddingBottom: 85 + insets.bottom},
         ]}>
         <TouchableOpacity style={styles.profileHeroCard} activeOpacity={0.8}>
-          <Image
-            source={{uri: 'https://via.placeholder.com/60/E2E8F0/000000?text=Admin'}}
-            style={styles.adminAvatar}
-          />
-          <View style={styles.adminMetaDetails}>
-            <Text style={styles.adminNameText}>Admin</Text>
-            <Text style={styles.adminRoleText}>Super Administrator</Text>
-          </View>
-          <Feather name="chevron-right" size={20} color="#7E8B97" />
+          {loading ? (
+            <ActivityIndicator color="#4E929D" style={styles.profileLoader} />
+          ) : (
+            <>
+              <Image
+                source={{
+                  uri:
+                    admin?.avatarUrl ??
+                    'https://via.placeholder.com/60/E2E8F0/000000?text=Admin',
+                }}
+                style={styles.adminAvatar}
+              />
+              <View style={styles.adminMetaDetails}>
+                <Text style={styles.adminNameText}>{admin?.fullName ?? 'Admin'}</Text>
+                <Text style={styles.adminRoleText}>
+                  {admin ? roleLabel(admin.role) : 'Super Administrator'}
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={20} color="#7E8B97" />
+            </>
+          )}
         </TouchableOpacity>
 
         <View style={styles.menuContainerCard}>
@@ -160,6 +211,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ECEFF3',
+    minHeight: 80,
+  },
+  profileLoader: {
+    flex: 1,
   },
   adminAvatar: {
     width: 48,

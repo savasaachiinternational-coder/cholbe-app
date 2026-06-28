@@ -9,6 +9,9 @@ import {
   SafeAreaProvider,
   initialWindowMetrics,
 } from 'react-native-safe-area-context';
+import {hasSession, getStoredUser} from './src/api/tokenStorage';
+import {getHomeRouteForRole} from './src/navigation/roleRoutes';
+import type {RootStackParamList} from './src/navigation/types';
 import {CreateHealthProfileScreen} from './src/screens/auth/CreateHealthProfileScreen';
 import {CreateNewPasswordScreen} from './src/screens/auth/CreateNewPasswordScreen';
 import {ForgotPasswordScreen} from './src/screens/auth/ForgotPasswordScreen';
@@ -51,14 +54,32 @@ const navigationTheme = {
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
   const [phase, setPhase] = useState<AppPhase>('splash');
+  const [initialRoute, setInitialRoute] =
+    useState<keyof RootStackParamList>('Home');
   const [verificationContact, setVerificationContact] = useState('');
   const [registerName, setRegisterName] = useState('');
+  const [verifiedOtpCode, setVerifiedOtpCode] = useState('');
   const [verificationFlow, setVerificationFlow] =
     useState<VerificationFlow>('forgotPassword');
 
-  const handleSplashFinish = useCallback(() => {
-    setPhase('onboarding');
+  const enterMainApp = useCallback(async (role?: string) => {
+    if (role) {
+      setInitialRoute(getHomeRouteForRole(role));
+    } else {
+      const user = await getStoredUser();
+      setInitialRoute(getHomeRouteForRole(user?.role));
+    }
+    setPhase('main');
   }, []);
+
+  const handleSplashFinish = useCallback(async () => {
+    const loggedIn = await hasSession();
+    if (loggedIn) {
+      await enterMainApp();
+      return;
+    }
+    setPhase('onboarding');
+  }, [enterMainApp]);
 
   const handleGoToSignIn = useCallback(() => {
     setPhase('signIn');
@@ -108,11 +129,12 @@ function App() {
     setPhase('otpVerificationMethod');
   }, []);
 
-  const handleVerifySuccess = useCallback(() => {
+  const handleVerifySuccess = useCallback((code: string) => {
+    setVerifiedOtpCode(code);
     setPhase('createNewPassword');
   }, []);
 
-  const handleRegisterVerifySuccess = useCallback(() => {
+  const handleRegisterVerifySuccess = useCallback((_code: string) => {
     setPhase('patientInformation');
   }, []);
 
@@ -125,20 +147,24 @@ function App() {
   }, []);
 
   const handleRegistrationComplete = useCallback(() => {
-    setPhase('main');
-  }, []);
+    enterMainApp('CUSTOMER');
+  }, [enterMainApp]);
 
   const handleBackToVerification = useCallback(() => {
     setPhase('verification');
   }, []);
 
   const handlePasswordResetComplete = useCallback(() => {
+    setVerifiedOtpCode('');
     setPhase('signIn');
   }, []);
 
-  const handleSignInSuccess = useCallback(() => {
-    setPhase('main');
-  }, []);
+  const handleSignInSuccess = useCallback(
+    (role: string) => {
+      enterMainApp(role);
+    },
+    [enterMainApp],
+  );
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
@@ -170,6 +196,7 @@ function App() {
       )}
       {phase === 'otpVerificationMethod' && (
         <OTPVerificationMethodScreen
+          contact={verificationContact}
           onBack={handleBackToRegister}
           onSelectMethod={handleOtpMethodSelected}
         />
@@ -183,6 +210,7 @@ function App() {
       {phase === 'verification' && (
         <VerificationScreen
           contact={verificationContact}
+          flow={verificationFlow}
           onBack={
             verificationFlow === 'register'
               ? handleBackToOtpMethod
@@ -209,13 +237,15 @@ function App() {
       )}
       {phase === 'createNewPassword' && (
         <CreateNewPasswordScreen
+          contact={verificationContact}
+          otpCode={verifiedOtpCode}
           onBack={handleBackToVerification}
           onContinue={handlePasswordResetComplete}
         />
       )}
       {phase === 'main' && (
         <NavigationContainer theme={isDarkMode ? DarkTheme : navigationTheme}>
-          <RootNavigator />
+          <RootNavigator initialRouteName={initialRoute} />
         </NavigationContainer>
       )}
     </SafeAreaProvider>

@@ -1,5 +1,7 @@
 import {useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   KeyboardAvoidingView,
@@ -16,6 +18,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {authApi} from '../../api/auth';
+import {ApiError} from '../../api/client';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -118,6 +122,25 @@ export function MedicalHistoryScreen({onBack, onComplete}: Props) {
   const [lunchTime, setLunchTime] = useState('');
   const [dinnerTime, setDinnerTime] = useState('');
   const [mealPicker, setMealPicker] = useState<MealPicker>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      await authApi.medicalHistory({
+        conditions: Array.from(selectedDiseases),
+        mealBreakfast: breakfastTime || undefined,
+        mealLunch: lunchTime || undefined,
+        mealDinner: dinnerTime || undefined,
+      });
+      onComplete();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not save medical history';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleDisease = (label: string) => {
     setSelectedDiseases(prev => {
@@ -257,14 +280,19 @@ export function MedicalHistoryScreen({onBack, onComplete}: Props) {
 
             <TouchableOpacity
               activeOpacity={0.9}
-              onPress={onComplete}
+              disabled={loading}
+              onPress={handleSubmit}
               style={styles.submitTouchable}>
               <LinearGradient
                 colors={['#5BAEA8', '#4A8B95', '#3D7A84']}
                 start={{x: 0.5, y: 0}}
                 end={{x: 0.5, y: 1}}
-                style={styles.submitButton}>
-                <Text style={styles.submitButtonText}>Submit</Text>
+                style={[styles.submitButton, loading && styles.buttonDisabled]}>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Submit</Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </ScrollView>
@@ -529,6 +557,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   pickerOverlay: {
     flex: 1,

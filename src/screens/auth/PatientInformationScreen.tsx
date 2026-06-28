@@ -1,5 +1,7 @@
 import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -16,6 +18,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {authApi} from '../../api/auth';
+import {ApiError} from '../../api/client';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -46,6 +50,24 @@ export function PatientInformationScreen({initialName = '', onContinue}: Props) 
   );
   const [genderPickerVisible, setGenderPickerVisible] = useState(false);
   const [usagePickerVisible, setUsagePickerVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleContinue = async () => {
+    setLoading(true);
+    try {
+      await authApi.patientOnboarding({
+        age: age ? parseInt(age, 10) : undefined,
+        gender,
+        usagePurpose: usagePurpose,
+      });
+      onContinue();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not save profile';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -153,10 +175,15 @@ export function PatientInformationScreen({initialName = '', onContinue}: Props) 
 
             <View style={styles.footerSection}>
               <TouchableOpacity
-                style={styles.continueButton}
+                style={[styles.continueButton, loading && styles.buttonDisabled]}
                 activeOpacity={0.85}
-                onPress={onContinue}>
-                <Text style={styles.continueButtonText}>Continue</Text>
+                disabled={loading}
+                onPress={handleContinue}>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                )}
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -378,6 +405,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   pickerOverlay: {
     flex: 1,

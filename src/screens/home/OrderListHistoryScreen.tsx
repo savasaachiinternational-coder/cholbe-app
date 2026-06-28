@@ -1,4 +1,7 @@
+import {useCallback, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -6,55 +9,49 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {ordersApi, type Order} from '../../api/orders';
+import {ApiError} from '../../api/client';
+import {
+  formatBdt,
+  ORDER_STATUS_COLOR,
+  ORDER_STATUS_LABEL,
+} from '../../utils/pharmacyHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderListHistory'>;
 
 const {width} = Dimensions.get('window');
 
-const ORDER_HISTORY_DATA = [
-  {
-    id: '1',
-    orderId: '#683949',
-    itemsCount: '4 Items',
-    status: 'On the Way',
-    price: '৳72.00',
-    statusColor: '#FF9F43',
-  },
-  {
-    id: '2',
-    orderId: '#683949',
-    itemsCount: '4 Items',
-    status: 'Preparing',
-    price: '৳72.00',
-    statusColor: '#45A096',
-  },
-  {
-    id: '3',
-    orderId: '#683949',
-    itemsCount: '4 Items',
-    status: 'Preparing',
-    price: '৳72.00',
-    statusColor: '#45A096',
-  },
-  {
-    id: '4',
-    orderId: '#683949',
-    itemsCount: '4 Items',
-    status: 'Preparing',
-    price: '৳72.00',
-    statusColor: '#45A096',
-  },
-];
-
 export function OrderListHistoryScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await ordersApi.list();
+      setOrders(data);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load orders';
+      Alert.alert('Orders', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [loadOrders]),
+  );
 
   return (
     <View style={styles.container}>
@@ -82,63 +79,34 @@ export function OrderListHistoryScreen({navigation}: Props) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollCanvasContent, {paddingBottom: 110 + insets.bottom}]}>
-        {ORDER_HISTORY_DATA.map(order => (
-          <View key={order.id} style={styles.orderHistoryCard}>
-            <View style={styles.cardLeftContent}>
-              <View style={styles.shoppingBagIconContainer}>
-                <MaterialCommunityIcons name="shopping-outline" size={24} color="#7D8797" />
+        contentContainerStyle={[styles.scrollCanvasContent, {paddingBottom: insets.bottom + 24}]}>
+        {loading ? (
+          <ActivityIndicator color="#45A096" style={styles.loader} />
+        ) : orders.length === 0 ? (
+          <Text style={styles.emptyText}>No orders yet.</Text>
+        ) : (
+          orders.map(order => (
+            <TouchableOpacity
+              key={order.id}
+              style={styles.orderCard}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('OrderTracking', {orderId: order.id})}>
+              <View style={styles.orderCardTop}>
+                <Text style={styles.orderIdText}>{order.orderNumber}</Text>
+                <Text style={[styles.statusText, {color: ORDER_STATUS_COLOR[order.status] ?? '#45A096'}]}>
+                  {ORDER_STATUS_LABEL[order.status] ?? order.status}
+                </Text>
               </View>
-
-              <View style={styles.metaTextGroup}>
-                <Text style={styles.orderIdText}>{order.orderId}</Text>
-                <Text style={styles.itemsCountText}>{order.itemsCount}</Text>
-                <View style={styles.statusBadgeRow}>
-                  <View style={[styles.statusIndicatorDot, {backgroundColor: order.statusColor}]} />
-                  <Text style={[styles.statusLabelText, {color: order.statusColor}]}>{order.status}</Text>
-                </View>
+              <View style={styles.orderCardBottom}>
+                <Text style={styles.itemsCountText}>
+                  {order.items.length} Item{order.items.length === 1 ? '' : 's'}
+                </Text>
+                <Text style={styles.priceText}>{formatBdt(Number(order.total))}</Text>
               </View>
-            </View>
-
-            <View style={styles.cardRightContent}>
-              <Text style={styles.totalPriceText}>{order.price}</Text>
-              <TouchableOpacity
-                style={styles.detailsActionButton}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('OrderTracking')}>
-                <Text style={styles.detailsButtonText}>Details</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
-
-      <View style={[styles.bottomTabBar, {paddingBottom: 12 + insets.bottom}]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Home')}>
-          <Feather name="home" size={24} color="#A0A5BA" />
-          <Text style={styles.tabLabel}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('PharmacyShop')}>
-          <MaterialCommunityIcons name="clippy" size={24} color="#45A096" />
-          <Text style={[styles.tabLabel, styles.activeTabLabel]}>Pharmacy</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('MedicineList')}>
-          <MaterialCommunityIcons name="heart-pulse" size={24} color="#A0A5BA" />
-          <Text style={styles.tabLabel}>Medication</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('ReportsList')}>
-          <MaterialCommunityIcons name="file-document-outline" size={24} color="#A0A5BA" />
-          <Text style={styles.tabLabel}>Report</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('MyProfile')}>
-          <Feather name="user" size={24} color="#A0A5BA" />
-          <Text style={styles.tabLabel}>Profile</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -161,64 +129,20 @@ const styles = StyleSheet.create({
   titleContainer: {alignItems: 'center', marginTop: 24, marginBottom: 16},
   screenTitle: {fontSize: 20, fontWeight: '600', color: '#333333'},
   scrollCanvasContent: {paddingHorizontal: 20, paddingTop: 8},
-  orderHistoryCard: {
+  loader: {marginVertical: 32},
+  emptyText: {textAlign: 'center', color: '#8A94A6', marginTop: 24},
+  orderCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    padding: 16,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#ECEFF7',
-    shadowColor: '#E0E4F0',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 2,
   },
-  cardLeftContent: {flexDirection: 'row', alignItems: 'center', flex: 1},
-  shoppingBagIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F1F3F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  metaTextGroup: {justifyContent: 'center'},
-  orderIdText: {fontSize: 16, fontWeight: '700', color: '#212529', marginBottom: 3},
-  itemsCountText: {fontSize: 13, color: '#8A94A6', fontWeight: '400', marginBottom: 4},
-  statusBadgeRow: {flexDirection: 'row', alignItems: 'center'},
-  statusIndicatorDot: {width: 6, height: 6, borderRadius: 3, marginRight: 6},
-  statusLabelText: {fontSize: 12, fontWeight: '600'},
-  cardRightContent: {alignItems: 'flex-end', justifyContent: 'space-between', minHeight: 56},
-  totalPriceText: {fontSize: 16, fontWeight: '700', color: '#212529'},
-  detailsActionButton: {
-    borderWidth: 1,
-    borderColor: '#72C1B6',
-    borderRadius: 8,
-    paddingVertical: 5,
-    paddingHorizontal: 16,
-    backgroundColor: 'transparent',
-  },
-  detailsButtonText: {color: '#45A096', fontSize: 13, fontWeight: '600'},
-  bottomTabBar: {
-    flexDirection: 'row',
-    minHeight: 74,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F2F7',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  tabItem: {alignItems: 'center', justifyContent: 'center', width: width / 5},
-  tabLabel: {fontSize: 11, color: '#9CA3AF', marginTop: 5, fontWeight: '500'},
-  activeTabLabel: {color: '#45A096', fontWeight: '600'},
+  orderCardTop: {flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8},
+  orderIdText: {fontSize: 15, fontWeight: '700', color: '#212529'},
+  statusText: {fontSize: 13, fontWeight: '600'},
+  orderCardBottom: {flexDirection: 'row', justifyContent: 'space-between'},
+  itemsCountText: {fontSize: 13, color: '#7D8797'},
+  priceText: {fontSize: 14, fontWeight: '700', color: '#45A096'},
 });

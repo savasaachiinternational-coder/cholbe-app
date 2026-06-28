@@ -1,4 +1,7 @@
+import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -7,28 +10,89 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {launchImageLibrary} from 'react-native-image-picker';
+import {launchImageLibrary, type Asset} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {reportsApi, type ReportType} from '../../api/reports';
+import {uploadFile} from '../../api/uploads';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UploadReportDetails'>;
 
 const {width} = Dimensions.get('window');
 
+const REPORT_TYPES: {label: string; value: ReportType}[] = [
+  {label: 'Lab Report', value: 'LAB'},
+  {label: 'Prescription', value: 'PRESCRIPTION'},
+  {label: 'Imaging', value: 'IMAGING'},
+  {label: 'Other', value: 'OTHER'},
+];
+
 export function UploadReportDetailsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
 
+  const [fileAsset, setFileAsset] = useState<Asset | null>(null);
+  const [reportType, setReportType] = useState<ReportType>('LAB');
+  const [title, setTitle] = useState('Hemoglobin');
+  const [reportDate, setReportDate] = useState(
+    new Date().toISOString().slice(0, 10),
+  );
+  const [provider, setProvider] = useState('Devcare Lab');
+  const [tip, setTip] = useState(
+    'Blood Sugar is slightly high. Please maintain diet and continue medication.',
+  );
+  const [loading, setLoading] = useState(false);
+  const [typePickerOpen, setTypePickerOpen] = useState(false);
+
   const handleBrowse = async () => {
-    await launchImageLibrary({
+    const result = await launchImageLibrary({
       mediaType: 'photo',
       selectionLimit: 1,
-      includeBase64: false,
     });
+    if (result.assets?.[0]) {
+      setFileAsset(result.assets[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!fileAsset?.uri) {
+      Alert.alert('Upload report', 'Please select a file first.');
+      return;
+    }
+    if (!title.trim()) {
+      Alert.alert('Upload report', 'Please enter a report title.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const uploaded = await uploadFile(
+        '/uploads/report',
+        fileAsset.uri,
+        fileAsset.fileName ?? 'report.jpg',
+        fileAsset.type ?? 'image/jpeg',
+      );
+      await reportsApi.create({
+        title: title.trim(),
+        reportType,
+        provider: provider.trim() || undefined,
+        reportDate,
+        fileUrl: uploaded.fileUrl,
+        fileName: uploaded.fileName,
+        mimeType: uploaded.mimeType,
+        tip: tip.trim() || undefined,
+      });
+      navigation.navigate('ReportUploadedSuccess');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Upload failed';
+      Alert.alert('Upload failed', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,7 +120,9 @@ export function UploadReportDetailsScreen({navigation}: Props) {
             <View style={styles.uploadIconWrapper}>
               <Feather name="download" size={28} color="#FFFFFF" />
             </View>
-            <Text style={styles.uploadTitleText}>Upload your Prescription here</Text>
+            <Text style={styles.uploadTitleText}>
+              {fileAsset?.fileName ?? 'Upload your Report here'}
+            </Text>
             <TouchableOpacity activeOpacity={0.7} onPress={handleBrowse}>
               <Text style={styles.browseHereText}>Browse Here</Text>
             </TouchableOpacity>
@@ -64,10 +130,27 @@ export function UploadReportDetailsScreen({navigation}: Props) {
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Type of Report</Text>
-            <TouchableOpacity style={styles.dropdownTrigger} activeOpacity={0.8}>
-              <Text style={styles.dropdownValue}>Amlodipine</Text>
+            <TouchableOpacity
+              style={styles.dropdownTrigger}
+              activeOpacity={0.8}
+              onPress={() => setTypePickerOpen(prev => !prev)}>
+              <Text style={styles.dropdownValue}>
+                {REPORT_TYPES.find(t => t.value === reportType)?.label ?? reportType}
+              </Text>
               <Feather name="chevron-down" size={20} color="#7D8797" />
             </TouchableOpacity>
+            {typePickerOpen &&
+              REPORT_TYPES.map(opt => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={styles.typeOption}
+                  onPress={() => {
+                    setReportType(opt.value);
+                    setTypePickerOpen(false);
+                  }}>
+                  <Text style={styles.typeOptionText}>{opt.label}</Text>
+                </TouchableOpacity>
+              ))}
           </View>
 
           <View style={styles.inputGroup}>
@@ -75,7 +158,8 @@ export function UploadReportDetailsScreen({navigation}: Props) {
             <View style={styles.textInputWrapper}>
               <TextInput
                 style={styles.textInput}
-                defaultValue="Hemoglobin"
+                value={title}
+                onChangeText={setTitle}
                 placeholderTextColor="#A0A5BA"
               />
             </View>
@@ -84,7 +168,12 @@ export function UploadReportDetailsScreen({navigation}: Props) {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Date of Report</Text>
             <View style={styles.dateSelectorBox}>
-              <Text style={styles.dateText}>25-10-2025</Text>
+              <TextInput
+                style={[styles.dateText, styles.dateInput]}
+                value={reportDate}
+                onChangeText={setReportDate}
+                placeholder="YYYY-MM-DD"
+              />
               <MaterialCommunityIcons
                 name="calendar-month-outline"
                 size={20}
@@ -98,7 +187,8 @@ export function UploadReportDetailsScreen({navigation}: Props) {
             <View style={styles.textInputWrapper}>
               <TextInput
                 style={styles.textInput}
-                defaultValue="Devcare Lab"
+                value={provider}
+                onChangeText={setProvider}
                 placeholderTextColor="#A0A5BA"
               />
               <Feather name="search" size={20} color="#7D8797" style={styles.searchIcon} />
@@ -115,10 +205,7 @@ export function UploadReportDetailsScreen({navigation}: Props) {
               />
               <Text style={styles.tipTitleText}>Tip</Text>
             </View>
-            <Text style={styles.tipBodyText}>
-              Blood Sugar is slightly high. Please maintain diet and continue
-              medication.
-            </Text>
+            <Text style={styles.tipBodyText}>{tip}</Text>
           </View>
         </View>
       </ScrollView>
@@ -132,10 +219,15 @@ export function UploadReportDetailsScreen({navigation}: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.uploadButton}
+          style={[styles.uploadButton, loading && styles.buttonDisabled]}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('ReportUploadedSuccess')}>
-          <Text style={styles.uploadButtonText}>Upload Reports</Text>
+          disabled={loading}
+          onPress={handleUpload}>
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.uploadButtonText}>Upload Reports</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -392,6 +484,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  typeOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ECEFF3',
+  },
+  typeOptionText: {
+    fontSize: 14,
+    color: '#333D47',
+  },
+  dateInput: {
+    flex: 1,
+    padding: 0,
   },
   bottomTabBar: {
     flexDirection: 'row',

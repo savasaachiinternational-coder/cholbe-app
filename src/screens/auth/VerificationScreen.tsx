@@ -1,5 +1,7 @@
 import {useRef, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   KeyboardAvoidingView,
@@ -17,6 +19,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {authApi} from '../../api/auth';
+import {ApiError} from '../../api/client';
 
 const {width} = Dimensions.get('window');
 
@@ -27,21 +31,60 @@ const PIN_SIZE = (width - 48 - OTP_GAP * (OTP_LENGTH - 1)) / OTP_LENGTH;
 
 type Props = {
   contact: string;
+  flow: 'register' | 'forgotPassword';
   onBack: () => void;
-  onVerifySuccess: () => void;
+  onVerifySuccess: (code: string) => void;
 };
 
 export function VerificationScreen({
   contact,
+  flow: _flow,
   onBack,
   onVerifySuccess,
 }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [loading, setLoading] = useState(false);
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   const displayContact = contact.trim() || 'yourmail@gmail.com';
+
+  const handleVerify = async () => {
+    const code = otp.join('');
+    if (code.length < OTP_LENGTH) {
+      Alert.alert('Verification', 'Please enter the full OTP code.');
+      return;
+    }
+    if (_flow === 'forgotPassword') {
+      onVerifySuccess(code);
+      return;
+    }
+    setLoading(true);
+    try {
+      await authApi.verifyOtp(contact, code);
+      onVerifySuccess(code);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Invalid OTP';
+      Alert.alert('Verification failed', message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      const res = await authApi.sendOtp(contact);
+      if (res.debugCode) {
+        Alert.alert('OTP sent', `Dev code: ${res.debugCode}`);
+      } else {
+        Alert.alert('OTP sent', 'A new code has been sent.');
+      }
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not resend OTP';
+      Alert.alert('Error', message);
+    }
+  };
 
   const handleOtpChange = (text: string, index: number) => {
     const newOtp = [...otp];
@@ -148,20 +191,23 @@ export function VerificationScreen({
 
             <View style={styles.footerSection}>
               <TouchableOpacity
-                style={styles.verifyButton}
+                style={[styles.verifyButton, loading && styles.buttonDisabled]}
                 activeOpacity={0.85}
-                onPress={onVerifySuccess}>
-                <Text style={styles.verifyButtonText}>Verify & Continue</Text>
+                disabled={loading}
+                onPress={handleVerify}>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.verifyButtonText}>Verify & Continue</Text>
+                )}
               </TouchableOpacity>
 
               <View style={styles.resendMessageRow}>
                 <Text style={styles.resendMutedText}>
                   Didn&apos;t you receive any code?{' '}
                 </Text>
-                <TouchableOpacity activeOpacity={0.6}>
-                  <Text style={styles.resendHighlightLink}>
-                    Resend in 30 sec
-                  </Text>
+                <TouchableOpacity activeOpacity={0.6} onPress={handleResend}>
+                  <Text style={styles.resendHighlightLink}>Resend code</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -295,6 +341,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   verifyButtonText: {
     color: '#FFFFFF',

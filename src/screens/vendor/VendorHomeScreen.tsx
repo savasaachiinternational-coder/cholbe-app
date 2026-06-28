@@ -1,4 +1,7 @@
+import {useCallback, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -7,46 +10,256 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {vendorApi} from '../../api/vendor';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {productImageUrl} from '../../utils/pharmacyHelpers';
 import {VendorBottomNav} from './VendorBottomNav';
+import type {VendorOrderStatus} from './vendorNav';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VHome'>;
+
+type VendorProduct = {
+  id: string;
+  name: string;
+  genericName?: string | null;
+  category?: string | null;
+  unitPrice: string | number;
+  discountPrice?: string | number | null;
+  stockQuantity: number;
+  minAlertLevel: number;
+  unitType?: string | null;
+  imageUrl?: string | null;
+  isActive: boolean;
+};
+
+type VendorOrder = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentMethod: string;
+  addressSnapshot?: {formattedAddress?: string; region?: string} | null;
+  customer?: {fullName: string; phone?: string | null};
+  items: {name: string; genericName?: string | null}[];
+};
+
+type DashboardData = {
+  vendor: {
+    id: string;
+    pharmacyName: string;
+    address?: string | null;
+    user?: {fullName: string};
+  };
+  stats: {
+    productCount: number;
+    orderCount: number;
+    pendingOrders: number;
+    totalRevenue: string | number;
+  };
+  recentProducts: VendorProduct[];
+  recentOrders: VendorOrder[];
+};
+
+function formatTk(amount: string | number) {
+  const n = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return `Tk${Number.isFinite(n) ? n.toLocaleString('en-BD', {maximumFractionDigits: 0}) : '0'}`;
+}
+
+function discountLabel(product: VendorProduct) {
+  if (!product.discountPrice) return null;
+  const unit = typeof product.unitPrice === 'string' ? parseFloat(product.unitPrice) : product.unitPrice;
+  const disc = typeof product.discountPrice === 'string' ? parseFloat(product.discountPrice) : product.discountPrice;
+  if (disc >= unit) return null;
+  return `(-${Math.round((1 - disc / unit) * 100)}%)`;
+}
+
+function mapOrderStatus(status: string): VendorOrderStatus {
+  if (status === 'PENDING') return 'Pending';
+  if (status === 'DELIVERED') return 'Delivered';
+  if (status === 'CONFIRMED' || status === 'PREPARING' || status === 'ON_THE_WAY') return 'Accepted';
+  return 'Pending';
+}
+
+function orderLocation(order: VendorOrder) {
+  const snap = order.addressSnapshot;
+  if (!snap) return '—';
+  return snap.formattedAddress ?? snap.region ?? '—';
+}
 
 export function VendorHomeScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [loading, setLoading] = useState(true);
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [search, setSearch] = useState('');
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
-  const renderInventoryItem = (index: number) => (
-    <View key={index} style={styles.inventoryCard}>
-      <Image
-        source={{uri: 'https://via.placeholder.com/80x60/ECEFF3/000000?text=Medicine'}}
-        style={styles.inventoryImage}
-      />
-      <View style={styles.inventoryDetails}>
-        <Text style={styles.itemTitle}>Aamdocal Plus 50</Text>
-        <Text style={styles.itemMetaText}>Generic: Amlodipine Besylate</Text>
-        <Text style={styles.itemMetaText}>In Stock: 156 Boxes</Text>
-        <Text style={styles.itemPriceText}>
-          Price: Tk 120/box <Text style={styles.discountText}>(-5%)</Text>
-        </Text>
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await vendorApi.dashboard();
+      setDashboard(data as DashboardData);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load dashboard';
+      Alert.alert('Dashboard', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        <View style={styles.tagBadge}>
-          <FontAwesome5 name="capsules" size={10} color="#7E8B97" />
-          <Text style={styles.tagBadgeText}>Medicines</Text>
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboard();
+    }, [loadDashboard]),
+  );
+
+  const updateOrderStatus = useCallback(
+    async (orderId: string, status: string) => {
+      setUpdatingOrderId(orderId);
+      try {
+        await vendorApi.updateOrderStatus(orderId, status);
+        await loadDashboard();
+      } catch (err) {
+        const message = err instanceof ApiError ? err.message : 'Could not update order';
+        Alert.alert('Order', message);
+      } finally {
+        setUpdatingOrderId(null);
+      }
+    },
+    [loadDashboard],
+  );
+
+  const products = dashboard?.recentProducts ?? [];
+  const filteredProducts = search.trim()
+    ? products.filter(
+        p =>
+          p.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+          (p.genericName?.toLowerCase().includes(search.trim().toLowerCase()) ?? false),
+      )
+    : products;
+
+  const lowStockCount = products.filter(
+    p => p.stockQuantity > 0 && p.stockQuantity <= p.minAlertLevel,
+  ).length;
+  const outOfStockCount = products.filter(p => p.stockQuantity === 0).length;
+
+  const renderInventoryItem = (product: VendorProduct) => {
+    const discount = discountLabel(product);
+    return (
+      <View key={product.id} style={styles.inventoryCard}>
+        <Image
+          source={{uri: productImageUrl(product.imageUrl)}}
+          style={styles.inventoryImage}
+        />
+        <View style={styles.inventoryDetails}>
+          <Text style={styles.itemTitle}>{product.name}</Text>
+          {product.genericName ? (
+            <Text style={styles.itemMetaText}>Generic: {product.genericName}</Text>
+          ) : null}
+          <Text style={styles.itemMetaText}>
+            In Stock: {product.stockQuantity} {product.unitType ?? 'units'}
+          </Text>
+          <Text style={styles.itemPriceText}>
+            Price: {formatTk(product.discountPrice ?? product.unitPrice)}
+            {product.unitType ? `/${product.unitType.toLowerCase()}` : ''}
+            {discount ? <Text style={styles.discountText}> {discount}</Text> : null}
+          </Text>
+
+          {product.category ? (
+            <View style={styles.tagBadge}>
+              <FontAwesome5 name="capsules" size={10} color="#7E8B97" />
+              <Text style={styles.tagBadgeText}>{product.category}</Text>
+            </View>
+          ) : null}
+        </View>
+
+        <View style={product.isActive ? styles.statusToggleActive : styles.statusToggleInactive}>
+          {product.isActive ? <View style={styles.statusToggleInner} /> : null}
         </View>
       </View>
+    );
+  };
 
-      <View style={styles.statusToggleActive}>
-        <View style={styles.statusToggleInner} />
+  const renderOrderCard = (order: VendorOrder) => {
+    const uiStatus = mapOrderStatus(order.status);
+    const firstItem = order.items[0];
+    const isUpdating = updatingOrderId === order.id;
+
+    return (
+      <View key={order.id} style={styles.orderRequestCard}>
+        <Text style={styles.customerName}>
+          Customer : {order.customer?.fullName ?? '—'}
+        </Text>
+        <Text style={styles.orderMetaText}>Order ID: {order.orderNumber}</Text>
+        <Text style={styles.orderMetaText}>Phone: {order.customer?.phone ?? '—'}</Text>
+        <Text style={styles.orderMetaText}>Delivery Location : {orderLocation(order)}</Text>
+
+        {firstItem ? (
+          <View style={styles.orderProductRow}>
+            <Image
+              source={{uri: 'https://via.placeholder.com/60/ECEFF3'}}
+              style={styles.orderProductImage}
+            />
+            <View style={styles.orderProductInfo}>
+              <Text style={styles.orderProductTitle}>{firstItem.name}</Text>
+              {firstItem.genericName ? (
+                <Text style={styles.itemMetaText}>Generic: {firstItem.genericName}</Text>
+              ) : null}
+              <Text
+                style={
+                  uiStatus === 'Pending'
+                    ? styles.statusLabelPending
+                    : uiStatus === 'Accepted'
+                      ? styles.statusLabelAccepted
+                      : styles.statusLabelPending
+                }>
+                Status: {uiStatus}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        {uiStatus === 'Pending' ? (
+          <View style={styles.actionButtonsRow}>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.btnAccept]}
+              activeOpacity={0.85}
+              disabled={isUpdating}
+              onPress={() => updateOrderStatus(order.id, 'CONFIRMED')}>
+              <Feather name="check-circle" size={14} color="#FFFFFF" />
+              <Text style={styles.actionBtnText}>Accept</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.btnDecline]}
+              activeOpacity={0.85}
+              disabled={isUpdating}
+              onPress={() => updateOrderStatus(order.id, 'CANCELLED')}>
+              <Feather name="x-circle" size={14} color="#FFFFFF" />
+              <Text style={styles.actionBtnText}>Declined</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {uiStatus === 'Accepted' && order.status !== 'ON_THE_WAY' ? (
+          <TouchableOpacity
+            style={styles.readyPickupBtn}
+            activeOpacity={0.85}
+            disabled={isUpdating}
+            onPress={() => updateOrderStatus(order.id, 'ON_THE_WAY')}>
+            <MaterialCommunityIcons name="hammer-wrench" size={14} color="#4E929D" />
+            <Text style={styles.readyPickupBtnText}>Ready for Pickup</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -67,142 +280,117 @@ export function VendorHomeScreen({navigation}: Props) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {paddingBottom: 80 + insets.bottom},
-        ]}>
-        <View style={styles.merchantHeaderCard}>
-          <View style={styles.merchantIconContainer}>
-            <MaterialCommunityIcons name="storefront-outline" size={28} color="#4E929D" />
-          </View>
-          <View style={styles.merchantInfoText}>
-            <Text style={styles.merchantName}>Cholbe Pharmacy (Uttara)</Text>
-            <Text style={styles.merchantMeta}>Merchant ID: CPV-001</Text>
-            <Text style={styles.merchantMeta}>Opening Hours: 09:00 AM - 11:00 PM</Text>
-          </View>
-        </View>
-
-        <View style={styles.metricsGrid}>
-          <View style={styles.metricBox}>
-            <Text style={[styles.metricLabel, styles.metricLabelRevenue]}>Total Revenue Today</Text>
-            <Text style={styles.metricValue}>Tk15,000</Text>
-            <Text style={[styles.metricSub, styles.metricSubPositive]}>(0%)</Text>
-          </View>
-          <View style={styles.metricBox}>
-            <Text style={[styles.metricLabel, styles.metricLabelOrders]}>Total Orders Today</Text>
-            <Text style={styles.metricValue}>24</Text>
-            <Text style={styles.metricSub}>(2 pending)</Text>
-          </View>
-        </View>
-
-        <View style={[styles.metricsGrid, styles.metricsGridSpaced]}>
-          <View style={styles.metricBox}>
-            <Text style={[styles.metricLabel, styles.metricLabelLowStock]}>Low Stock Items</Text>
-            <Text style={styles.metricValue}>5</Text>
-            <Text style={[styles.metricSub, styles.metricLabelLowStock]}>Need Attention</Text>
-          </View>
-          <View style={styles.metricBox}>
-            <Text style={[styles.metricLabel, styles.metricLabelOutStock]}>Out of Stock Items</Text>
-            <Text style={styles.metricValue}>2</Text>
-            <Text style={styles.metricSub}> </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.addProductBtn} activeOpacity={0.9}>
-          <Feather name="plus" size={20} color="#FFFFFF" />
-          <Text style={styles.addProductBtnText}>Add New Product</Text>
-        </TouchableOpacity>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Live Inventory List</Text>
-          <TouchableOpacity
-            style={styles.viewAllRow}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('VInventory')}>
-            <Text style={styles.viewAllText}>View All</Text>
-            <Feather name="chevron-right" size={14} color="#7E8B97" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.searchContainer}>
-          <Feather name="search" size={18} color="#9AA6B2" />
-          <TextInput placeholder="Search" placeholderTextColor="#9AA6B2" style={styles.searchInput} />
-          <MaterialCommunityIcons name="tune" size={18} color="#4E929D" />
-        </View>
-
-        {[1, 2, 3, 4].map(id => renderInventoryItem(id))}
-
-        <View style={[styles.sectionHeader, styles.sectionHeaderSpaced]}>
-          <Text style={styles.sectionTitle}>Recent Order Requests</Text>
-          <TouchableOpacity
-            style={styles.viewAllRow}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('VOrders')}>
-            <Text style={styles.viewAllText}>View All</Text>
-            <Feather name="chevron-right" size={14} color="#7E8B97" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.orderRequestCard}>
-          <Text style={styles.customerName}>Customer : Habibur Rahman</Text>
-          <Text style={styles.orderMetaText}>Order ID: #RK123456</Text>
-          <Text style={styles.orderMetaText}>Phone: 01677589448</Text>
-          <Text style={styles.orderMetaText}>
-            Delivery Location : House 14 Road 06, Uttara Sector 12, Dhaka North, Dhaka
-          </Text>
-
-          <View style={styles.orderProductRow}>
-            <Image
-              source={{uri: 'https://via.placeholder.com/60/ECEFF3'}}
-              style={styles.orderProductImage}
-            />
-            <View style={styles.orderProductInfo}>
-              <Text style={styles.orderProductTitle}>Aamdocal Plus 50</Text>
-              <Text style={styles.itemMetaText}>Generic: Amlodipine Besylate</Text>
-              <Text style={styles.statusLabelPending}>Status: Pending</Text>
+      {loading && !dashboard ? (
+        <ActivityIndicator color="#4E929D" style={styles.loader} />
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {paddingBottom: 80 + insets.bottom},
+          ]}>
+          <View style={styles.merchantHeaderCard}>
+            <View style={styles.merchantIconContainer}>
+              <MaterialCommunityIcons name="storefront-outline" size={28} color="#4E929D" />
+            </View>
+            <View style={styles.merchantInfoText}>
+              <Text style={styles.merchantName}>
+                {dashboard?.vendor.pharmacyName ?? '—'}
+              </Text>
+              <Text style={styles.merchantMeta}>
+                Merchant ID: {dashboard?.vendor.id?.slice(0, 8).toUpperCase() ?? '—'}
+              </Text>
+              {dashboard?.vendor.address ? (
+                <Text style={styles.merchantMeta}>{dashboard.vendor.address}</Text>
+              ) : null}
             </View>
           </View>
 
-          <View style={styles.actionButtonsRow}>
-            <TouchableOpacity style={[styles.actionBtn, styles.btnAccept]} activeOpacity={0.85}>
-              <Feather name="check-circle" size={14} color="#FFFFFF" />
-              <Text style={styles.actionBtnText}>Accept</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, styles.btnDecline]} activeOpacity={0.85}>
-              <Feather name="x-circle" size={14} color="#FFFFFF" />
-              <Text style={styles.actionBtnText}>Declined</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.orderRequestCard}>
-          <Text style={styles.customerName}>Customer : Rahman Uddin</Text>
-          <Text style={styles.orderMetaText}>Order ID: #RK123458</Text>
-          <Text style={styles.orderMetaText}>Phone: 01677589448</Text>
-          <Text style={styles.orderMetaText}>
-            Delivery Location : House 14 Road 06, Uttara Sector 12, Dhaka North, Dhaka
-          </Text>
-
-          <View style={styles.orderProductRow}>
-            <Image
-              source={{uri: 'https://via.placeholder.com/60/ECEFF3'}}
-              style={styles.orderProductImage}
-            />
-            <View style={styles.orderProductInfo}>
-              <Text style={styles.orderProductTitle}>Aamdocal Plus 50</Text>
-              <Text style={styles.itemMetaText}>Generic: Amlodipine Besylate</Text>
-              <Text style={styles.statusLabelAccepted}>Status: Accepted</Text>
+          <View style={styles.metricsGrid}>
+            <View style={styles.metricBox}>
+              <Text style={[styles.metricLabel, styles.metricLabelRevenue]}>Total Revenue Today</Text>
+              <Text style={styles.metricValue}>
+                {formatTk(dashboard?.stats.totalRevenue ?? 0)}
+              </Text>
+              <Text style={[styles.metricSub, styles.metricSubPositive]}>(0%)</Text>
+            </View>
+            <View style={styles.metricBox}>
+              <Text style={[styles.metricLabel, styles.metricLabelOrders]}>Total Orders Today</Text>
+              <Text style={styles.metricValue}>{dashboard?.stats.orderCount ?? 0}</Text>
+              <Text style={styles.metricSub}>
+                ({dashboard?.stats.pendingOrders ?? 0} pending)
+              </Text>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.readyPickupBtn} activeOpacity={0.85}>
-            <MaterialCommunityIcons name="hammer-wrench" size={14} color="#4E929D" />
-            <Text style={styles.readyPickupBtnText}>Ready for Pickup</Text>
+          <View style={[styles.metricsGrid, styles.metricsGridSpaced]}>
+            <View style={styles.metricBox}>
+              <Text style={[styles.metricLabel, styles.metricLabelLowStock]}>Low Stock Items</Text>
+              <Text style={styles.metricValue}>{lowStockCount}</Text>
+              <Text style={[styles.metricSub, styles.metricLabelLowStock]}>Need Attention</Text>
+            </View>
+            <View style={styles.metricBox}>
+              <Text style={[styles.metricLabel, styles.metricLabelOutStock]}>Out of Stock Items</Text>
+              <Text style={styles.metricValue}>{outOfStockCount}</Text>
+              <Text style={styles.metricSub}> </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.addProductBtn}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('VAddProduct')}>
+            <Feather name="plus" size={20} color="#FFFFFF" />
+            <Text style={styles.addProductBtnText}>Add New Product</Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Live Inventory List</Text>
+            <TouchableOpacity
+              style={styles.viewAllRow}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('VInventory')}>
+              <Text style={styles.viewAllText}>View All</Text>
+              <Feather name="chevron-right" size={14} color="#7E8B97" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.searchContainer}>
+            <Feather name="search" size={18} color="#9AA6B2" />
+            <TextInput
+              placeholder="Search"
+              placeholderTextColor="#9AA6B2"
+              style={styles.searchInput}
+              value={search}
+              onChangeText={setSearch}
+            />
+            <MaterialCommunityIcons name="tune" size={18} color="#4E929D" />
+          </View>
+
+          {filteredProducts.length === 0 ? (
+            <Text style={styles.emptyText}>No products yet.</Text>
+          ) : (
+            filteredProducts.map(renderInventoryItem)
+          )}
+
+          <View style={[styles.sectionHeader, styles.sectionHeaderSpaced]}>
+            <Text style={styles.sectionTitle}>Recent Order Requests</Text>
+            <TouchableOpacity
+              style={styles.viewAllRow}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('VOrders')}>
+              <Text style={styles.viewAllText}>View All</Text>
+              <Feather name="chevron-right" size={14} color="#7E8B97" />
+            </TouchableOpacity>
+          </View>
+
+          {(dashboard?.recentOrders ?? []).length === 0 ? (
+            <Text style={styles.emptyText}>No recent orders.</Text>
+          ) : (
+            (dashboard?.recentOrders ?? []).map(renderOrderCard)
+          )}
+        </ScrollView>
+      )}
 
       <VendorBottomNav activeTab="home" bottomInset={insets.bottom} navigation={navigation} />
     </View>
@@ -213,6 +401,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F6F8FB',
+  },
+  loader: {
+    marginTop: 40,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#7E8B97',
+    fontSize: 13,
+    marginVertical: 12,
   },
   scrollContent: {
     paddingTop: 4,
@@ -440,6 +637,16 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     borderWidth: 1.5,
     borderColor: '#47B39D',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 2,
+  },
+  statusToggleInactive: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 2,

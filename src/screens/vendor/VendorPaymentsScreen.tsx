@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -10,10 +12,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {vendorApi} from '../../api/vendor';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {VendorBottomNav} from './VendorBottomNav';
@@ -29,6 +34,18 @@ type PickerField = 'date' | 'status' | null;
 
 type TransactionIconType = 'bkash' | 'nagad' | 'card' | 'cod' | 'fee';
 
+type ApiPayment = {
+  id: string;
+  method: string;
+  amount: string | number;
+  status: string;
+  createdAt: string;
+  order?: {
+    orderNumber: string;
+    customer?: {fullName: string};
+  };
+};
+
 type TransactionItem = {
   id: string;
   gateway: string;
@@ -41,59 +58,61 @@ type TransactionItem = {
   isProcessing?: boolean;
 };
 
-const MOCK_TRANSACTIONS: TransactionItem[] = [
-  {
-    id: 'OD1234',
-    gateway: 'Bkash',
-    methodLabel: 'bkash',
-    iconType: 'bkash',
-    date: '05 May, 10:15 am',
-    amount: '845',
+function formatAmount(amount: string | number) {
+  const n = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return Number.isFinite(n)
+    ? n.toLocaleString('en-BD', {maximumFractionDigits: 0})
+    : '0';
+}
+
+function formatTxnDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function methodToIcon(method: string): TransactionIconType {
+  if (method === 'BKASH') return 'bkash';
+  if (method === 'NAGAD') return 'nagad';
+  if (method === 'CARD') return 'card';
+  return 'cod';
+}
+
+function methodToLabel(method: string) {
+  if (method === 'BKASH') return 'bkash';
+  if (method === 'NAGAD') return 'Nagad';
+  if (method === 'CARD') return 'Credit Card';
+  return 'Cash on Delivery';
+}
+
+function toTransaction(txn: ApiPayment): TransactionItem {
+  return {
+    id: txn.order?.orderNumber ?? txn.id,
+    gateway: txn.order?.customer?.fullName ?? 'Order',
+    methodLabel: methodToLabel(txn.method),
+    iconType: methodToIcon(txn.method),
+    date: formatTxnDate(txn.createdAt),
+    amount: formatAmount(txn.amount),
     isPositive: true,
-    status: 'Paid',
-  },
-  {
-    id: 'OD1234',
-    gateway: 'Bkash',
-    methodLabel: 'Fee',
-    iconType: 'fee',
-    date: '05 May, 10:15 am',
-    amount: '80',
-    isPositive: false,
-    status: 'Pending',
-  },
-  {
-    id: 'OD1234',
-    gateway: 'Bkash',
-    methodLabel: 'Credit Card',
-    iconType: 'card',
-    date: '05 May, 10:15 am',
-    amount: '8,800',
-    isPositive: true,
-    status: 'Paid',
-  },
-  {
-    id: 'OD1234',
-    gateway: 'Bkash',
-    methodLabel: 'Nagad',
-    iconType: 'nagad',
-    date: '05 May, 10:15 am',
-    amount: '880',
-    isPositive: true,
-    status: 'Pending',
-    isProcessing: true,
-  },
-  {
-    id: 'OD1234',
-    gateway: 'Bkash',
-    methodLabel: 'Cash on Delivery',
-    iconType: 'cod',
-    date: '05 May, 10:15 am',
-    amount: '800',
-    isPositive: true,
-    status: 'Paid',
-  },
-];
+    status: txn.status === 'PAID' ? 'Paid' : 'Pending',
+    isProcessing: txn.status === 'PENDING',
+  };
+}
+
+function withinDateFilter(createdAt: string, filter: PaymentDateFilter) {
+  if (filter === 'All Time') return true;
+  const d = new Date(createdAt);
+  if (Number.isNaN(d.getTime())) return true;
+  const now = Date.now();
+  const days =
+    filter === 'Last 7 Days' ? 7 : filter === 'Last 30 Days' ? 30 : 90;
+  return now - d.getTime() <= days * 24 * 60 * 60 * 1000;
+}
 
 function TransactionRow({item}: {item: TransactionItem}) {
   return (
@@ -167,6 +186,54 @@ export function VendorPaymentsScreen({navigation}: Props) {
   const [dateFilter, setDateFilter] = useState<PaymentDateFilter>('Last 7 Days');
   const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>('All Statuses');
   const [activePicker, setActivePicker] = useState<PickerField>(null);
+  const [payments, setPayments] = useState<ApiPayment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const loadPayments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await vendorApi.payments();
+      setPayments(data as ApiPayment[]);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load payments';
+      Alert.alert('Payments', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPayments();
+    }, [loadPayments]),
+  );
+
+  const earnings = useMemo(() => {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const sumInRange = (days: number) =>
+      payments
+        .filter(p => p.status === 'PAID' && now - new Date(p.createdAt).getTime() <= days * dayMs)
+        .reduce((sum, p) => {
+          const n = typeof p.amount === 'string' ? parseFloat(p.amount) : p.amount;
+          return sum + (Number.isFinite(n) ? n : 0);
+        }, 0);
+
+    const balance = payments
+      .filter(p => p.status === 'PAID')
+      .reduce((sum, p) => {
+        const n = typeof p.amount === 'string' ? parseFloat(p.amount) : p.amount;
+        return sum + (Number.isFinite(n) ? n : 0);
+      }, 0);
+
+    return {
+      balance,
+      today: sumInRange(1),
+      week: sumInRange(7),
+      month: sumInRange(30),
+    };
+  }, [payments]);
 
   const pickerConfig =
     activePicker === 'date'
@@ -185,12 +252,23 @@ export function VendorPaymentsScreen({navigation}: Props) {
           }
         : null;
 
-  const filteredTransactions = MOCK_TRANSACTIONS.filter(item => {
-    if (statusFilter === 'All Statuses') {
-      return true;
-    }
-    return item.status === statusFilter;
-  });
+  const filteredTransactions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return payments
+      .filter(raw => {
+        if (!withinDateFilter(raw.createdAt, dateFilter)) return false;
+        const uiStatus = raw.status === 'PAID' ? 'Paid' : 'Pending';
+        if (statusFilter !== 'All Statuses' && uiStatus !== statusFilter) return false;
+        if (!q) return true;
+        const txn = toTransaction(raw);
+        return (
+          txn.id.toLowerCase().includes(q) ||
+          txn.gateway.toLowerCase().includes(q) ||
+          txn.methodLabel.toLowerCase().includes(q)
+        );
+      })
+      .map(toTransaction);
+  }, [payments, dateFilter, statusFilter, search]);
 
   return (
     <View style={styles.container}>
@@ -218,7 +296,9 @@ export function VendorPaymentsScreen({navigation}: Props) {
         ]}>
         <View style={styles.balanceCardContainer}>
           <Text style={styles.balanceLabel}>Current Balance</Text>
-          <Text style={styles.mainBalanceValue}>Tk28,450.00</Text>
+          <Text style={styles.mainBalanceValue}>
+            Tk{earnings.balance.toLocaleString('en-BD', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+          </Text>
 
           <View style={styles.payoutIndicatorBadge}>
             <Text style={styles.payoutIndicatorText}>Available for payout</Text>
@@ -233,18 +313,18 @@ export function VendorPaymentsScreen({navigation}: Props) {
         <View style={styles.earningsGrid}>
           <View style={styles.earningBox}>
             <Text style={styles.earningBoxLabel}>Today:</Text>
-            <Text style={styles.earningBoxValue}>Tk 1,250</Text>
-            <Text style={[styles.earningBoxSub, styles.earningPositive]}>Paragraph(+5%)</Text>
+            <Text style={styles.earningBoxValue}>Tk {formatAmount(earnings.today)}</Text>
+            <Text style={[styles.earningBoxSub, styles.earningPositive]}> </Text>
           </View>
           <View style={styles.earningBox}>
             <Text style={styles.earningBoxLabel}>This Week:</Text>
-            <Text style={styles.earningBoxValue}>Tk 8,800</Text>
-            <Text style={[styles.earningBoxSub, styles.earningPositive]}>Paragraph(+8%)</Text>
+            <Text style={styles.earningBoxValue}>Tk {formatAmount(earnings.week)}</Text>
+            <Text style={[styles.earningBoxSub, styles.earningPositive]}> </Text>
           </View>
           <View style={styles.earningBox}>
             <Text style={styles.earningBoxLabel}>This Month:</Text>
-            <Text style={styles.earningBoxValue}>Tk 35,600</Text>
-            <Text style={[styles.earningBoxSub, styles.earningNegative]}>Paragraph(-5%)</Text>
+            <Text style={styles.earningBoxValue}>Tk {formatAmount(earnings.month)}</Text>
+            <Text style={[styles.earningBoxSub, styles.earningNegative]}> </Text>
           </View>
         </View>
 
@@ -256,6 +336,8 @@ export function VendorPaymentsScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
             <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
@@ -282,9 +364,15 @@ export function VendorPaymentsScreen({navigation}: Props) {
         </View>
 
         <View style={styles.transactionsStack}>
-          {filteredTransactions.map((item, index) => (
-            <TransactionRow key={`${item.id}-${index}`} item={item} />
-          ))}
+          {loading ? (
+            <ActivityIndicator color="#4E929D" style={styles.loader} />
+          ) : filteredTransactions.length === 0 ? (
+            <Text style={styles.emptyText}>No transactions found.</Text>
+          ) : (
+            filteredTransactions.map((item, index) => (
+              <TransactionRow key={`${item.id}-${index}`} item={item} />
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -360,6 +448,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 4,
+  },
+  loader: {
+    marginVertical: 24,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#7E8B97',
+    fontSize: 13,
+    marginVertical: 12,
   },
   header: {
     flexDirection: 'row',

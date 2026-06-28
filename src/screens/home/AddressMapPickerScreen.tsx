@@ -11,20 +11,37 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AddressMapPicker'>;
 
 const {width} = Dimensions.get('window');
 
-const INITIAL_REGION = {
+const DEFAULT_COORDS = {
   latitude: 23.874,
   longitude: 90.3695,
-  latitudeDelta: 0.03,
-  longitudeDelta: 0.03,
 };
 
-export function AddressMapPickerScreen({navigation}: Props) {
+export function AddressMapPickerScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [marker, setMarker] = useState({
-    latitude: INITIAL_REGION.latitude,
-    longitude: INITIAL_REGION.longitude,
-  });
+  const initial = {
+    latitude: route.params?.initialLatitude ?? DEFAULT_COORDS.latitude,
+    longitude: route.params?.initialLongitude ?? DEFAULT_COORDS.longitude,
+  };
+  const [marker, setMarker] = useState(initial);
+
+  const initialRegion = {
+    ...initial,
+    latitudeDelta: 0.03,
+    longitudeDelta: 0.03,
+  };
+
+  const confirmLocation = () => {
+    navigation.navigate({
+      name: 'CartCheckoutDetails',
+      params: {
+        addressId: route.params?.addressId,
+        pickedLatitude: marker.latitude,
+        pickedLongitude: marker.longitude,
+      },
+      merge: true,
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -39,7 +56,7 @@ export function AddressMapPickerScreen({navigation}: Props) {
       <MapView
         provider={PROVIDER_GOOGLE}
         style={styles.map}
-        initialRegion={INITIAL_REGION}>
+        initialRegion={initialRegion}>
         <Marker
           coordinate={marker}
           draggable
@@ -54,7 +71,7 @@ export function AddressMapPickerScreen({navigation}: Props) {
         <Text style={styles.coordsText}>
           {marker.latitude.toFixed(5)}, {marker.longitude.toFixed(5)}
         </Text>
-        <TouchableOpacity style={styles.confirmButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.confirmButton} onPress={confirmLocation}>
           <Text style={styles.confirmText}>Use This Location</Text>
         </TouchableOpacity>
       </View>

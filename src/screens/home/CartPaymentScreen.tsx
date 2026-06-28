@@ -1,5 +1,7 @@
-import {useState, type ReactNode} from 'react';
+import {useCallback, useEffect, useState, type ReactNode} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -15,20 +17,64 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {cartApi} from '../../api/cart';
+import {ordersApi, uiPaymentToApi} from '../../api/orders';
+import {checkoutSession} from '../../checkout/checkoutSession';
+import {ApiError} from '../../api/client';
+import {formatBdt} from '../../utils/pharmacyHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CartPayment'>;
 type PaymentMethod = 'COD' | 'bKash' | 'Nagad' | 'Card';
 
-const ORDER_SUMMARY_ITEMS = [
-  {id: '1', name: 'Cetirizine 10 mg', qty: 5, price: '৳800.00'},
-  {id: '2', name: 'Delivery Charge', qty: 1, price: '৳30.00'},
-];
+const DELIVERY_CHARGE = 30;
 
-export function CartPaymentScreen({navigation}: Props) {
+export function CartPaymentScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('COD');
   const [isOrderSuccessOpen, setIsOrderSuccessOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [cartSubtotal, setCartSubtotal] = useState(0);
+  const [notes, setNotes] = useState('');
+  const [placedOrderId, setPlacedOrderId] = useState('');
+  const grandTotal = cartSubtotal + DELIVERY_CHARGE;
+
+  const loadCart = useCallback(async () => {
+    try {
+      const cart = await cartApi.get();
+      setCartSubtotal(cart.subtotal);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load cart';
+      Alert.alert('Payment', message);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCart();
+  }, [loadCart]);
+
+  const handleConfirmOrder = async () => {
+    setLoading(true);
+    try {
+      const order = await ordersApi.checkout({
+        addressId: route.params.addressId,
+        paymentMethod: uiPaymentToApi(selectedMethod),
+        prescriptionUrl: checkoutSession.getPrescriptionUrl(),
+        notes: notes.trim() || checkoutSession.getDeliveryNotes(),
+      });
+      if (selectedMethod !== 'COD') {
+        await ordersApi.confirmPayment(order.id);
+      }
+      setPlacedOrderId(order.id);
+      checkoutSession.clear();
+      setIsOrderSuccessOpen(true);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Checkout failed';
+      Alert.alert('Order failed', message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const paymentMethods: {key: PaymentMethod; label: string; icon: ReactNode}[] = [
     {
@@ -61,11 +107,17 @@ export function CartPaymentScreen({navigation}: Props) {
     },
   ];
 
-  const handleModalNavigation = (
-    route: 'Notifications' | 'OrderListHistory',
-  ) => {
+  const handleModalNavigation = (target: 'notifications' | 'orders' | 'details') => {
     setIsOrderSuccessOpen(false);
-    navigation.navigate(route);
+    if (target === 'details' && placedOrderId) {
+      navigation.navigate('OrderCompletedDetails', {orderId: placedOrderId});
+      return;
+    }
+    if (target === 'orders') {
+      navigation.navigate('OrderListHistory');
+      return;
+    }
+    navigation.navigate('Notifications');
   };
 
   return (
@@ -141,6 +193,8 @@ export function CartPaymentScreen({navigation}: Props) {
               style={styles.textInputStyle}
               placeholder="(Optional) floor or Apt No or tell us how we"
               placeholderTextColor="#9AA6B2"
+              value={notes}
+              onChangeText={setNotes}
             />
           </View>
         </View>
@@ -153,12 +207,12 @@ export function CartPaymentScreen({navigation}: Props) {
 
           <View style={styles.invoiceRowSpaced}>
             <Text style={styles.invoiceLabelMain}>Subtotal</Text>
-            <Text style={styles.invoiceValueMain}>৳ 800</Text>
+            <Text style={styles.invoiceValueMain}>{formatBdt(cartSubtotal)}</Text>
           </View>
 
           <View style={styles.invoiceRow}>
             <Text style={styles.invoiceLabelStandard}>Delivery Charge</Text>
-            <Text style={styles.invoiceValueStandard}>৳ 30</Text>
+            <Text style={styles.invoiceValueStandard}>{formatBdt(DELIVERY_CHARGE)}</Text>
           </View>
 
           <View style={styles.invoiceRow}>
@@ -187,7 +241,7 @@ export function CartPaymentScreen({navigation}: Props) {
             <Text style={styles.footerTaxSubtitle}>(incl.fees and tax)</Text>
           </View>
           <View style={styles.footerValueBlock}>
-            <Text style={styles.footerTotalCurrency}>+৳ 830</Text>
+            <Text style={styles.footerTotalCurrency}>+{formatBdt(grandTotal)}</Text>
             <Text style={styles.footerCentFraction}>00</Text>
           </View>
         </View>
@@ -195,8 +249,13 @@ export function CartPaymentScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.confirmOrderBtn}
           activeOpacity={0.9}
-          onPress={() => setIsOrderSuccessOpen(true)}>
-          <Text style={styles.confirmOrderBtnText}>Confirm Order</Text>
+          disabled={loading}
+          onPress={handleConfirmOrder}>
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.confirmOrderBtnText}>Confirm Order</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -229,7 +288,7 @@ export function CartPaymentScreen({navigation}: Props) {
             <TouchableOpacity
               style={styles.headerIconButton}
               activeOpacity={0.7}
-              onPress={() => handleModalNavigation('Notifications')}>
+              onPress={() => handleModalNavigation('notifications')}>
               <Feather name="bell" size={24} color="#333333" />
             </TouchableOpacity>
           </View>
@@ -247,17 +306,12 @@ export function CartPaymentScreen({navigation}: Props) {
 
             <View style={styles.summaryDetailsCard}>
               <View style={styles.itemsSection}>
-                {ORDER_SUMMARY_ITEMS.map(item => (
-                  <View key={item.id} style={styles.invoiceItemRowLine}>
-                    <View style={styles.itemInfoLeft}>
-                      <Text style={styles.invoiceItemNameText}>{item.name}</Text>
-                      {item.id === '1' && (
-                        <Text style={styles.invoiceItemQtyText}>Qty: {item.qty}</Text>
-                      )}
-                    </View>
-                    <Text style={styles.invoiceItemPriceText}>{item.price}</Text>
+                <View style={styles.invoiceItemRowLine}>
+                  <View style={styles.itemInfoLeft}>
+                    <Text style={styles.invoiceItemNameText}>Order total</Text>
                   </View>
-                ))}
+                  <Text style={styles.invoiceItemPriceText}>{formatBdt(grandTotal)}</Text>
+                </View>
               </View>
 
               <View style={styles.dividerLine} />
@@ -265,11 +319,11 @@ export function CartPaymentScreen({navigation}: Props) {
               <View style={styles.costBreakdownSection}>
                 <View style={styles.costRow}>
                   <Text style={styles.costLabel}>Subtotal</Text>
-                  <Text style={styles.costValue}>৳800.00</Text>
+                  <Text style={styles.costValue}>{formatBdt(cartSubtotal)}</Text>
                 </View>
                 <View style={styles.costRow}>
                   <Text style={styles.costLabel}>Delivery charge</Text>
-                  <Text style={styles.costValue}>৳30.00</Text>
+                  <Text style={styles.costValue}>{formatBdt(DELIVERY_CHARGE)}</Text>
                 </View>
                 <View style={[styles.costRow, styles.costRowTotal]}>
                   <Text style={styles.costTotalLabel}>Total</Text>
@@ -280,7 +334,7 @@ export function CartPaymentScreen({navigation}: Props) {
               <TouchableOpacity
                 style={styles.backToShopButton}
                 activeOpacity={0.9}
-                onPress={() => handleModalNavigation('OrderListHistory')}>
+                onPress={() => handleModalNavigation('orders')}>
                 <Text style={styles.backToShopButtonText}>Track Order</Text>
               </TouchableOpacity>
             </View>

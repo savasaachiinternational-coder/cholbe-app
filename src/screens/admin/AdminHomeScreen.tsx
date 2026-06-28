@@ -1,4 +1,7 @@
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -7,10 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {adminApi} from '../../api/admin';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
@@ -32,16 +38,18 @@ const CHART_POINTS = [
   {x: 295 / 300, y: 36 / 150},
 ];
 
-const METRICS = [
-  [
-    {title: 'Total Orders', value: '1500', percentage: '(18.6%)'},
-    {title: 'Total Revenue', value: 'Tk 174511', percentage: '(18.6%)'},
-  ],
-  [
-    {title: 'Total Users', value: '15000', percentage: '(18.6%)'},
-    {title: 'Total Vendor', value: '174', percentage: '(18.6%)'},
-  ],
-];
+type DashboardData = {
+  totalOrders: number;
+  totalUsers: number;
+  totalVendors: number;
+  totalRevenue: string | number;
+  growthPercent: number;
+};
+
+function formatRevenue(value: string | number) {
+  const n = typeof value === 'string' ? parseFloat(value) : value;
+  return `Tk ${Math.round(n || 0).toLocaleString()}`;
+}
 
 function ChartLineSegment({
   start,
@@ -133,6 +141,41 @@ function MetricCard({
 export function AdminHomeScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminApi.dashboard();
+      setDashboard(data);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load dashboard';
+      Alert.alert('Dashboard', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboard();
+    }, [loadDashboard]),
+  );
+
+  const metrics = useMemo(() => {
+    const pct = dashboard ? `(${dashboard.growthPercent}%)` : '';
+    return [
+      [
+        {title: 'Total Orders', value: String(dashboard?.totalOrders ?? '—'), percentage: pct},
+        {title: 'Total Revenue', value: dashboard ? formatRevenue(dashboard.totalRevenue) : '—', percentage: pct},
+      ],
+      [
+        {title: 'Total Users', value: String(dashboard?.totalUsers ?? '—'), percentage: pct},
+        {title: 'Total Vendor', value: String(dashboard?.totalVendors ?? '—'), percentage: pct},
+      ],
+    ];
+  }, [dashboard]);
 
   return (
     <View style={styles.container}>
@@ -178,20 +221,24 @@ export function AdminHomeScreen({navigation}: Props) {
           <Feather name="chevron-down" size={16} color="#4F5E6D" />
         </TouchableOpacity>
 
-        {METRICS.map((row, rowIndex) => (
-          <View
-            key={row.map(metric => metric.title).join('-')}
-            style={[styles.metricsGridRow, rowIndex > 0 && styles.metricsGridRowSpaced]}>
-            {row.map(metric => (
-              <MetricCard
-                key={metric.title}
-                title={metric.title}
-                value={metric.value}
-                percentage={metric.percentage}
-              />
-            ))}
-          </View>
-        ))}
+        {loading ? (
+          <ActivityIndicator color="#4E929D" style={styles.loader} />
+        ) : (
+          metrics.map((row, rowIndex) => (
+            <View
+              key={row.map(metric => metric.title).join('-')}
+              style={[styles.metricsGridRow, rowIndex > 0 && styles.metricsGridRowSpaced]}>
+              {row.map(metric => (
+                <MetricCard
+                  key={metric.title}
+                  title={metric.title}
+                  value={metric.value}
+                  percentage={metric.percentage}
+                />
+              ))}
+            </View>
+          ))
+        )}
 
         <View style={styles.chartSectionCard}>
           <View style={styles.chartHeaderRow}>
@@ -244,6 +291,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 4,
+  },
+  loader: {
+    marginVertical: 24,
   },
   header: {
     flexDirection: 'row',

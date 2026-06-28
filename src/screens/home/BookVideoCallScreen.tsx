@@ -1,5 +1,7 @@
 import {useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -16,6 +18,8 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {TIME_SLOTS, type PaymentMethod} from './bookVideoCallData';
+import {appointmentsApi} from '../../api/appointments';
+import {ApiError} from '../../api/client';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const SLOT_WIDTH = (SCREEN_WIDTH - 32 - 24) / 4;
@@ -26,14 +30,16 @@ export function BookVideoCallScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
 
+  const doctorId = route.params.doctorId;
   const doctorName = route.params?.doctorName ?? 'Dr. Ahmed';
   const specialty = route.params?.specialty ?? 'Cardiologist';
   const baseFee = route.params?.consultationFee ?? 'BDT 800';
 
   const [duration, setDuration] = useState<'15' | '30'>('15');
   const [day, setDay] = useState<'today' | 'tomorrow'>('today');
-  const [selectedTime, setSelectedTime] = useState('10:30 PM');
+  const [selectedTime, setSelectedTime] = useState('10:30 AM');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bkash');
+  const [booking, setBooking] = useState(false);
 
   const consultationFee = useMemo(() => {
     if (baseFee.startsWith('BDT')) {
@@ -43,6 +49,43 @@ export function BookVideoCallScreen({navigation, route}: Props) {
   }, [baseFee, duration]);
 
   const durationLabel = duration === '15' ? '15 Minutes' : '30 Minutes';
+
+  const scheduledDateIso = useMemo(() => {
+    const d = new Date();
+    if (day === 'tomorrow') {
+      d.setDate(d.getDate() + 1);
+    }
+    d.setHours(10, 30, 0, 0);
+    return d.toISOString();
+  }, [day]);
+
+  const confirmBooking = async () => {
+    if (!doctorId) {
+      Alert.alert('Booking', 'Doctor not selected. Please pick a doctor first.');
+      navigation.navigate('DoctorList');
+      return;
+    }
+    setBooking(true);
+    try {
+      const appointment = await appointmentsApi.book({
+        doctorId,
+        scheduledDate: scheduledDateIso,
+        timeSlot: selectedTime,
+        durationMin: duration === '30' ? 30 : 15,
+        paymentMethod,
+      });
+      navigation.replace('WaitingRoom', {
+        appointmentId: appointment.id,
+        doctorName: appointment.doctor.user.fullName,
+        specialty: appointment.doctor.specialty,
+      });
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Booking failed';
+      Alert.alert('Booking', message);
+    } finally {
+      setBooking(false);
+    }
+  };
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -253,10 +296,18 @@ export function BookVideoCallScreen({navigation, route}: Props) {
           paid services. Please ensure timely participation
         </Text>
 
-        <TouchableOpacity style={styles.confirmCheckoutButton} activeOpacity={0.9}>
-          <Text style={styles.confirmCheckoutButtonText}>
-            Confirm Booking - {consultationFee}
-          </Text>
+        <TouchableOpacity
+          style={[styles.confirmCheckoutButton, booking && styles.confirmDisabled]}
+          activeOpacity={0.9}
+          disabled={booking}
+          onPress={confirmBooking}>
+          {booking ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.confirmCheckoutButtonText}>
+              Confirm Booking - {consultationFee}
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 
@@ -551,6 +602,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
+  },
+  confirmDisabled: {
+    opacity: 0.7,
   },
   confirmCheckoutButtonText: {
     color: '#FFFFFF',

@@ -1,5 +1,7 @@
 import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -15,11 +17,13 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {authApi} from '../../api/auth';
+import {ApiError} from '../../api/client';
 
 const SIGN_IN_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
 type Props = {
-  onSignInSuccess: () => void;
+  onSignInSuccess: (role: string) => void;
   onForgotPassword: () => void;
   onCreateAccount: () => void;
 };
@@ -35,6 +39,24 @@ export function SignInScreen({
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    if (!emailOrPhone.trim() || !password) {
+      Alert.alert('Sign in', 'Please enter email/phone and password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await authApi.login(emailOrPhone.trim(), password);
+      onSignInSuccess(res.user.role);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Sign in failed';
+      Alert.alert('Sign in failed', message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -131,10 +153,15 @@ export function SignInScreen({
           </View>
 
           <TouchableOpacity
-            style={styles.signInButton}
+            style={[styles.signInButton, loading && styles.buttonDisabled]}
             activeOpacity={0.85}
-            onPress={onSignInSuccess}>
-            <Text style={styles.signInButtonText}>Sign in</Text>
+            disabled={loading}
+            onPress={handleSignIn}>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.signInButtonText}>Sign in</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -270,6 +297,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   signInButtonText: {
     color: '#FFFFFF',

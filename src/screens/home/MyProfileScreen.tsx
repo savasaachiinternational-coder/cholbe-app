@@ -1,7 +1,10 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -9,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -18,17 +22,13 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {
-  ASSIGNED_DOCTOR,
-  EMERGENCY_CONTACTS,
-  FAMILY_MEMBERS,
-  HEALTH_SUMMARY,
-  MEDICAL_CONDITIONS,
   PROFILE_SUB_TABS,
-  PROFILE_USER,
   QUICK_ACTIONS,
   type ProfileSubTabKey,
   type QuickAction,
 } from './profileData';
+import {profileApi, type ProfileOverview} from '../../api/profile';
+import {ApiError} from '../../api/client';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - 44) / 2;
@@ -43,13 +43,115 @@ export function MyProfileScreen({navigation}: Props) {
   const insets = useSafeAreaInsets();
   const [activeProfileTab, setActiveProfileTab] =
     useState<ProfileSubTabKey>('overview');
+  const [overview, setOverview] = useState<ProfileOverview | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const doctorName = ASSIGNED_DOCTOR.name;
-  const specialty = ASSIGNED_DOCTOR.specialty;
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await profileApi.overview();
+      setOverview(data);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load profile';
+      Alert.alert('Profile', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile]),
+  );
+
+  const user = overview?.user;
+  const patient = user?.patientProfile;
+  const doctorName =
+    overview?.assignedDoctor?.user.fullName ??
+    overview?.nextAppointment?.doctor.user.fullName ??
+    'Book a doctor';
+  const specialty =
+    overview?.assignedDoctor?.specialty ??
+    overview?.nextAppointment?.doctor.specialty ??
+    'Video consultation';
+  const appointmentId = overview?.nextAppointment?.id;
+  const assignedDoctorId =
+    overview?.nextAppointment?.doctor.id ?? overview?.assignedDoctor?.id;
+
+  const demographics = useMemo(() => {
+    const parts = [
+      patient?.age != null ? `Age : ${patient.age}` : null,
+      patient?.gender ? patient.gender : null,
+      patient?.bloodGroup ? `Blood Group: ${patient.bloodGroup}` : null,
+    ].filter(Boolean);
+    return parts.join('  •  ') || 'Complete your health profile';
+  }, [patient]);
+
+  const location =
+    overview?.defaultAddress?.formattedAddress ?? 'Add delivery address';
+  const conditions = patient?.conditions ?? [];
+  const emergencyContacts = patient?.emergencyContacts ?? [];
+  const familyMembers = patient?.familyMembers ?? [];
+  const medicationCount = overview?.medicationCount ?? 0;
+
+  const healthSummary = useMemo(() => {
+    const items = [];
+    if (overview?.latestReport) {
+      items.push({
+        id: 'report',
+        label: 'Latest Report',
+        value: overview.latestReport.title,
+        sub: new Date(overview.latestReport.reportDate).toLocaleDateString('en-GB'),
+      });
+    }
+    if (overview?.nextAppointment) {
+      items.push({
+        id: 'appt',
+        label: 'Next Appointment',
+        value: new Date(overview.nextAppointment.scheduledDate).toLocaleDateString('en-GB'),
+        sub: overview.nextAppointment.timeSlot,
+      });
+    }
+    return items;
+  }, [overview]);
 
   const openChat = () => {
-    navigation.navigate('ConsultationChat', {doctorName, specialty});
+    navigation.navigate('ConsultationChat', {
+      doctorName,
+      specialty,
+      appointmentId,
+    });
   };
+
+  const bookAppointment = () => {
+    if (assignedDoctorId) {
+      navigation.navigate('BookVideoCall', {
+        doctorId: assignedDoctorId,
+        doctorName,
+        specialty,
+        consultationFee: 'BDT 800',
+      });
+      return;
+    }
+    navigation.navigate('DoctorList');
+  };
+
+  const dialPhone = (phone: string) => {
+    Linking.openURL(`tel:${phone.replace(/\s/g, '')}`);
+  };
+
+  const smsPhone = (phone: string) => {
+    Linking.openURL(`sms:${phone.replace(/\s/g, '')}`);
+  };
+
+  if (loading && !overview) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#0D9488" />
+      </View>
+    );
+  }
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -160,15 +262,11 @@ export function MyProfileScreen({navigation}: Props) {
           </View>
 
           <View style={styles.bioTextContainer}>
-            <Text style={styles.userNameText}>{PROFILE_USER.name}</Text>
-            <Text style={styles.userDemographicsText}>
-              {PROFILE_USER.demographics}
-            </Text>
-            <Text style={styles.userMetaRow}>
-              📍 {PROFILE_USER.location}
-            </Text>
-            <Text style={styles.userMetaRow}>📞 {PROFILE_USER.phone}</Text>
-            <Text style={styles.userMetaRow}>✉️ {PROFILE_USER.email}</Text>
+            <Text style={styles.userNameText}>{user?.fullName ?? '—'}</Text>
+            <Text style={styles.userDemographicsText}>{demographics}</Text>
+            <Text style={styles.userMetaRow}>📍 {location}</Text>
+            <Text style={styles.userMetaRow}>📞 {user?.phone ?? '—'}</Text>
+            <Text style={styles.userMetaRow}>✉️ {user?.email ?? '—'}</Text>
           </View>
         </View>
 
@@ -189,7 +287,7 @@ export function MyProfileScreen({navigation}: Props) {
               />
             </View>
             <View style={styles.chipsRowGrid}>
-              {MEDICAL_CONDITIONS.map(condition => (
+              {conditions.map(condition => (
                 <View key={condition} style={styles.tagChip}>
                   <Text style={styles.tagChipText}>{condition}</Text>
                 </View>
@@ -209,7 +307,7 @@ export function MyProfileScreen({navigation}: Props) {
               />
             </View>
             <Text style={styles.medicationQuantityText}>
-              3 Active Medications
+              {medicationCount} Active Medication{medicationCount === 1 ? '' : 's'}
             </Text>
             <TouchableOpacity
               style={styles.viewDetailsChipLink}
@@ -237,13 +335,7 @@ export function MyProfileScreen({navigation}: Props) {
             <TouchableOpacity
               style={styles.doctorInlineBookButton}
               activeOpacity={0.8}
-              onPress={() =>
-                navigation.navigate('BookVideoCall', {
-                  doctorName,
-                  specialty,
-                  consultationFee: 'BDT 800',
-                })
-              }>
+              onPress={bookAppointment}>
               <Text style={styles.doctorInlineBookText}>Book Appointment</Text>
             </TouchableOpacity>
           </View>
@@ -258,15 +350,19 @@ export function MyProfileScreen({navigation}: Props) {
         </View>
 
         <View style={styles.emergencyContractsContainer}>
-          {EMERGENCY_CONTACTS.map((contact, index) => (
+          {emergencyContacts.map((contact, index) => (
             <View
               key={contact.id}
               style={[
                 styles.emergencyContactCardRow,
-                index === EMERGENCY_CONTACTS.length - 1 &&
+                index === emergencyContacts.length - 1 &&
                   styles.emergencyContactRowLast,
               ]}>
-              <Image source={contact.avatar} style={styles.contactAvatarThumb} />
+              <View style={styles.contactAvatarPlaceholder}>
+                <Text style={styles.contactAvatarInitial}>
+                  {contact.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
               <View style={styles.contactBaseMeta}>
                 <Text style={styles.contactNameTitle}>{contact.name}</Text>
                 <Text style={styles.contactRelationLabel}>
@@ -277,13 +373,15 @@ export function MyProfileScreen({navigation}: Props) {
               <View style={styles.contactActionButtonsGroup}>
                 <TouchableOpacity
                   style={styles.contactCallButton}
-                  activeOpacity={0.8}>
+                  activeOpacity={0.8}
+                  onPress={() => dialPhone(contact.phone)}>
                   <Feather name="phone" size={12} color="#475569" />
                   <Text style={styles.contactActionText}>Call</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.contactCallButton}
-                  activeOpacity={0.8}>
+                  activeOpacity={0.8}
+                  onPress={() => smsPhone(contact.phone)}>
                   <Feather name="message-square" size={12} color="#475569" />
                   <Text style={styles.contactActionText}>SMS</Text>
                 </TouchableOpacity>
@@ -320,15 +418,19 @@ export function MyProfileScreen({navigation}: Props) {
           showsHorizontalScrollIndicator={false}
           style={styles.familyCarouselScroll}
           contentContainerStyle={styles.familyScrollContent}>
-          {FAMILY_MEMBERS.map(member => (
+          {familyMembers.map(member => (
             <View key={member.id} style={styles.familyAvatarCard}>
-              <Image source={member.avatar} style={styles.familyMemberAvatar} />
+              <View style={styles.familyAvatarPlaceholder}>
+                <Text style={styles.familyAvatarInitial}>
+                  {member.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
               <View style={styles.familyMemberMeta}>
                 <Text style={styles.familyMemberName} numberOfLines={1}>
                   {member.name}
                 </Text>
                 <Text style={styles.familyMemberRelation}>
-                  {member.relation}
+                  {member.relationship}
                 </Text>
               </View>
             </View>
@@ -371,14 +473,20 @@ export function MyProfileScreen({navigation}: Props) {
         </View>
 
         <View style={styles.summaryGridContainer}>
-          {HEALTH_SUMMARY.map(item => (
-            <View key={item.id} style={styles.gridSummaryCard}>
-              <Feather name="calendar" size={20} color="#1E293B" />
-              <Text style={styles.gridSummaryLabel}>{item.label}</Text>
-              <Text style={styles.gridSummaryValue}>{item.value}</Text>
-              <Text style={styles.gridSummarySub}>{item.sub}</Text>
-            </View>
-          ))}
+          {healthSummary.length === 0 ? (
+            <Text style={styles.emptySummaryText}>
+              No health summary yet. Upload a report or book a consultation.
+            </Text>
+          ) : (
+            healthSummary.map(item => (
+              <View key={item.id} style={styles.gridSummaryCard}>
+                <Feather name="calendar" size={20} color="#1E293B" />
+                <Text style={styles.gridSummaryLabel}>{item.label}</Text>
+                <Text style={styles.gridSummaryValue}>{item.value}</Text>
+                <Text style={styles.gridSummarySub}>{item.sub}</Text>
+              </View>
+            ))
+          )}
         </View>
 
         <Text style={styles.sectionTitleLabel}>Quick Actions</Text>
@@ -473,6 +581,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F6F8FA',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -785,6 +897,19 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: '#E2E8F0',
   },
+  contactAvatarPlaceholder: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactAvatarInitial: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+  },
   contactBaseMeta: {
     marginLeft: 10,
     width: SCREEN_WIDTH * 0.18,
@@ -863,6 +988,24 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: '#CBD5E1',
+  },
+  familyAvatarPlaceholder: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  familyAvatarInitial: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  emptySummaryText: {
+    fontSize: 13,
+    color: '#64748B',
+    paddingVertical: 8,
   },
   familyMemberMeta: {
     marginLeft: 8,

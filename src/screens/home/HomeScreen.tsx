@@ -1,7 +1,9 @@
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -17,13 +19,15 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {HomeBottomNav} from './HomeBottomNav';
 import {
-  RELATED_PRODUCTS,
-  SCHEDULE_GROUPS,
   SCHEDULE_TABS,
   type BottomTabKey,
   type ScheduleItem,
   type ScheduleTab,
 } from './homeData';
+import {homeApi, type PatientHomeDashboard} from '../../api/home';
+import {medicationSchedulesApi} from '../../api/medications';
+import {cartApi} from '../../api/cart';
+import {ApiError} from '../../api/client';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const PRODUCT_CARD_WIDTH = SCREEN_WIDTH * 0.43;
@@ -37,6 +41,88 @@ export function HomeScreen() {
 
   const [activeTab, setActiveTab] = useState<BottomTabKey>('home');
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>('upcoming');
+  const [dashboard, setDashboard] = useState<PatientHomeDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadHome = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await homeApi.dashboard();
+      setDashboard(data);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load home';
+      Alert.alert('Home', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadHome();
+    }, [loadHome]),
+  );
+
+  const scheduleGroups = useMemo(() => {
+    const schedules = dashboard?.schedules ?? [];
+    const map = new Map<string, ScheduleItem[]>();
+    schedules.forEach((s, idx) => {
+      const times = s.times.length ? s.times : ['Anytime'];
+      times.forEach((time, tIdx) => {
+        const items = map.get(time) ?? [];
+        items.push({
+          id: `${s.id}-${tIdx}`,
+          name: s.medicineName,
+          detail: [s.dose, s.mealTiming].filter(Boolean).join(' • ') || 'Scheduled dose',
+          icon: 'pill',
+          active: idx === 0 && tIdx === 0,
+          showDismiss: true,
+          showCheck: true,
+          scheduleId: s.id,
+        });
+        map.set(time, items);
+      });
+    });
+    return Array.from(map.entries()).map(([time, items]) => ({time, items}));
+  }, [dashboard]);
+
+  const markTaken = async () => {
+    const scheduleId = dashboard?.nextMedication?.scheduleId;
+    if (!scheduleId) return;
+    try {
+      await medicationSchedulesApi.logDose(scheduleId, 'taken');
+      loadHome();
+    } catch (err) {
+      Alert.alert('Medication', err instanceof ApiError ? err.message : 'Could not log dose');
+    }
+  };
+
+  const snoozeMedication = async () => {
+    const scheduleId = dashboard?.nextMedication?.scheduleId;
+    if (!scheduleId) return;
+    try {
+      await medicationSchedulesApi.logDose(scheduleId, 'snoozed', 10);
+      loadHome();
+    } catch (err) {
+      Alert.alert('Medication', err instanceof ApiError ? err.message : 'Could not snooze');
+    }
+  };
+
+  const addToCart = async (productId: string) => {
+    try {
+      await cartApi.addItem(productId, 1);
+      Alert.alert('Cart', 'Added to cart');
+    } catch (err) {
+      Alert.alert('Cart', err instanceof ApiError ? err.message : 'Could not add to cart');
+    }
+  };
+
+  const user = dashboard?.user;
+  const nextMed = dashboard?.nextMedication;
+  const stats = dashboard?.medicationStats;
+  const vitals = dashboard?.healthVitals;
+  const refill = dashboard?.refill;
+  const unreadCount = dashboard?.unreadNotifications ?? 0;
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'vhome') {
@@ -78,11 +164,16 @@ export function HomeScreen() {
           style={styles.iconButton}
           activeOpacity={0.7}
           onPress={() => navigation.navigate('Notifications')}>
-          <View style={styles.bellDot} />
+          {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
           <Feather name="bell" size={24} color="#1E293B" />
         </TouchableOpacity>
       </View>
 
+      {loading && !dashboard ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color="#0D9488" />
+        </View>
+      ) : (
       <ScrollView
         style={styles.mainScroll}
         showsVerticalScrollIndicator={false}
@@ -92,17 +183,21 @@ export function HomeScreen() {
         ]}>
         <View style={styles.userInfoContainer}>
           <Image
-            source={require('../../assets/b2.png')}
+            source={
+              user?.avatarUrl
+                ? {uri: user.avatarUrl}
+                : require('../../assets/b2.png')
+            }
             style={styles.avatar}
           />
           <View style={styles.userMeta}>
-            <Text style={styles.userName}>Rahman Uddin</Text>
+            <Text style={styles.userName}>{user?.fullName ?? '—'}</Text>
             <View style={styles.locationRow}>
               <Feather name="map-pin" size={14} color="#64748B" />
-              <Text style={styles.locationText}>Uttara, Dhaka</Text>
+              <Text style={styles.locationText}>{user?.location ?? 'Add address'}</Text>
             </View>
             <Text style={styles.lastSeenText}>
-              Last seen by Dashboard: 2 weeks ago
+              Last seen by Dashboard: {user?.lastActiveLabel ?? '—'}
             </Text>
           </View>
         </View>
@@ -116,26 +211,43 @@ export function HomeScreen() {
             <Text style={styles.heroLabel}>Next Medication</Text>
           </View>
 
-          <Text style={styles.medicationTitle}>Amlodipine 5mg</Text>
-          <Text style={styles.medicationSubtitle}>Time to take your medicine</Text>
+          <Text style={styles.medicationTitle}>
+            {nextMed?.medicineName ?? 'No medication scheduled'}
+          </Text>
+          <Text style={styles.medicationSubtitle}>
+            {nextMed?.dose ? `${nextMed.dose} — Time to take your medicine` : 'Add a medication to get reminders'}
+          </Text>
 
-          <View style={styles.timeTag}>
-            <Feather name="activity" size={12} color="#0EA5E9" />
-            <Text style={styles.timeTagText}>In 10 Minutes</Text>
-          </View>
+          {nextMed ? (
+            <View style={styles.timeTag}>
+              <Feather name="activity" size={12} color="#0EA5E9" />
+              <Text style={styles.timeTagText}>{nextMed.minutesUntilLabel}</Text>
+            </View>
+          ) : null}
 
-          <TouchableOpacity style={styles.markTakenButton} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.markTakenButton}
+            activeOpacity={0.85}
+            onPress={markTaken}
+            disabled={!nextMed}>
             <Text style={styles.markTakenButtonText}>Mark as Taken</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.snoozeButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.snoozeButton}
+            activeOpacity={0.7}
+            onPress={snoozeMedication}
+            disabled={!nextMed}>
             <Text style={styles.snoozeText}>Snooze 10 minutes</Text>
             <Feather name="chevron-right" size={14} color="#64748B" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.actionButton} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('PharmacyShop')}>
             <Feather
               name="shopping-cart"
               size={18}
@@ -174,10 +286,13 @@ export function HomeScreen() {
               />
               <View>
                 <Text style={styles.metricLabel}>
-                  Bp <Text style={styles.metricValue}>130/85</Text>
+                  Bp{' '}
+                  <Text style={styles.metricValue}>
+                    {vitals?.bloodPressure?.value ?? '—'}
+                  </Text>
                 </Text>
                 <Text style={styles.metricTimestamp}>
-                  Last checked: 2 days ago
+                  Last checked: {vitals?.bloodPressure?.checkedAgo ?? '—'}
                 </Text>
               </View>
             </View>
@@ -191,7 +306,10 @@ export function HomeScreen() {
               />
               <View>
                 <Text style={styles.metricLabel}>
-                  Oxygen: <Text style={styles.metricValue}>97%</Text>
+                  Oxygen:{' '}
+                  <Text style={styles.metricValue}>
+                    {vitals?.oxygen?.value ?? '—'}
+                  </Text>
                 </Text>
               </View>
             </View>
@@ -209,11 +327,17 @@ export function HomeScreen() {
           <View style={styles.alertLeftContent}>
             <View style={styles.alertRow}>
               <Feather name="bell" size={16} color="#475569" />
-              <Text style={styles.alertText}>Next refill in 5days</Text>
+              <Text style={styles.alertText}>
+                Next refill in {refill?.daysUntil ?? 0} days
+              </Text>
             </View>
             <View style={[styles.alertRow, styles.alertRowSpaced]}>
               <Feather name="users" size={16} color="#10B981" />
-              <Text style={styles.alertSubtext}>Family is monitoring you</Text>
+              <Text style={styles.alertSubtext}>
+                {refill?.familyMonitoring
+                  ? 'Family is monitoring you'
+                  : 'Add family members to enable monitoring'}
+              </Text>
             </View>
           </View>
 
@@ -235,14 +359,14 @@ export function HomeScreen() {
               <Text style={[styles.statLabel, styles.statLabelTaken]}>Taken</Text>
               <Feather name="check-circle" size={16} color="#16A34A" />
             </View>
-            <Text style={styles.statNumber}>3</Text>
+            <Text style={styles.statNumber}>{stats?.taken ?? 0}</Text>
           </View>
           <View style={[styles.statBox, styles.statMissed]}>
             <View style={styles.statBoxHeader}>
               <Text style={[styles.statLabel, styles.statLabelMissed]}>Missed</Text>
               <Feather name="x-circle" size={16} color="#EF4444" />
             </View>
-            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statNumber}>{stats?.missed ?? 0}</Text>
           </View>
         </View>
 
@@ -254,14 +378,14 @@ export function HomeScreen() {
               </Text>
               <FontAwesome name="medkit" size={16} color="#7C3AED" />
             </View>
-            <Text style={styles.statNumber}>2</Text>
+            <Text style={styles.statNumber}>{stats?.remaining ?? 0}</Text>
           </View>
           <View style={[styles.statBox, styles.statTotal]}>
             <View style={styles.statBoxHeader}>
               <Text style={[styles.statLabel, styles.statLabelTotal]}>Total</Text>
               <Feather name="activity" size={16} color="#2563EB" />
             </View>
-            <Text style={styles.statNumber}>6</Text>
+            <Text style={styles.statNumber}>{stats?.total ?? 0}</Text>
           </View>
         </View>
 
@@ -299,7 +423,16 @@ export function HomeScreen() {
                 }
                 onPress={() => {
                   if (isWaitingRoom) {
-                    navigation.navigate('WaitingRoom');
+                    const appt = dashboard?.nextAppointment;
+                    if (appt) {
+                      navigation.navigate('WaitingRoom', {
+                        appointmentId: appt.id,
+                        doctorName: appt.doctorName,
+                        specialty: appt.specialty,
+                      });
+                    } else {
+                      navigation.navigate('MyAppointment');
+                    }
                     return;
                   }
                   setScheduleTab(tab.key);
@@ -321,11 +454,11 @@ export function HomeScreen() {
           })}
         </ScrollView>
 
-        {SCHEDULE_GROUPS.map(group => (
+        {scheduleGroups.map(group => (
           <View key={group.time}>
             <Text style={styles.timeSectionHeader}>{group.time}</Text>
             {group.items.map(item => (
-              <ScheduleRow key={item.id} item={item} />
+              <ScheduleRow key={item.id} item={item} onTaken={markTaken} />
             ))}
           </View>
         ))}
@@ -352,26 +485,49 @@ export function HomeScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.carouselContent}>
-          {RELATED_PRODUCTS.map(product => (
+          {dashboard?.relatedProducts.map(product => {
+            const price = Number(product.discountPrice ?? product.unitPrice);
+            const original = Number(product.unitPrice);
+            const discount =
+              product.discountPrice && original > price
+                ? `${Math.round(((original - price) / original) * 100)}%`
+                : null;
+            return (
             <View key={product.id} style={styles.productCard}>
-              <View style={styles.discountBadge}>
-                <Text style={styles.discountText}>{product.discount}</Text>
-              </View>
-              <Image source={product.image} style={styles.productImage} />
-              <Text style={styles.productTitle}>{product.title}</Text>
-              <Text style={styles.productWeight}>{product.subtitle}</Text>
+              {discount ? (
+                <View style={styles.discountBadge}>
+                  <Text style={styles.discountText}>{discount}</Text>
+                </View>
+              ) : null}
+              <Image
+                source={
+                  product.imageUrl
+                    ? {uri: product.imageUrl}
+                    : require('../../assets/b2.png')
+                }
+                style={styles.productImage}
+              />
+              <Text style={styles.productTitle}>{product.name}</Text>
+              <Text style={styles.productWeight}>{product.genericName ?? product.category ?? ''}</Text>
               <View style={styles.productPricingRow}>
-                <Text style={styles.productVol}>{product.volume}</Text>
-                <Text style={styles.oldPrice}>{product.originalPrice}</Text>
-                <Text style={styles.currentPrice}>{product.price}</Text>
+                <Text style={styles.productVol}>{product.category ?? 'Item'}</Text>
+                {product.discountPrice ? (
+                  <Text style={styles.oldPrice}>BDT {original}</Text>
+                ) : null}
+                <Text style={styles.currentPrice}>BDT {price}</Text>
               </View>
-              <TouchableOpacity style={styles.addToCartButton} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.addToCartButton}
+                activeOpacity={0.8}
+                onPress={() => addToCart(product.id)}>
                 <Text style={styles.addToCartText}>Add to Cart</Text>
               </TouchableOpacity>
             </View>
-          ))}
+          );
+          })}
         </ScrollView>
       </ScrollView>
+      )}
 
       <View style={styles.bottomNavWrap}>
         <HomeBottomNav
@@ -384,7 +540,13 @@ export function HomeScreen() {
   );
 }
 
-function ScheduleRow({item}: {item: ScheduleItem}) {
+function ScheduleRow({
+  item,
+  onTaken,
+}: {
+  item: ScheduleItem;
+  onTaken?: () => void;
+}) {
   const active = item.active;
 
   return (
@@ -431,11 +593,13 @@ function ScheduleRow({item}: {item: ScheduleItem}) {
             style={styles.dismissIcon}
           />
         )}
-        <Feather
-          name="check-circle"
-          size={22}
-          color={active ? '#FFFFFF' : '#000000'}
-        />
+        <TouchableOpacity activeOpacity={0.8} onPress={onTaken}>
+          <Feather
+            name="check-circle"
+            size={22}
+            color={active ? '#FFFFFF' : '#000000'}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -445,6 +609,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  loadingWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mainScroll: {
     flex: 1,

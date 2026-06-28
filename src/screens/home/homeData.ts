@@ -12,6 +12,8 @@ export type ScheduleItem = {
   icon: 'pill' | 'insulin';
   active?: boolean;
   showDismiss?: boolean;
+  showCheck?: boolean;
+  scheduleId?: string;
 };
 
 export type ScheduleGroup = {

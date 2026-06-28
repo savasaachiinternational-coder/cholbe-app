@@ -1,5 +1,7 @@
 import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +16,8 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
+import {profileApi} from '../../api/profile';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddFamilyMember'>;
 
@@ -30,6 +34,7 @@ export function AddFamilyMemberScreen({navigation}: Props) {
   const [gender, setGender] = useState<GenderOption>('Male');
   const [relationship, setRelationship] = useState('');
   const [phone, setPhone] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -51,8 +56,27 @@ export function AddFamilyMemberScreen({navigation}: Props) {
     navigation.navigate('Home');
   };
 
-  const saveMember = () => {
-    navigation.goBack();
+  const saveMember = async () => {
+    if (!name.trim() || !relationship.trim()) {
+      Alert.alert('Family member', 'Name and relationship are required.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await profileApi.addFamilyMember({
+        name: name.trim(),
+        relationship: relationship.trim(),
+        gender,
+        age: age ? Number(age) : undefined,
+        phone: phone.trim() || undefined,
+      });
+      navigation.goBack();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not save member';
+      Alert.alert('Family member', message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

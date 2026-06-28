@@ -1,5 +1,7 @@
 import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -10,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {launchImageLibrary, type Asset} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -17,6 +20,9 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {VendorBottomNav} from './VendorBottomNav';
+import {vendorProductsApi} from '../../api/vendorProducts';
+import {uploadFile} from '../../api/uploads';
+import {ApiError} from '../../api/client';
 import {
   PRODUCT_CATEGORIES,
   TEMPERATURE_OPTIONS,
@@ -39,6 +45,75 @@ export function VendorAddProductScreen({navigation}: Props) {
   const [unitType, setUnitType] = useState<UnitType>('Box');
   const [temperature, setTemperature] = useState<TemperatureOption>(TEMPERATURE_OPTIONS[0]);
   const [activePicker, setActivePicker] = useState<PickerField>(null);
+  const [productName, setProductName] = useState('');
+  const [genericName, setGenericName] = useState('');
+  const [brand, setBrand] = useState('');
+  const [unitPrice, setUnitPrice] = useState('');
+  const [discountPrice, setDiscountPrice] = useState('');
+  const [stockQuantity, setStockQuantity] = useState('');
+  const [minAlertLevel, setMinAlertLevel] = useState('10');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [batchNumber, setBatchNumber] = useState('');
+  const [imageAsset, setImageAsset] = useState<Asset | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const handlePickImage = async () => {
+    const result = await launchImageLibrary({mediaType: 'photo', selectionLimit: 1});
+    if (result.assets?.[0]) setImageAsset(result.assets[0]);
+  };
+
+  const handleSave = async () => {
+    if (!productName.trim()) {
+      Alert.alert('Product', 'Product name is required.');
+      return;
+    }
+    const price = parseFloat(unitPrice);
+    const stock = parseInt(stockQuantity, 10);
+    if (Number.isNaN(price) || price < 0) {
+      Alert.alert('Product', 'Enter a valid unit price.');
+      return;
+    }
+    if (Number.isNaN(stock) || stock < 0) {
+      Alert.alert('Product', 'Enter a valid stock quantity.');
+      return;
+    }
+    setSaving(true);
+    try {
+      let imageUrl: string | undefined;
+      if (imageAsset?.uri) {
+        const uploaded = await uploadFile(
+          '/uploads/product-image',
+          imageAsset.uri,
+          imageAsset.fileName ?? 'product.jpg',
+          imageAsset.type ?? 'image/jpeg',
+        );
+        imageUrl = uploaded.fileUrl;
+      }
+      await vendorProductsApi.create({
+        name: productName.trim(),
+        genericName: genericName.trim() || undefined,
+        category,
+        brand: brand.trim() || undefined,
+        unitPrice: price,
+        discountPrice: discountPrice ? parseFloat(discountPrice) : undefined,
+        stockQuantity: stock,
+        minAlertLevel: minAlertLevel ? parseInt(minAlertLevel, 10) : 10,
+        expiryDate: expiryDate || undefined,
+        batchNumber: batchNumber.trim() || undefined,
+        unitType,
+        temperature,
+        imageUrl,
+        prescriptionRequired,
+        reminderActive,
+      });
+      navigation.goBack();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not save product';
+      Alert.alert('Save failed', message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const pickerConfig =
     activePicker === 'category'
@@ -90,6 +165,8 @@ export function VendorAddProductScreen({navigation}: Props) {
           <View style={styles.inputBox}>
             <TextInput
               style={styles.textInput}
+              value={productName}
+              onChangeText={setProductName}
               placeholder="e.g. Amlodipine"
               placeholderTextColor="#A0AEC0"
             />
@@ -99,6 +176,8 @@ export function VendorAddProductScreen({navigation}: Props) {
           <View style={styles.inputBox}>
             <TextInput
               style={styles.textInput}
+              value={genericName}
+              onChangeText={setGenericName}
               placeholder="e.g. Acetaminophen"
               placeholderTextColor="#A0AEC0"
             />
@@ -120,6 +199,8 @@ export function VendorAddProductScreen({navigation}: Props) {
               <View style={styles.inputBox}>
                 <TextInput
                   style={styles.textInput}
+                  value={brand}
+                  onChangeText={setBrand}
                   placeholder="Manufacture"
                   placeholderTextColor="#A0AEC0"
                 />
@@ -135,6 +216,8 @@ export function VendorAddProductScreen({navigation}: Props) {
               <View style={styles.inputBox}>
                 <TextInput
                   style={styles.textInput}
+                  value={unitPrice}
+                  onChangeText={setUnitPrice}
                   placeholder="TK 0.00"
                   placeholderTextColor="#A0AEC0"
                   keyboardType="numeric"
@@ -146,6 +229,8 @@ export function VendorAddProductScreen({navigation}: Props) {
               <View style={styles.inputBox}>
                 <TextInput
                   style={styles.textInput}
+                  value={discountPrice}
+                  onChangeText={setDiscountPrice}
                   placeholder="TK 0.00"
                   placeholderTextColor="#A0AEC0"
                   keyboardType="numeric"
@@ -160,8 +245,11 @@ export function VendorAddProductScreen({navigation}: Props) {
               <View style={styles.inputBox}>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="e.g. 100 Boxes"
+                  value={stockQuantity}
+                  onChangeText={setStockQuantity}
+                  placeholder="e.g. 100"
                   placeholderTextColor="#A0AEC0"
+                  keyboardType="numeric"
                 />
               </View>
             </View>
@@ -170,6 +258,8 @@ export function VendorAddProductScreen({navigation}: Props) {
               <View style={styles.inputBox}>
                 <TextInput
                   style={styles.textInput}
+                  value={minAlertLevel}
+                  onChangeText={setMinAlertLevel}
                   placeholder="e.g. 10"
                   placeholderTextColor="#A0AEC0"
                   keyboardType="numeric"
@@ -186,7 +276,9 @@ export function VendorAddProductScreen({navigation}: Props) {
               <View style={styles.inputBoxWithIcon}>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="25-10-2025"
+                  value={expiryDate}
+                  onChangeText={setExpiryDate}
+                  placeholder="YYYY-MM-DD"
                   placeholderTextColor="#1A1C1E"
                 />
                 <Feather name="calendar" size={16} color="#1A1C1E" />
@@ -197,6 +289,8 @@ export function VendorAddProductScreen({navigation}: Props) {
               <View style={styles.inputBox}>
                 <TextInput
                   style={styles.textInput}
+                  value={batchNumber}
+                  onChangeText={setBatchNumber}
                   placeholder="e.g. BT-492"
                   placeholderTextColor="#A0AEC0"
                 />
@@ -254,9 +348,11 @@ export function VendorAddProductScreen({navigation}: Props) {
               <Feather name="image" size={18} color="#4E929D" />
               <Text style={styles.mediaTitle}>Product Media</Text>
             </View>
-            <TouchableOpacity style={styles.uploadDashedZone} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.uploadDashedZone} activeOpacity={0.8} onPress={handlePickImage}>
               <MaterialCommunityIcons name="crop-free" size={28} color="#47B39D" />
-              <Text style={styles.uploadZoneText}>Upload Image</Text>
+              <Text style={styles.uploadZoneText}>
+                {imageAsset?.fileName ?? 'Upload Image'}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -299,10 +395,15 @@ export function VendorAddProductScreen({navigation}: Props) {
           </View>
 
           <TouchableOpacity
-            style={styles.saveProductBtn}
+            style={[styles.saveProductBtn, saving && styles.buttonDisabled]}
             activeOpacity={0.9}
-            onPress={() => navigation.goBack()}>
-            <Text style={styles.saveProductBtnText}>Save Product</Text>
+            disabled={saving}
+            onPress={handleSave}>
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveProductBtnText}>Save Product</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -582,6 +683,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   pickerOverlay: {
     flex: 1,

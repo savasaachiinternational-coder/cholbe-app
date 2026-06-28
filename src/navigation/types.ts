@@ -18,31 +18,27 @@ export type RootStackParamList = {
   MedicineList: undefined;
   ReportsList: undefined;
   DoctorList: undefined;
-  BookVideoCall:
-    | {
-        doctorName?: string;
-        specialty?: string;
-        consultationFee?: string;
-      }
-    | undefined;
-  ConsultationChat:
-    | {
-        doctorName?: string;
-        specialty?: string;
-      }
-    | undefined;
-  WaitingRoom:
-    | {
-        doctorName?: string;
-        specialty?: string;
-      }
-    | undefined;
-  ActiveVideoCall:
-    | {
-        doctorName?: string;
-        specialty?: string;
-      }
-    | undefined;
+  BookVideoCall: {
+    doctorId: string;
+    doctorName?: string;
+    specialty?: string;
+    consultationFee?: string;
+  };
+  ConsultationChat: {
+    doctorName?: string;
+    specialty?: string;
+    appointmentId?: string;
+  };
+  WaitingRoom: {
+    appointmentId: string;
+    doctorName?: string;
+    specialty?: string;
+  };
+  ActiveVideoCall: {
+    appointmentId: string;
+    doctorName?: string;
+    specialty?: string;
+  };
   MyProfile: undefined;
   ConsultationSummary:
     | {
@@ -74,22 +70,26 @@ export type RootStackParamList = {
   ViewReportDetails: undefined;
   ReportUploadedSuccess: undefined;
   PharmacyShop: undefined;
-  PharmacyDetails:
+  PharmacyDetails: {productId: string};
+  PharmacyCartOverlay: undefined;
+  CartCheckoutDetails:
     | {
-        name?: string;
-        subtitle?: string;
-        imageUrl?: string;
-        price?: string;
-        oldPrice?: string;
+        addressId?: string;
+        pickedLatitude?: number;
+        pickedLongitude?: number;
       }
     | undefined;
-  PharmacyCartOverlay: undefined;
-  CartCheckoutDetails: undefined;
-  CartPayment: undefined;
-  OrderTracking: undefined;
+  CartPayment: {addressId: string; notes?: string};
+  OrderTracking: {orderId: string};
   OrderListHistory: undefined;
-  AddressMapPicker: undefined;
-  OrderCompletedDetails: undefined;
+  AddressMapPicker:
+    | {
+        addressId?: string;
+        initialLatitude?: number;
+        initialLongitude?: number;
+      }
+    | undefined;
+  OrderCompletedDetails: {orderId: string};
   PharmacyPrescriptionMenu: undefined;
   ChooseFromPharmacyGallery: undefined;
 };

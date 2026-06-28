@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,27 +10,56 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import {GOOGLE_MAPS_API_KEY} from '../../config/googleMaps';
-import type {RootStackParamList} from '../../navigation/types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import { GOOGLE_MAPS_API_KEY } from '../../config/googleMaps';
+import type { RootStackParamList } from '../../navigation/types';
+import { addressesApi, type Address } from '../../api/addresses';
+import { authApi } from '../../api/auth';
+import { cartApi } from '../../api/cart';
+import { getStoredUser } from '../../api/tokenStorage';
+import { ApiError } from '../../api/client';
+import { formatBdt } from '../../utils/pharmacyHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CartCheckoutDetails'>;
 type VariantKey = 'PC' | 'Stripe' | 'Box';
 type AddressCategory = 'Home' | 'Office';
 
-const VARIANTS: {key: VariantKey; label: string}[] = [
-  {key: 'PC', label: '1 PC'},
-  {key: 'Stripe', label: '1 Stripe = 10 pcs'},
-  {key: 'Box', label: '1 Box = 10 Stripes'},
+const VARIANTS: { key: VariantKey; label: string }[] = [
+  { key: 'PC', label: '1 PC' },
+  { key: 'Stripe', label: '1 Stripe = 10 pcs' },
+  { key: 'Box', label: '1 Box = 10 Stripes' },
 ];
 
-const REGION_CHIPS = ['Dhaka', 'Dhaka North', 'Uttara Sector 12'];
+const DEFAULT_LAT = 23.874;
+const DEFAULT_LNG = 90.3695;
 
-const MAP_PREVIEW_URL = `https://maps.googleapis.com/maps/api/staticmap?center=23.8740,90.3695&zoom=14&size=600x240&scale=2&markers=color:red%7C23.8740,90.3695&key=${GOOGLE_MAPS_API_KEY}`;
+function buildMapPreviewUrl(lat: number, lng: number) {
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=14&size=600x240&scale=2&markers=color:red%7C${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
+}
+
+function parseRegion(region: string | null | undefined) {
+  const parts = (region ?? 'Dhaka, Dhaka North, Uttara Sector 12')
+    .split(',')
+    .map(part => part.trim())
+    .filter(Boolean);
+  return {
+    city: parts[0] ?? 'Dhaka',
+    area: parts[1] ?? 'Dhaka North',
+    sector: parts[2] ?? 'Uttara Sector 12',
+  };
+}
+
+function joinRegion(city: string, area: string, sector: string) {
+  return [city, area, sector]
+    .map(part => part.trim())
+    .filter(Boolean)
+    .join(', ');
+}
 
 function VerifiedBadgeIcon() {
   return (
@@ -38,16 +69,186 @@ function VerifiedBadgeIcon() {
   );
 }
 
-export function CartCheckoutDetailsScreen({navigation}: Props) {
+export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [addressCategory, setAddressCategory] = useState<AddressCategory>('Home');
+  const [addressCategory, setAddressCategory] =
+    useState<AddressCategory>('Home');
   const [selectedVariant, setSelectedVariant] = useState<VariantKey>('Box');
   const [quantities, setQuantities] = useState<Record<VariantKey, number>>({
     PC: 0,
     Stripe: 0,
     Box: 5,
   });
+  const [address, setAddress] = useState<Address | null>(null);
+  const [cartSubtotal, setCartSubtotal] = useState(0);
+  const [cartItems, setCartItems] = useState<
+    { name: string; quantity: number; unitPrice: number }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+  const [regionCity, setRegionCity] = useState('Dhaka');
+  const [regionArea, setRegionArea] = useState('Dhaka North');
+  const [regionSector, setRegionSector] = useState('Uttara Sector 12');
+  const [formattedAddress, setFormattedAddress] = useState('');
+  const [latitude, setLatitude] = useState(DEFAULT_LAT);
+  const [longitude, setLongitude] = useState(DEFAULT_LNG);
+  const addressLoadedRef = useRef(false);
+  const deliveryCharge = 30;
+  const grandTotal = cartSubtotal + deliveryCharge;
+
+  const loadCart = useCallback(async () => {
+    try {
+      const cart = await cartApi.get();
+      setCartSubtotal(cart.subtotal);
+      setCartItems(
+        cart.items.map(i => ({
+          name: i.name,
+          quantity: i.quantity,
+          unitPrice: Number(i.unitPrice),
+        })),
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load cart';
+      Alert.alert('Checkout', message);
+    }
+  }, []);
+
+  const loadAddressAndUser = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [addresses, user] = await Promise.all([
+        addressesApi.list(),
+        getStoredUser(),
+      ]);
+      const selected =
+        addresses.find(a => a.id === route.params?.addressId) ??
+        addresses.find(a => a.isDefault) ??
+        addresses[0] ??
+        null;
+      setAddress(selected);
+      if (selected?.label === 'Office') setAddressCategory('Office');
+      else if (selected?.label === 'Home') setAddressCategory('Home');
+
+      const region = parseRegion(selected?.region);
+      setRegionCity(region.city);
+      setRegionArea(region.area);
+      setRegionSector(region.sector);
+      setFormattedAddress(selected?.formattedAddress ?? '');
+      setLatitude(selected?.latitude ?? DEFAULT_LAT);
+      setLongitude(selected?.longitude ?? DEFAULT_LNG);
+      setUserName(user?.fullName ?? '');
+      setUserPhone(user?.phone ?? '');
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load checkout';
+      Alert.alert('Checkout', message);
+    } finally {
+      setLoading(false);
+    }
+  }, [route.params?.addressId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadCart();
+      if (!addressLoadedRef.current) {
+        void loadAddressAndUser();
+        addressLoadedRef.current = true;
+      }
+    }, [loadCart, loadAddressAndUser]),
+  );
+
+  useEffect(() => {
+    addressLoadedRef.current = false;
+    void loadAddressAndUser().then(() => {
+      addressLoadedRef.current = true;
+    });
+  }, [route.params?.addressId, loadAddressAndUser]);
+
+  useEffect(() => {
+    const { pickedLatitude, pickedLongitude } = route.params ?? {};
+    if (pickedLatitude != null && pickedLongitude != null) {
+      setLatitude(pickedLatitude);
+      setLongitude(pickedLongitude);
+    }
+  }, [route.params?.pickedLatitude, route.params?.pickedLongitude]);
+
+  const saveShippingDetails = useCallback(async (): Promise<Address> => {
+    const trimmedName = userName.trim();
+    const trimmedPhone = userPhone.trim();
+    const trimmedAddress = formattedAddress.trim();
+    const region = joinRegion(regionCity, regionArea, regionSector);
+
+    if (!trimmedName) {
+      throw new Error('Please enter recipient name.');
+    }
+    if (!trimmedPhone) {
+      throw new Error('Please enter phone number.');
+    }
+    if (!trimmedAddress) {
+      throw new Error('Please enter delivery address.');
+    }
+
+    await authApi.updateMe({ fullName: trimmedName, phone: trimmedPhone });
+
+    const payload = {
+      label: addressCategory,
+      region,
+      formattedAddress: trimmedAddress,
+      latitude,
+      longitude,
+      isDefault: true,
+    };
+
+    if (address?.id) {
+      return addressesApi.update(address.id, payload);
+    }
+    return addressesApi.create(payload);
+  }, [
+    address?.id,
+    addressCategory,
+    formattedAddress,
+    latitude,
+    longitude,
+    regionArea,
+    regionCity,
+    regionSector,
+    userName,
+    userPhone,
+  ]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const saved = await saveShippingDetails();
+      setAddress(saved);
+      Alert.alert('Saved', 'Shipping details updated.');
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Could not save shipping details';
+      Alert.alert('Shipping', message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleContinue = async () => {
+    setSaving(true);
+    try {
+      const saved = await saveShippingDetails();
+      setAddress(saved);
+      navigation.navigate('CartPayment', { addressId: saved.id });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Could not save shipping details';
+      Alert.alert('Shipping', message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleQuantityChange = (variant: VariantKey, delta: number) => {
     setQuantities(prev => ({
@@ -59,15 +260,17 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
 
   const formatQuantity = (value: number) => value.toString().padStart(2, '0');
 
-  const openAddressMap = () => navigation.navigate('AddressMapPicker');
+  const openAddressMap = () =>
+    navigation.navigate('AddressMapPicker', { addressId: address?.id });
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.headerButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
+          onPress={() => navigation.goBack()}
+        >
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Shipping</Text>
@@ -77,7 +280,8 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.timelineContainer}>
           <View style={styles.timelineLine} />
 
@@ -106,8 +310,10 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
         <View style={styles.guestBanner}>
           <Text style={styles.guestBannerText}>
             Order now as a guest.{' '}
-            <Text style={styles.greenLink}>Enjoy Free Home Delivery</Text> on your first order after{' '}
-            <Text style={[styles.greenLink, styles.underlineText]}>Log in</Text> !
+            <Text style={styles.greenLink}>Enjoy Free Home Delivery</Text> on
+            your first order after{' '}
+            <Text style={[styles.greenLink, styles.underlineText]}>Log in</Text>{' '}
+            !
           </Text>
         </View>
 
@@ -116,63 +322,130 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
             <Text style={styles.sectionHeading}>Add Shipping Address</Text>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={openAddressMap}>
-              <MaterialCommunityIcons name="pencil-outline" size={20} color="#1A1C1E" />
+              onPress={handleSave}
+              disabled={saving}
+            >
+              <MaterialCommunityIcons
+                name="pencil-outline"
+                size={20}
+                color="#1A1C1E"
+              />
             </TouchableOpacity>
           </View>
 
           <Text style={styles.inputLabel}>Recipient's Name</Text>
           <View style={styles.inputFieldBox}>
-            <Feather name="user" size={18} color="#4F5E6D" style={styles.fieldIcon} />
-            <TextInput style={styles.textInputStyle} defaultValue="Tanvir Ahmed" editable={false} />
+            <Feather
+              name="user"
+              size={18}
+              color="#4F5E6D"
+              style={styles.fieldIcon}
+            />
+            <TextInput
+              style={styles.textInputStyle}
+              value={userName}
+              onChangeText={setUserName}
+              placeholder="Recipient name"
+              placeholderTextColor="#9AA6B2"
+            />
           </View>
 
           <Text style={styles.inputLabel}>Phone</Text>
           <View style={styles.inputFieldBox}>
-            <Feather name="phone" size={18} color="#4F5E6D" style={styles.fieldIcon} />
+            <Feather
+              name="phone"
+              size={18}
+              color="#4F5E6D"
+              style={styles.fieldIcon}
+            />
             <TextInput
               style={styles.textInputStyle}
-              defaultValue="01677589448"
-              editable={false}
+              value={userPhone}
+              onChangeText={setUserPhone}
               keyboardType="phone-pad"
+              placeholder="Phone number"
+              placeholderTextColor="#9AA6B2"
             />
           </View>
 
-          <Text style={styles.inputLabel}>Region/City/Dhaka</Text>
+          <Text style={styles.inputLabel}>Region/City/Area</Text>
           <View style={styles.chipsFormBlock}>
-            {REGION_CHIPS.map(chip => (
-              <View key={chip} style={styles.inlineChip}>
-                <MaterialCommunityIcons name="checkbox-blank-circle" size={14} color="#47B39D" />
-                <Text style={styles.chipFormLabel}>{chip}</Text>
-              </View>
-            ))}
+            <View style={styles.inlineChip}>
+              <MaterialCommunityIcons
+                name="checkbox-blank-circle"
+                size={14}
+                color="#47B39D"
+              />
+              <TextInput
+                style={styles.chipInput}
+                value={regionCity}
+                onChangeText={setRegionCity}
+                placeholder="City"
+                placeholderTextColor="#9AA6B2"
+              />
+            </View>
+            <View style={styles.inlineChip}>
+              <MaterialCommunityIcons
+                name="checkbox-blank-circle"
+                size={14}
+                color="#47B39D"
+              />
+              <TextInput
+                style={styles.chipInput}
+                value={regionArea}
+                onChangeText={setRegionArea}
+                placeholder="Area"
+                placeholderTextColor="#9AA6B2"
+              />
+            </View>
+            <View style={styles.inlineChip}>
+              <MaterialCommunityIcons
+                name="checkbox-blank-circle"
+                size={14}
+                color="#47B39D"
+              />
+              <TextInput
+                style={styles.chipInput}
+                value={regionSector}
+                onChangeText={setRegionSector}
+                placeholder="Sector"
+                placeholderTextColor="#9AA6B2"
+              />
+            </View>
           </View>
 
           <Text style={styles.inputLabel}>Delivery address</Text>
           <TouchableOpacity
             style={styles.mapPreviewCard}
             activeOpacity={0.9}
-            onPress={openAddressMap}>
-            <Image source={{uri: MAP_PREVIEW_URL}} style={styles.mapPreviewImage} />
+            onPress={openAddressMap}
+          >
+            <Image
+              source={{ uri: buildMapPreviewUrl(latitude, longitude) }}
+              style={styles.mapPreviewImage}
+            />
             <View style={styles.mapPreviewPin}>
               <Feather name="map-pin" size={22} color="#E26D6D" />
             </View>
           </TouchableOpacity>
 
           <View style={styles.deliveryAddressRow}>
-            <TouchableOpacity
-              style={styles.addressTextRow}
-              activeOpacity={0.8}
-              onPress={openAddressMap}>
-              <TouchableOpacity
-                style={styles.mapPinButton}
-                activeOpacity={0.7}
-                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-                onPress={openAddressMap}>
-                <Feather name="map-pin" size={18} color="#4F5E6D" />
-              </TouchableOpacity>
-              <Text style={styles.deliveryAddressText}>House 14 Road D6, Uttara 12</Text>
-            </TouchableOpacity>
+            <View style={styles.addressInputRow}>
+              <Feather
+                name="map-pin"
+                size={18}
+                color="#4F5E6D"
+                style={styles.fieldIcon}
+              />
+              <TextInput
+                style={styles.addressInput}
+                value={formattedAddress}
+                onChangeText={setFormattedAddress}
+                placeholder="House, road, area"
+                placeholderTextColor="#9AA6B2"
+                multiline
+              />
+            </View>
 
             <View style={styles.radioOptionGroup}>
               {(['Home', 'Office'] as AddressCategory[]).map(category => (
@@ -180,9 +453,14 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
                   key={category}
                   style={styles.radioClickItem}
                   activeOpacity={0.8}
-                  onPress={() => setAddressCategory(category)}>
+                  onPress={() => setAddressCategory(category)}
+                >
                   <MaterialCommunityIcons
-                    name={addressCategory === category ? 'radiobox-marked' : 'radiobox-blank'}
+                    name={
+                      addressCategory === category
+                        ? 'radiobox-marked'
+                        : 'radiobox-blank'
+                    }
                     size={18}
                     color={addressCategory === category ? '#4F5E6D' : '#7E8B97'}
                   />
@@ -210,7 +488,11 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
 
         <View style={styles.cardSection}>
           <View style={styles.orderSummaryTitleRow}>
-            <MaterialCommunityIcons name="text-box-search-outline" size={20} color="#1A1C1E" />
+            <MaterialCommunityIcons
+              name="text-box-search-outline"
+              size={20}
+              color="#1A1C1E"
+            />
             <Text style={styles.orderSummaryTitle}>Order Summary</Text>
           </View>
 
@@ -219,24 +501,29 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
               <View
                 style={[
                   styles.summaryRadioFake,
-                  selectedVariant === variant.key && styles.summaryRadioFakeActive,
+                  selectedVariant === variant.key &&
+                    styles.summaryRadioFakeActive,
                 ]}
               />
               <Text style={styles.summaryUnitText}>{variant.label}</Text>
               <View style={styles.summaryControlRow}>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => handleQuantityChange(variant.key, -1)}>
+                  onPress={() => handleQuantityChange(variant.key, -1)}
+                >
                   <Feather
                     name="minus-circle"
                     size={20}
                     color={quantities[variant.key] > 0 ? '#1A1C1E' : '#C8D1DB'}
                   />
                 </TouchableOpacity>
-                <Text style={styles.summaryCountVal}>{formatQuantity(quantities[variant.key])}</Text>
+                <Text style={styles.summaryCountVal}>
+                  {formatQuantity(quantities[variant.key])}
+                </Text>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => handleQuantityChange(variant.key, 1)}>
+                  onPress={() => handleQuantityChange(variant.key, 1)}
+                >
                   <Feather name="plus-circle" size={20} color="#1A1C1E" />
                 </TouchableOpacity>
               </View>
@@ -245,29 +532,32 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
 
           <View style={styles.dividerLine} />
 
-          <View style={styles.productInvoiceBlock}>
-            <Image
-              source={{
-                uri: 'https://via.placeholder.com/100x100/FF8C00/FFFFFF?text=Immune+12S',
-              }}
-              style={styles.invoiceProductImage}
-            />
-            <View style={styles.invoiceMetaDetails}>
-              <View style={styles.invoiceTitleContainer}>
-                <Text style={styles.invoiceProductTitle}>Cetirizine 10 mg</Text>
-                <Text style={styles.invoiceCurrencyValue}>৳ 800</Text>
-              </View>
-              <Text style={styles.invoiceDiscountsText}>
-                ৳ 8000 <Text style={styles.lineThroughText}>৳ 960</Text> 10% off
+          {cartItems.map((item, idx) => (
+            <View key={`${item.name}-${idx}`} style={styles.invoiceRowSpaced}>
+              <Text style={styles.invoiceLabelStandard}>
+                {item.name} x{item.quantity}
               </Text>
+              <Text style={styles.invoiceLabelStandard}>
+                {formatBdt(item.unitPrice * item.quantity)}
+              </Text>
+            </View>
+          ))}
 
+          <View style={styles.dividerLine} />
+
+          <View style={styles.productInvoiceBlock}>
+            <View style={styles.invoiceMetaDetails}>
               <View style={styles.invoiceRowSpaced}>
                 <Text style={styles.invoiceLabelStandard}>Items Total</Text>
-                <Text style={styles.invoiceLabelStandard}>৳ 800</Text>
+                <Text style={styles.invoiceLabelStandard}>
+                  {formatBdt(cartSubtotal)}
+                </Text>
               </View>
               <View style={styles.invoiceTitleContainer}>
                 <Text style={styles.invoiceLabelStandard}>Delivery Charge</Text>
-                <Text style={styles.invoiceLabelStandard}>৳ 30</Text>
+                <Text style={styles.invoiceLabelStandard}>
+                  {formatBdt(deliveryCharge)}
+                </Text>
               </View>
             </View>
           </View>
@@ -276,41 +566,32 @@ export function CartCheckoutDetailsScreen({navigation}: Props) {
 
           <View style={styles.grandTotalContainer}>
             <Text style={styles.grandTotalLabel}>Grand Total:</Text>
-            <Text style={styles.grandTotalValue}>৳ 830</Text>
-          </View>
-
-          <View style={styles.trustBadgesRow}>
-            <View style={styles.trustBadgeItem}>
-              <VerifiedBadgeIcon />
-              <Text style={styles.trustBadgeText}>Verified Purchase Badge</Text>
-            </View>
-            <View style={styles.trustBadgeItem}>
-              <MaterialCommunityIcons name="replay" size={16} color="#4F5E6D" />
-              <Text style={styles.trustBadgeText}>Free 1-Day Returns &1-Year warranty</Text>
-            </View>
+            <Text style={styles.grandTotalValue}>{formatBdt(grandTotal)}</Text>
           </View>
         </View>
-
-        <TouchableOpacity
-          style={styles.primaryActionButton}
-          activeOpacity={0.9}
-          onPress={() => navigation.navigate('CartPayment')}>
-          <Text style={styles.primaryActionButtonText}>Next</Text>
-        </TouchableOpacity>
       </ScrollView>
 
-      <View style={[styles.totalStickyFooter, {paddingBottom: Math.max(insets.bottom, 16)}]}>
-        <View style={styles.footerDragTopHandle} />
-        <View style={styles.footerFlexRow}>
-          <View>
-            <Text style={styles.footerTotalLabel}>Total</Text>
-            <Text style={styles.footerTaxSubtitle}>(incl.fees and tax)</Text>
-          </View>
-          <View style={styles.footerValueBlock}>
-            <Text style={styles.footerTotalCurrency}>+৳ 830</Text>
-            <Text style={styles.footerCentFraction}>00</Text>
-          </View>
-        </View>
+      <View
+        style={[
+          styles.stickyFooterContainer,
+          { paddingBottom: Math.max(insets.bottom, 16) },
+        ]}
+      >
+        <TouchableOpacity
+          style={[
+            styles.continueBtn,
+            (loading || saving) && styles.disabledBtn,
+          ]}
+          activeOpacity={0.9}
+          disabled={loading || saving}
+          onPress={handleContinue}
+        >
+          {loading || saving ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.continueBtnText}>Continue to Payment</Text>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -478,6 +759,13 @@ const styles = StyleSheet.create({
     color: '#333D47',
     fontWeight: '500',
   },
+  chipInput: {
+    fontSize: 12,
+    color: '#333D47',
+    fontWeight: '500',
+    padding: 0,
+    minWidth: 72,
+  },
   mapPreviewCard: {
     height: 120,
     borderRadius: 12,
@@ -499,31 +787,31 @@ const styles = StyleSheet.create({
     marginLeft: -11,
   },
   deliveryAddressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: 12,
     gap: 12,
   },
-  addressTextRow: {
-    flex: 1,
+  addressInputRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    backgroundColor: '#ECEFF3',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     gap: 8,
   },
-  mapPinButton: {
-    paddingTop: 1,
-  },
-  deliveryAddressText: {
+  addressInput: {
     flex: 1,
     fontSize: 13,
     color: '#1A1C1E',
     fontWeight: '500',
     lineHeight: 18,
+    padding: 0,
+    minHeight: 36,
   },
   radioOptionGroup: {
     flexDirection: 'row',
     gap: 14,
+    alignSelf: 'flex-end',
   },
   radioClickItem: {
     flexDirection: 'row',
@@ -724,6 +1012,28 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  stickyFooterContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: '#F7F9FC',
+    borderTopWidth: 1,
+    borderTopColor: '#ECEFF3',
+  },
+  continueBtn: {
+    backgroundColor: '#00A884',
+    borderRadius: 28,
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  continueBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  disabledBtn: {
+    opacity: 0.6,
+  },
   totalStickyFooter: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
@@ -733,7 +1043,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#ECEFF3',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: -4},
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 10,

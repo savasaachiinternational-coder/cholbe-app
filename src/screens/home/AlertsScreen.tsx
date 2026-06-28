@@ -1,11 +1,14 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
@@ -13,15 +16,86 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
-import {ALERTS_DATE_LABEL, ALERTS_LIST, type AlertSegmentTab} from './alertsData';
+import {type AlertSegmentTab} from './alertsData';
+import {notificationsApi, type Notification} from '../../api/notifications';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Alerts'>;
+
+function formatDateLabel(dateStr: string): string {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+  if (sameDay(date, today)) {
+    return `Today, ${date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })}`;
+  }
+  if (sameDay(date, yesterday)) return 'Yesterday';
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function isAlertNotification(n: Notification): boolean {
+  return n.category === 'alert' || n.title.toLowerCase().includes('missed');
+}
 
 export function AlertsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeSegmentTab, setActiveSegmentTab] =
     useState<AlertSegmentTab>('alerts');
+  const [items, setItems] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadAlerts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await notificationsApi.list();
+      setItems(data.filter(isAlertNotification));
+    } catch (err) {
+      Alert.alert(
+        'Alerts',
+        err instanceof ApiError ? err.message : 'Could not load alerts',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAlerts();
+    }, [loadAlerts]),
+  );
+
+  const groupedAlerts = useMemo(() => {
+    const map = new Map<string, Notification[]>();
+    items.forEach(alert => {
+      const key = formatDateLabel(alert.createdAt);
+      const list = map.get(key) ?? [];
+      list.push(alert);
+      map.set(key, list);
+    });
+    return Array.from(map.entries());
+  }, [items]);
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -121,30 +195,41 @@ export function AlertsScreen({navigation}: Props) {
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.dateSectionHeader}>{ALERTS_DATE_LABEL}</Text>
-
-        {ALERTS_LIST.map(alert => (
-          <View key={alert.id} style={styles.alertNotificationCard}>
-            <View style={styles.cardInnerContentRow}>
-              <View style={styles.warningIconCircle}>
-                <Feather name="alert-circle" size={18} color="#EF4444" />
-              </View>
-              <View style={styles.cardTextMetaBlock}>
-                <Text style={styles.cardHeadingTitleText}>{alert.title}</Text>
-                <Text style={styles.cardBodyDescriptionText}>
-                  {alert.description}
-                </Text>
-                <Text style={styles.cardTimestampText}>{alert.time}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.viewHistoryTagButton}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('MedicineList')}>
-                <Text style={styles.viewHistoryTagText}>View History</Text>
-              </TouchableOpacity>
+        {loading ? (
+          <ActivityIndicator size="large" color="#0D9488" style={styles.loader} />
+        ) : groupedAlerts.length === 0 ? (
+          <Text style={styles.emptyText}>No alerts right now. You are on track!</Text>
+        ) : (
+          groupedAlerts.map(([dateLabel, alerts]) => (
+            <View key={dateLabel}>
+              <Text style={styles.dateSectionHeader}>{dateLabel}</Text>
+              {alerts.map(alert => (
+                <View key={alert.id} style={styles.alertNotificationCard}>
+                  <View style={styles.cardInnerContentRow}>
+                    <View style={styles.warningIconCircle}>
+                      <Feather name="alert-circle" size={18} color="#EF4444" />
+                    </View>
+                    <View style={styles.cardTextMetaBlock}>
+                      <Text style={styles.cardHeadingTitleText}>{alert.title}</Text>
+                      <Text style={styles.cardBodyDescriptionText}>
+                        {alert.body}
+                      </Text>
+                      <Text style={styles.cardTimestampText}>
+                        {formatTime(alert.createdAt)}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.viewHistoryTagButton}
+                      activeOpacity={0.8}
+                      onPress={() => navigation.navigate('MedicineList')}>
+                      <Text style={styles.viewHistoryTagText}>View History</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
             </View>
-          </View>
-        ))}
+          ))
+        )}
       </ScrollView>
 
       <TouchableOpacity
@@ -205,6 +290,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+  },
+  loader: {
+    marginVertical: 32,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#64748B',
+    marginTop: 32,
   },
   tabsSegmentContainer: {
     flexDirection: 'row',

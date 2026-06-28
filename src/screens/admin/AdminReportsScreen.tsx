@@ -1,4 +1,7 @@
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -6,9 +9,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {adminApi} from '../../api/admin';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
@@ -20,34 +26,37 @@ type MedicineItem = {
   price: string;
 };
 
+type SalesReport = {
+  totalOrders: number;
+  totalRevenue: number;
+  topSellingMedicines: {name: string; quantitySold: number | null}[];
+};
+
 const CHART_HEIGHT = 140;
 const BAR_WIDTH = 13;
 const BAR_GAP = 7;
 
-const BAR_DATA = [
-  {height: 75, isSolid: true},
-  {height: 30, isSolid: false},
-  {height: 130, isSolid: false},
-  {height: 70, isSolid: true},
-  {height: 85, isSolid: false},
-  {height: 100, isSolid: false},
-  {height: 110, isSolid: true},
-  {height: 105, isSolid: false},
-  {height: 50, isSolid: true},
-  {height: 95, isSolid: false},
-  {height: 78, isSolid: false},
-  {height: 100, isSolid: true},
-];
+function formatRevenue(value: number) {
+  return `Tk ${Math.round(value || 0).toLocaleString()}`;
+}
 
-const MOCK_MEDICINES: MedicineItem[] = Array.from({length: 3}, () => ({
-  name: 'Aamdocal Plus 50',
-  price: '250',
-}));
+function buildBarData(medicines: {quantitySold: number | null}[]) {
+  const quantities = medicines.map(m => m.quantitySold ?? 0);
+  const max = Math.max(...quantities, 1);
+  return quantities.slice(0, 12).map((qty, index) => ({
+    height: Math.max(20, Math.round((qty / max) * CHART_HEIGHT)),
+    isSolid: index % 2 === 0,
+  }));
+}
 
-function SalesBarChart() {
+function SalesBarChart({barData}: {barData: {height: number; isSolid: boolean}[]}) {
+  if (barData.length === 0) {
+    return null;
+  }
+
   return (
     <View style={styles.barChartRow}>
-      {BAR_DATA.map((bar, index) => (
+      {barData.map((bar, index) => (
         <View
           key={index}
           style={[
@@ -55,7 +64,7 @@ function SalesBarChart() {
             {
               height: bar.height,
               backgroundColor: bar.isSolid ? '#00A884' : '#E6F4F1',
-              marginRight: index === BAR_DATA.length - 1 ? 0 : BAR_GAP,
+              marginRight: index === barData.length - 1 ? 0 : BAR_GAP,
             },
           ]}
         />
@@ -80,6 +89,41 @@ function MedicineRow({item, isLast}: {item: MedicineItem; isLast: boolean}) {
 export function AdminReportsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [report, setReport] = useState<SalesReport | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadReport = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminApi.salesReport();
+      setReport(data as SalesReport);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load report';
+      Alert.alert('Reports', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReport();
+    }, [loadReport]),
+  );
+
+  const barData = useMemo(
+    () => buildBarData(report?.topSellingMedicines ?? []),
+    [report?.topSellingMedicines],
+  );
+
+  const topMedicines = useMemo(
+    () =>
+      (report?.topSellingMedicines ?? []).slice(0, 10).map(m => ({
+        name: m.name,
+        price: String(m.quantitySold ?? 0),
+      })),
+    [report?.topSellingMedicines],
+  );
 
   return (
     <View style={styles.container}>
@@ -105,71 +149,73 @@ export function AdminReportsScreen({navigation}: Props) {
           styles.scrollContent,
           {paddingBottom: 85 + insets.bottom},
         ]}>
-        <TouchableOpacity style={styles.dateRangePicker} activeOpacity={0.8}>
-          <Feather name="calendar" size={16} color="#9AA6B2" />
-          <Text style={styles.datePickerText}>May 12 - May,18 2026</Text>
-          <Feather name="chevron-down" size={18} color="#1A1C1E" />
-        </TouchableOpacity>
-
-        <View style={styles.metricsRowGrid}>
-          <View style={styles.metricBox}>
-            <Text style={styles.metricLabel}>Total Orders</Text>
-            <Text style={styles.metricValue}>1500</Text>
-            <Text style={styles.metricPercentage}>(18.6%)</Text>
-          </View>
-          <View style={styles.metricBox}>
-            <Text style={styles.metricLabel}>Total Revenue</Text>
-            <Text style={styles.metricValue}>Tk 174511</Text>
-            <Text style={styles.metricPercentage}>(18.6%)</Text>
-          </View>
-        </View>
-
-        <View style={styles.chartCardContainer}>
-          <View style={styles.chartHeaderRow}>
-            <Text style={styles.chartSectionHeading}>Sales Overview</Text>
-            <TouchableOpacity style={styles.timeframeDropdown} activeOpacity={0.8}>
-              <Text style={styles.timeframeDropdownText}>This Week</Text>
-              <Feather name="chevron-down" size={14} color="#4F5E6D" />
+        {loading ? (
+          <ActivityIndicator color="#4E929D" style={styles.loader} />
+        ) : (
+          <>
+            <TouchableOpacity style={styles.dateRangePicker} activeOpacity={0.8}>
+              <Feather name="calendar" size={16} color="#9AA6B2" />
+              <Text style={styles.datePickerText}>All time</Text>
+              <Feather name="chevron-down" size={18} color="#1A1C1E" />
             </TouchableOpacity>
-          </View>
 
-          <View style={styles.graphBodyWrapperRow}>
-            <View style={styles.yAxisGuides}>
-              <Text style={styles.axisText}>80k</Text>
-              <Text style={styles.axisText}>60k</Text>
-              <Text style={styles.axisText}>40k</Text>
-              <Text style={styles.axisText}>20k</Text>
-              <Text style={styles.axisText}>0</Text>
+            <View style={styles.metricsRowGrid}>
+              <View style={styles.metricBox}>
+                <Text style={styles.metricLabel}>Total Orders</Text>
+                <Text style={styles.metricValue}>{report?.totalOrders ?? '—'}</Text>
+              </View>
+              <View style={styles.metricBox}>
+                <Text style={styles.metricLabel}>Total Revenue</Text>
+                <Text style={styles.metricValue}>
+                  {report ? formatRevenue(report.totalRevenue) : '—'}
+                </Text>
+              </View>
             </View>
 
-            <View style={styles.chartCanvasArea}>
-              <View style={styles.chartHorizontalLineGuide} />
-              <View style={[styles.chartHorizontalLineGuide, {top: '25%'}]} />
-              <View style={[styles.chartHorizontalLineGuide, {top: '50%'}]} />
-              <View style={[styles.chartHorizontalLineGuide, {top: '75%'}]} />
-              <SalesBarChart />
+            <View style={styles.chartCardContainer}>
+              <View style={styles.chartHeaderRow}>
+                <Text style={styles.chartSectionHeading}>Sales Overview</Text>
+                <TouchableOpacity style={styles.timeframeDropdown} activeOpacity={0.8}>
+                  <Text style={styles.timeframeDropdownText}>Top medicines</Text>
+                  <Feather name="chevron-down" size={14} color="#4F5E6D" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.graphBodyWrapperRow}>
+                <View style={styles.yAxisGuides}>
+                  <Text style={styles.axisText}>80k</Text>
+                  <Text style={styles.axisText}>60k</Text>
+                  <Text style={styles.axisText}>40k</Text>
+                  <Text style={styles.axisText}>20k</Text>
+                  <Text style={styles.axisText}>0</Text>
+                </View>
+
+                <View style={styles.chartCanvasArea}>
+                  <View style={styles.chartHorizontalLineGuide} />
+                  <View style={[styles.chartHorizontalLineGuide, {top: '25%'}]} />
+                  <View style={[styles.chartHorizontalLineGuide, {top: '50%'}]} />
+                  <View style={[styles.chartHorizontalLineGuide, {top: '75%'}]} />
+                  <SalesBarChart barData={barData} />
+                </View>
+              </View>
             </View>
-          </View>
 
-          <View style={styles.xAxisRowLabels}>
-            <Text style={styles.axisText}>12 May</Text>
-            <Text style={styles.axisText}>14 May</Text>
-            <Text style={styles.axisText}>16 May</Text>
-            <Text style={styles.axisText}>18 May</Text>
-            <Text style={styles.axisText}>20 May</Text>
-          </View>
-        </View>
-
-        <Text style={styles.sectionHeadingTitle}>Top Selling Medicines</Text>
-        <View style={styles.medicinesContainerCard}>
-          {MOCK_MEDICINES.map((item, index) => (
-            <MedicineRow
-              key={`${item.name}-${index}`}
-              item={item}
-              isLast={index === MOCK_MEDICINES.length - 1}
-            />
-          ))}
-        </View>
+            <Text style={styles.sectionHeadingTitle}>Top Selling Medicines</Text>
+            <View style={styles.medicinesContainerCard}>
+              {topMedicines.length === 0 ? (
+                <Text style={styles.emptyText}>No sales data yet.</Text>
+              ) : (
+                topMedicines.map((item, index) => (
+                  <MedicineRow
+                    key={`${item.name}-${index}`}
+                    item={item}
+                    isLast={index === topMedicines.length - 1}
+                  />
+                ))
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       <AdminBottomNav activeTab="report" bottomInset={insets.bottom} navigation={navigation} />
@@ -185,6 +231,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 4,
   },
+  loader: {marginVertical: 48},
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -247,12 +294,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1A1C1E',
     marginTop: 8,
-  },
-  metricPercentage: {
-    fontSize: 11,
-    color: '#00A884',
-    fontWeight: '600',
-    marginTop: 4,
   },
   chartCardContainer: {
     backgroundColor: '#FFFFFF',
@@ -326,13 +367,6 @@ const styles = StyleSheet.create({
     width: BAR_WIDTH,
     borderRadius: 2,
   },
-  xAxisRowLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingLeft: 42,
-    paddingRight: 4,
-    marginTop: 10,
-  },
   sectionHeadingTitle: {
     fontSize: 14,
     fontWeight: '700',
@@ -348,6 +382,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ECEFF3',
     paddingVertical: 4,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#9AA6B2',
+    fontSize: 14,
+    paddingVertical: 24,
   },
   medicineItemRow: {
     flexDirection: 'row',

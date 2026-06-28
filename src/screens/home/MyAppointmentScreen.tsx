@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -7,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
@@ -15,10 +18,12 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {
-  PAST_APPOINTMENT,
-  UPCOMING_APPOINTMENT,
   type AppointmentDetail,
-} from './myAppointmentsData';
+  isUpcomingAppointment,
+  toAppointmentDetail,
+} from '../../api/utils/appointmentHelpers';
+import {appointmentsApi, type Appointment} from '../../api/appointments';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyAppointment'>;
 type AppointmentTab = 'upcoming' | 'past';
@@ -29,10 +34,41 @@ export function MyAppointmentScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<AppointmentTab>('upcoming');
+  const [items, setItems] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const appointment =
-    activeTab === 'upcoming' ? UPCOMING_APPOINTMENT : PAST_APPOINTMENT;
-  const {doctorName, specialty} = appointment;
+  const loadAppointments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await appointmentsApi.list();
+      setItems(data);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load appointments';
+      Alert.alert('Appointments', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAppointments();
+    }, [loadAppointments]),
+  );
+
+  const upcoming = useMemo(
+    () => items.filter(isUpcomingAppointment).map(toAppointmentDetail),
+    [items],
+  );
+  const past = useMemo(
+    () => items.filter(a => !isUpcomingAppointment(a)).map(toAppointmentDetail),
+    [items],
+  );
+
+  const listForTab = activeTab === 'upcoming' ? upcoming : past;
+  const appointment = listForTab[0];
+  const doctorName = appointment?.doctorName ?? '—';
+  const specialty = appointment?.specialty ?? '—';
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -59,7 +95,12 @@ export function MyAppointmentScreen({navigation}: Props) {
   };
 
   const joinCall = () => {
-    navigation.navigate('WaitingRoom', {doctorName, specialty});
+    if (!appointment) return;
+    navigation.navigate('WaitingRoom', {
+      appointmentId: appointment.id,
+      doctorName: appointment.doctorName,
+      specialty: appointment.specialty,
+    });
   };
 
   return (
@@ -115,33 +156,57 @@ export function MyAppointmentScreen({navigation}: Props) {
           </TouchableOpacity>
         </View>
 
-        {activeTab === 'past' && (
-          <View style={styles.statusRibbonContainer}>
-            <Feather
-              name="check-circle"
-              size={18}
-              color="#0D9488"
-              style={styles.ribbonIconMargin}
-            />
-            <Text style={styles.statusRibbonText}>
-              You consultation with {doctorName} is complete
+        {loading ? (
+          <ActivityIndicator size="large" color="#0D9488" style={{marginTop: 40}} />
+        ) : !appointment ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              No {activeTab} appointments yet.
             </Text>
+            <TouchableOpacity
+              style={styles.bookNowButton}
+              onPress={() => navigation.navigate('DoctorList')}>
+              <Text style={styles.bookNowButtonText}>Find a doctor</Text>
+            </TouchableOpacity>
           </View>
+        ) : (
+          <>
+            {activeTab === 'past' && (
+              <View style={styles.statusRibbonContainer}>
+                <Feather
+                  name="check-circle"
+                  size={18}
+                  color="#0D9488"
+                  style={styles.ribbonIconMargin}
+                />
+                <Text style={styles.statusRibbonText}>
+                  You consultation with {doctorName} is complete
+                </Text>
+              </View>
+            )}
+
+            <AppointmentMainCard
+              appointment={appointment}
+              isUpcoming={activeTab === 'upcoming'}
+              onJoinCall={joinCall}
+              onReschedule={() =>
+                navigation.navigate('BookVideoCall', {
+                  doctorId: appointment.doctorId,
+                  doctorName: appointment.doctorName,
+                  specialty: appointment.specialty,
+                  consultationFee: appointment.fee,
+                })
+              }
+              onViewSummary={openConsultationSummary}
+            />
+
+            <ReminderAdvisoryCard
+              appointment={appointment}
+              isUpcoming={activeTab === 'upcoming'}
+              onSubmitFeedback={openConsultationSummary}
+            />
+          </>
         )}
-
-        <AppointmentMainCard
-          appointment={appointment}
-          isUpcoming={activeTab === 'upcoming'}
-          onJoinCall={joinCall}
-          onReschedule={() => navigation.navigate('BookVideoCall', {doctorName, specialty})}
-          onViewSummary={openConsultationSummary}
-        />
-
-        <ReminderAdvisoryCard
-          appointment={appointment}
-          isUpcoming={activeTab === 'upcoming'}
-          onSubmitFeedback={openConsultationSummary}
-        />
       </ScrollView>
 
       <TouchableOpacity
@@ -585,5 +650,26 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 10,
+  },
+  emptyState: {
+    alignItems: 'center',
+    marginTop: 48,
+    paddingHorizontal: 24,
+  },
+  emptyStateText: {
+    fontSize: 15,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  bookNowButton: {
+    backgroundColor: '#0D9488',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  bookNowButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });

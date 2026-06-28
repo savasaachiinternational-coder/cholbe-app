@@ -1,5 +1,7 @@
 import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -15,15 +17,24 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {PasswordChangeSuccessModal} from './PasswordChangeSuccessModal';
+import {authApi} from '../../api/auth';
+import {ApiError} from '../../api/client';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
 type Props = {
+  contact: string;
+  otpCode: string;
   onBack: () => void;
   onContinue: () => void;
 };
 
-export function CreateNewPasswordScreen({onBack, onContinue}: Props) {
+export function CreateNewPasswordScreen({
+  contact,
+  otpCode,
+  onBack,
+  onContinue,
+}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
 
@@ -32,9 +43,27 @@ export function CreateNewPasswordScreen({onBack, onContinue}: Props) {
   const [secureNewPassword, setSecureNewPassword] = useState(true);
   const [secureConfirmPassword, setSecureConfirmPassword] = useState(true);
   const [successVisible, setSuccessVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleContinue = () => {
-    setSuccessVisible(true);
+  const handleContinue = async () => {
+    if (!newPassword || newPassword.length < 8) {
+      Alert.alert('Password', 'Password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Password', 'Passwords do not match.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await authApi.resetPassword(contact, otpCode, newPassword);
+      setSuccessVisible(true);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not reset password';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSuccessDone = () => {
@@ -159,10 +188,15 @@ export function CreateNewPasswordScreen({onBack, onContinue}: Props) {
 
             <View style={styles.footerSection}>
               <TouchableOpacity
-                style={styles.continueButton}
+                style={[styles.continueButton, loading && styles.buttonDisabled]}
                 activeOpacity={0.85}
+                disabled={loading}
                 onPress={handleContinue}>
-                <Text style={styles.continueButtonText}>Continue</Text>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -280,6 +314,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   continueButtonText: {
     color: '#FFFFFF',

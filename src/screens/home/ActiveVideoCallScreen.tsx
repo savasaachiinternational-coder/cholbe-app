@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   StyleSheet,
@@ -6,36 +7,70 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {RtcSurfaceView} from 'react-native-agora';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {useAgoraRtc} from '../../hooks/useAgoraRtc';
 import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {appointmentsApi} from '../../api/appointments';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_HEIGHT * 0.58;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ActiveVideoCall'>;
 
-const DOCTOR_STREAM = require('../../assets/b2.png');
 const DOCTOR_AVATAR = require('../../assets/b2.png');
-const USER_PIP = require('../../assets/b1.png');
 
 export function ActiveVideoCallScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
 
+  const appointmentId = route.params.appointmentId;
   const doctorName = route.params?.doctorName ?? 'Dr. Ahmed';
   const specialty = route.params?.specialty ?? 'Cardiologist';
 
+  const {engine, state, leave, toggleMute, toggleVideo, formatTimer} =
+    useAgoraRtc(appointmentId);
+
   const openChat = () => {
-    navigation.navigate('ConsultationChat', {doctorName, specialty});
+    navigation.navigate('ConsultationChat', {
+      doctorName,
+      specialty,
+      appointmentId,
+    });
+  };
+
+  const endCall = async () => {
+    await appointmentsApi.updateStatus(appointmentId, 'completed').catch(() => undefined);
+    await leave();
+    navigation.goBack();
   };
 
   return (
     <View style={styles.container}>
       <View style={[styles.videoStreamContainer, {height: VIDEO_HEIGHT}]}>
-        <Image source={DOCTOR_STREAM} style={styles.doctorFullVideoStream} />
+        {state.loading ? (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#0D9488" />
+            <Text style={styles.loadingText}>Connecting to video channel…</Text>
+          </View>
+        ) : state.error ? (
+          <View style={styles.loadingOverlay}>
+            <Text style={styles.errorText}>{state.error}</Text>
+          </View>
+        ) : state.remoteUid ? (
+          <RtcSurfaceView
+            style={styles.doctorFullVideoStream}
+            canvas={{uid: state.remoteUid}}
+          />
+        ) : (
+          <View style={styles.waitingRemote}>
+            <Image source={DOCTOR_AVATAR} style={styles.waitingAvatar} />
+            <Text style={styles.waitingText}>Waiting for {doctorName} to join…</Text>
+          </View>
+        )}
 
         <View
           style={[
@@ -50,59 +85,87 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
               <Text style={styles.specialtyText}>{specialty}</Text>
             </View>
           </View>
-          <Text style={styles.callTimer}>00:12</Text>
+          <Text style={styles.callTimer}>{formatTimer()}</Text>
         </View>
 
-        <View style={styles.userPipContainer}>
-          <Image source={USER_PIP} style={styles.userPipImage} />
-          <View style={styles.pipHardwareControls}>
-            <TouchableOpacity
-              style={styles.pipBadgeIconButton}
-              activeOpacity={0.8}>
-              <Feather name="mic-off" size={12} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.pipBadgeIconButton, styles.pipVideoOffBadge]}
-              activeOpacity={0.8}>
-              <Feather name="video-off" size={12} color="#FFFFFF" />
-            </TouchableOpacity>
+        {engine && state.videoEnabled ? (
+          <View style={styles.userPipContainer}>
+            <RtcSurfaceView style={styles.userPipImage} canvas={{uid: 0}} />
+            <View style={styles.pipHardwareControls}>
+              <TouchableOpacity
+                style={styles.pipBadgeIconButton}
+                activeOpacity={0.8}
+                onPress={toggleMute}>
+                <Feather
+                  name={state.muted ? 'mic-off' : 'mic'}
+                  size={12}
+                  color="#FFFFFF"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.pipBadgeIconButton, styles.pipVideoOffBadge]}
+                activeOpacity={0.8}
+                onPress={toggleVideo}>
+                <Feather
+                  name={state.videoEnabled ? 'video' : 'video-off'}
+                  size={12}
+                  color="#FFFFFF"
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        ) : null}
       </View>
 
       <View
         style={[styles.controlPanelArea, {paddingBottom: insets.bottom + 16}]}>
         <View style={styles.diagnosticGridRow}>
-          <DiagnosticItem icon="camera" label="Camera" status="Ready" />
-          <DiagnosticItem icon="mic" label="Mic" status="Ready" withDivider />
+          <DiagnosticItem
+            icon="camera"
+            label="Camera"
+            status={state.videoEnabled ? 'On' : 'Off'}
+          />
+          <DiagnosticItem
+            icon="mic"
+            label="Mic"
+            status={state.muted ? 'Muted' : 'On'}
+            withDivider
+          />
           <DiagnosticItem
             icon="wifi"
             label="Network"
-            status="Good"
+            status={state.joined ? 'Connected' : 'Connecting'}
             withDivider
           />
         </View>
 
         <Text style={styles.callDisclaimerNotice}>
           Please be ready before the call starts.{'\n'}Ensure a good internet
-          connections.
+          connection.
         </Text>
 
         <View style={styles.callControlsRowContainer}>
           <View style={styles.actionControlNode}>
             <TouchableOpacity
               style={styles.secondaryCallButton}
-              activeOpacity={0.85}>
-              <Feather name="mic" size={24} color="#1E293B" />
+              activeOpacity={0.85}
+              onPress={toggleMute}>
+              <Feather
+                name={state.muted ? 'mic-off' : 'mic'}
+                size={24}
+                color="#1E293B"
+              />
             </TouchableOpacity>
-            <Text style={styles.controlActionLabel}>Switch to Audio Call</Text>
+            <Text style={styles.controlActionLabel}>
+              {state.muted ? 'Unmute' : 'Mute'}
+            </Text>
           </View>
 
           <View style={styles.actionControlNode}>
             <TouchableOpacity
               style={styles.primaryDisconnectCallButton}
               activeOpacity={0.9}
-              onPress={() => navigation.goBack()}>
+              onPress={endCall}>
               <Feather name="phone-off" size={26} color="#FFFFFF" />
             </TouchableOpacity>
             <Text style={styles.controlActionLabel}>End Call</Text>
@@ -156,12 +219,42 @@ const styles = StyleSheet.create({
   videoStreamContainer: {
     width: SCREEN_WIDTH,
     position: 'relative',
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#0F172A',
   },
   doctorFullVideoStream: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+  },
+  loadingOverlay: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#E2E8F0',
+    fontSize: 14,
+  },
+  errorText: {
+    color: '#FCA5A5',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  waitingRemote: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waitingAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 12,
+  },
+  waitingText: {
+    color: '#E2E8F0',
+    fontSize: 14,
   },
   doctorOverlayBadge: {
     position: 'absolute',
@@ -235,7 +328,6 @@ const styles = StyleSheet.create({
   userPipImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   pipHardwareControls: {
     position: 'absolute',

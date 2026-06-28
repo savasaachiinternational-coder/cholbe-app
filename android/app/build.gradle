@@ -92,6 +92,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [usesCleartextTraffic: "true"]
         if (!mapsApiKey.isEmpty()) {
             resValue "string", "google_maps_api_key", mapsApiKey
         }

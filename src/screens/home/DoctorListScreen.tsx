@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -16,18 +18,60 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
-import {DOCTOR_CATEGORIES, DOCTOR_LIST_ITEMS} from './doctorListData';
+import {DOCTOR_CATEGORIES} from './doctorListData';
+import {doctorsApi, type Doctor} from '../../api/doctors';
+import {ApiError} from '../../api/client';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 44) / 2;
 const CATEGORY_WIDTH = (SCREEN_WIDTH - 52) / 3;
+const DOCTOR_PLACEHOLDER = require('../../assets/b2.png');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DoctorList'>;
+
+function formatFee(fee: string | number): string {
+  const amount = typeof fee === 'string' ? Number(fee) : fee;
+  return Number.isNaN(amount) ? `BDT ${fee}` : `BDT ${amount}`;
+}
 
 export function DoctorListScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  const loadDoctors = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await doctorsApi.list({
+        search: searchQuery.trim() || undefined,
+        category: activeCategory ?? undefined,
+      });
+      setDoctors(data);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load doctors';
+      Alert.alert('Doctors', message);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, activeCategory]);
+
+  useEffect(() => {
+    const timer = setTimeout(loadDoctors, 300);
+    return () => clearTimeout(timer);
+  }, [loadDoctors]);
+
+  const filteredDoctors = useMemo(() => {
+    if (!searchQuery.trim()) return doctors;
+    const q = searchQuery.toLowerCase();
+    return doctors.filter(
+      d =>
+        d.user.fullName.toLowerCase().includes(q) ||
+        d.specialty.toLowerCase().includes(q),
+    );
+  }, [doctors, searchQuery]);
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -47,6 +91,15 @@ export function DoctorListScreen({navigation}: Props) {
       return;
     }
     navigation.navigate('Home');
+  };
+
+  const bookDoctor = (doc: Doctor) => {
+    navigation.navigate('BookVideoCall', {
+      doctorId: doc.id,
+      doctorName: doc.user.fullName,
+      specialty: doc.specialty,
+      consultationFee: formatFee(doc.fee),
+    });
   };
 
   return (
@@ -92,18 +145,21 @@ export function DoctorListScreen({navigation}: Props) {
 
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionHeading}>Explore Doctors Near You</Text>
-          <TouchableOpacity style={styles.viewAllRow} activeOpacity={0.7}>
-            <Text style={styles.viewAllText}>View All</Text>
-            <Feather name="arrow-right" size={14} color="#1E293B" />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.categoriesGrid}>
           {DOCTOR_CATEGORIES.map(cat => (
             <TouchableOpacity
               key={cat.id}
-              style={[styles.categoryCard, {width: CATEGORY_WIDTH}]}
-              activeOpacity={0.8}>
+              style={[
+                styles.categoryCard,
+                {width: CATEGORY_WIDTH},
+                activeCategory === cat.name && styles.categoryCardActive,
+              ]}
+              activeOpacity={0.8}
+              onPress={() =>
+                setActiveCategory(prev => (prev === cat.name ? null : cat.name))
+              }>
               <View style={styles.categoryIconWrapper}>
                 <Feather name={cat.icon} size={24} color="#64748B" />
               </View>
@@ -116,45 +172,47 @@ export function DoctorListScreen({navigation}: Props) {
 
         <View style={[styles.sectionHeaderRow, styles.availableHeader]}>
           <Text style={styles.sectionHeadingLarge}>Available Doctor</Text>
-          <TouchableOpacity style={styles.viewAllRow} activeOpacity={0.7}>
-            <Text style={styles.viewAllText}>View All</Text>
-            <Feather name="chevron-right" size={14} color="#64748B" />
-          </TouchableOpacity>
+          <Text style={styles.viewAllText}>{filteredDoctors.length} found</Text>
         </View>
 
-        <View style={styles.doctorsGridContainer}>
-          {DOCTOR_LIST_ITEMS.map(doc => (
-            <View key={doc.id} style={styles.doctorProductCard}>
-              <Image source={doc.image} style={styles.doctorImgCard} />
-              <View style={styles.cardContentBlock}>
-                <View style={styles.specialtyBadge}>
-                  <Text style={styles.specialtyBadgeText}>{doc.specialty}</Text>
-                </View>
-                <Text style={styles.doctorNameText} numberOfLines={1}>
-                  {doc.name}
-                </Text>
-                <Text style={styles.doctorDegreeText} numberOfLines={2}>
-                  {doc.degree}
-                </Text>
-                <Text style={styles.feeText}>{doc.fee}</Text>
-                <TouchableOpacity
-                  style={styles.appointmentButton}
-                  activeOpacity={0.85}
-                  onPress={() =>
-                    navigation.navigate('BookVideoCall', {
-                      doctorName: doc.name,
-                      specialty: doc.specialty,
-                      consultationFee: 'BDT 800',
-                    })
-                  }>
-                  <Text style={styles.appointmentButtonText}>
-                    Book Appointment
+        {loading ? (
+          <ActivityIndicator size="large" color="#0D9488" style={styles.loader} />
+        ) : filteredDoctors.length === 0 ? (
+          <Text style={styles.emptyText}>No doctors match your search.</Text>
+        ) : (
+          <View style={styles.doctorsGridContainer}>
+            {filteredDoctors.map(doc => (
+              <View key={doc.id} style={[styles.doctorProductCard, {width: CARD_WIDTH}]}>
+                <Image
+                  source={
+                    doc.imageUrl || doc.user.avatarUrl
+                      ? {uri: doc.imageUrl ?? doc.user.avatarUrl ?? undefined}
+                      : DOCTOR_PLACEHOLDER
+                  }
+                  style={styles.doctorImgCard}
+                />
+                <View style={styles.cardContentBlock}>
+                  <View style={styles.specialtyBadge}>
+                    <Text style={styles.specialtyBadgeText}>{doc.specialty}</Text>
+                  </View>
+                  <Text style={styles.doctorNameText} numberOfLines={1}>
+                    {doc.user.fullName}
                   </Text>
-                </TouchableOpacity>
+                  <Text style={styles.doctorDegreeText} numberOfLines={2}>
+                    {doc.degree ?? 'Licensed specialist'}
+                  </Text>
+                  <Text style={styles.feeText}>{formatFee(doc.fee)}</Text>
+                  <TouchableOpacity
+                    style={styles.appointmentButton}
+                    activeOpacity={0.85}
+                    onPress={() => bookDoctor(doc)}>
+                    <Text style={styles.appointmentButtonText}>Book Appointment</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
       <TouchableOpacity
@@ -203,23 +261,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   searchRow: {
-    marginTop: 8,
     marginBottom: 16,
   },
   searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 14,
+    borderRadius: 12,
+    paddingHorizontal: 12,
     height: 48,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 1,
+    borderColor: '#E2E8F0',
   },
   searchIcon: {
     marginRight: 8,
@@ -228,144 +280,125 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#1E293B',
-    padding: 0,
+    paddingVertical: 0,
   },
   filterInlineButton: {
-    paddingLeft: 8,
+    padding: 4,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
-  },
-  availableHeader: {
-    marginTop: 24,
+    marginBottom: 12,
   },
   sectionHeading: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
   },
   sectionHeadingLarge: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1E293B',
   },
-  viewAllRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
   viewAllText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#64748B',
-    fontWeight: '500',
   },
   categoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 10,
+    gap: 8,
+    marginBottom: 20,
   },
   categoryCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 12,
+    paddingVertical: 12,
     alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    marginBottom: 10,
+    borderColor: '#E2E8F0',
+  },
+  categoryCardActive: {
+    borderColor: '#0D9488',
+    backgroundColor: '#F0FDFA',
   },
   categoryIconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   categoryLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#475569',
     textAlign: 'center',
     paddingHorizontal: 4,
   },
+  availableHeader: {
+    marginTop: 4,
+  },
   doctorsGridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 14,
+    gap: 12,
   },
   doctorProductCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    width: CARD_WIDTH,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 4,
   },
   doctorImgCard: {
     width: '100%',
-    height: 125,
+    height: 100,
     backgroundColor: '#E2E8F0',
-    resizeMode: 'cover',
   },
   cardContentBlock: {
     padding: 10,
   },
   specialtyBadge: {
-    backgroundColor: '#84CC16',
     alignSelf: 'flex-start',
+    backgroundColor: '#F0FDFA',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 6,
     marginBottom: 6,
   },
   specialtyBadgeText: {
-    color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '600',
+    color: '#0D9488',
   },
   doctorNameText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1E293B',
+    marginBottom: 2,
   },
   doctorDegreeText: {
     fontSize: 11,
     color: '#64748B',
-    lineHeight: 14,
-    marginTop: 2,
-    height: 28,
+    marginBottom: 6,
+    minHeight: 28,
   },
   feeText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#1E293B',
-    marginTop: 6,
-    marginBottom: 10,
+    color: '#0D9488',
+    marginBottom: 8,
   },
   appointmentButton: {
-    borderWidth: 1,
-    borderColor: '#14B8A6',
-    borderRadius: 10,
+    backgroundColor: '#0D9488',
+    borderRadius: 8,
     paddingVertical: 8,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
   appointmentButtonText: {
-    color: '#14B8A6',
+    color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   floatingScanButton: {
     position: 'absolute',
@@ -373,20 +406,27 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#A7F3D0',
-    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
+    justifyContent: 'center',
     elevation: 4,
-    zIndex: 99,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   bottomNavWrap: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  loader: {
+    marginVertical: 40,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#64748B',
+    marginVertical: 24,
   },
 });

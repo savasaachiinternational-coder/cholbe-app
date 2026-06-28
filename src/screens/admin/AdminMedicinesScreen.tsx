@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,10 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {ApiError} from '../../api/client';
+import {medicinesApi, type Medicine} from '../../api/medicines';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
@@ -20,24 +25,44 @@ import {ADMIN_MEDICINE_FILTERS, type AdminMedicineFilter} from './adminNav';
 type Props = NativeStackScreenProps<RootStackParamList, 'AMedicines'>;
 
 type MedicineRecord = {
+  id: string;
   name: string;
   type: string;
   stock: string;
   price: string;
+  imageUrl: string | null;
+  status: string;
 };
 
-const MOCK_MEDICINES: MedicineRecord[] = Array.from({length: 6}, () => ({
-  name: 'Aamdocal Plus 50',
-  type: 'Tablet',
-  stock: '2,450',
-  price: '250',
-}));
+function mapMedicine(m: Medicine): MedicineRecord {
+  return {
+    id: m.id,
+    name: m.name,
+    type: m.category ?? m.brand ?? '—',
+    stock: m.status === 'OUT_OF_STOCK' ? '0' : '—',
+    price: '—',
+    imageUrl: m.imageUrl,
+    status: m.status,
+  };
+}
+
+function filterMedicines(items: MedicineRecord[], filter: AdminMedicineFilter) {
+  if (filter === 'All') return items;
+  if (filter === 'Active') return items.filter(m => m.status === 'ACTIVE');
+  if (filter === 'Inactive') return items.filter(m => m.status === 'INACTIVE');
+  if (filter === 'Out of Stock') return items.filter(m => m.status === 'OUT_OF_STOCK');
+  return items;
+}
 
 function MedicineCard({item}: {item: MedicineRecord}) {
   return (
     <View style={styles.medicineCard}>
       <Image
-        source={{uri: 'https://via.placeholder.com/80x60/ECEFF3/000000?text=Medicine'}}
+        source={{
+          uri:
+            item.imageUrl ??
+            'https://via.placeholder.com/80x60/ECEFF3/000000?text=Medicine',
+        }}
         style={styles.medicineImage}
       />
       <View style={styles.metaInfoColumn}>
@@ -56,6 +81,37 @@ export function AdminMedicinesScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<AdminMedicineFilter>('Active');
+  const [medicines, setMedicines] = useState<MedicineRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const loadMedicines = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await medicinesApi.list();
+      setMedicines(data.map(mapMedicine));
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load medicines';
+      Alert.alert('Medicines', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadMedicines();
+    }, [loadMedicines]),
+  );
+
+  const filteredMedicines = useMemo(() => {
+    const byFilter = filterMedicines(medicines, activeFilter);
+    const q = search.trim().toLowerCase();
+    if (!q) return byFilter;
+    return byFilter.filter(
+      m => m.name.toLowerCase().includes(q) || m.type.toLowerCase().includes(q),
+    );
+  }, [medicines, activeFilter, search]);
 
   return (
     <View style={styles.container}>
@@ -87,6 +143,8 @@ export function AdminMedicinesScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
             <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
@@ -114,9 +172,15 @@ export function AdminMedicinesScreen({navigation}: Props) {
         </ScrollView>
 
         <View style={styles.cardsVerticalStack}>
-          {MOCK_MEDICINES.map((medicine, index) => (
-            <MedicineCard key={`${medicine.name}-${index}`} item={medicine} />
-          ))}
+          {loading ? (
+            <ActivityIndicator color="#4E929D" style={styles.loader} />
+          ) : filteredMedicines.length === 0 ? (
+            <Text style={styles.emptyText}>No medicines found.</Text>
+          ) : (
+            filteredMedicines.map(medicine => (
+              <MedicineCard key={medicine.id} item={medicine} />
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -198,6 +262,13 @@ const styles = StyleSheet.create({
   },
   cardsVerticalStack: {
     gap: 12,
+  },
+  loader: {marginVertical: 32},
+  emptyText: {
+    textAlign: 'center',
+    color: '#9AA6B2',
+    fontSize: 14,
+    paddingVertical: 32,
   },
   medicineCard: {
     backgroundColor: '#FFFFFF',

@@ -1,4 +1,7 @@
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -7,10 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {adminApi} from '../../api/admin';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
@@ -18,25 +24,70 @@ import {AdminBottomNav} from './AdminBottomNav';
 type Props = NativeStackScreenProps<RootStackParamList, 'AInventory'>;
 
 type LowStockItem = {
+  id: string;
   name: string;
   type: string;
   stockCount: number;
+  imageUrl: string | null;
+};
+
+type StockSegment = {
+  color: string;
+  percent: number;
+  label: string;
+  value: string;
+};
+
+type InventoryOverview = {
+  totalItems: number;
+  lowStockCount: number;
+  outOfStock: number;
+  lowStockItems: {
+    id: string;
+    name: string;
+    category: string | null;
+    unitType: string | null;
+    stockQuantity: number;
+    imageUrl: string | null;
+  }[];
 };
 
 const DONUT_SIZE = 140;
 const DONUT_HOLE = 82;
 
-const STOCK_SEGMENTS = [
-  {color: '#00A884', percent: 0.72, label: 'In Stock', value: '1,135(72%)'},
-  {color: '#FFC107', percent: 0.18, label: 'Low Stock', value: '78 (20%)'},
-  {color: '#E26D6D', percent: 0.1, label: 'Out of Stock', value: '35(2%)'},
-];
+function buildStockSegments(overview: InventoryOverview | null): StockSegment[] {
+  if (!overview || overview.totalItems === 0) {
+    return [
+      {color: '#00A884', percent: 1, label: 'In Stock', value: '0 (0%)'},
+    ];
+  }
 
-const MOCK_LOW_STOCK: LowStockItem[] = Array.from({length: 6}, () => ({
-  name: 'Aamdocal Plus 50',
-  type: 'Tablet',
-  stockCount: 24,
-}));
+  const {totalItems, lowStockCount, outOfStock} = overview;
+  const inStock = Math.max(0, totalItems - lowStockCount - outOfStock);
+  const pct = (n: number) => (totalItems > 0 ? n / totalItems : 0);
+  const labelPct = (n: number) => Math.round(pct(n) * 100);
+
+  return [
+    {
+      color: '#00A884',
+      percent: pct(inStock),
+      label: 'In Stock',
+      value: `${inStock.toLocaleString()} (${labelPct(inStock)}%)`,
+    },
+    {
+      color: '#FFC107',
+      percent: pct(lowStockCount),
+      label: 'Low Stock',
+      value: `${lowStockCount.toLocaleString()} (${labelPct(lowStockCount)}%)`,
+    },
+    {
+      color: '#E26D6D',
+      percent: pct(outOfStock),
+      label: 'Out of Stock',
+      value: `${outOfStock.toLocaleString()} (${labelPct(outOfStock)}%)`,
+    },
+  ].filter(s => s.percent > 0);
+}
 
 function PieSlice({
   startPercent,
@@ -88,13 +139,13 @@ function PieSlice({
   );
 }
 
-function StockDonutChart() {
+function StockDonutChart({segments}: {segments: StockSegment[]}) {
   let cumulative = 0;
 
   return (
     <View style={styles.donutCanvasWrapper}>
       <View style={styles.donutPieLayer}>
-        {STOCK_SEGMENTS.map(segment => {
+        {segments.map(segment => {
           const slice = (
             <PieSlice
               key={segment.label}
@@ -117,7 +168,11 @@ function LowStockRow({item}: {item: LowStockItem}) {
   return (
     <View style={styles.alertCard}>
       <Image
-        source={{uri: 'https://via.placeholder.com/60/ECEFF3/000000?text=Medicine'}}
+        source={{
+          uri:
+            item.imageUrl ??
+            'https://via.placeholder.com/60/ECEFF3/000000?text=Medicine',
+        }}
         style={styles.alertItemImage}
       />
       <View style={styles.alertMetaColumn}>
@@ -134,6 +189,46 @@ function LowStockRow({item}: {item: LowStockItem}) {
 export function AdminInventoryScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [overview, setOverview] = useState<InventoryOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const loadInventory = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminApi.inventoryOverview();
+      setOverview(data as InventoryOverview);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load inventory';
+      Alert.alert('Inventory', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadInventory();
+    }, [loadInventory]),
+  );
+
+  const stockSegments = useMemo(() => buildStockSegments(overview), [overview]);
+
+  const lowStockItems = useMemo(() => {
+    const items =
+      overview?.lowStockItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.category ?? item.unitType ?? '—',
+        stockCount: item.stockQuantity,
+        imageUrl: item.imageUrl,
+      })) ?? [];
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(
+      i => i.name.toLowerCase().includes(q) || i.type.toLowerCase().includes(q),
+    );
+  }, [overview, search]);
 
   return (
     <View style={styles.container}>
@@ -165,68 +260,78 @@ export function AdminInventoryScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
             <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.metricsRowGrid}>
-          <View style={styles.metricItemBox}>
-            <Text style={styles.metricLabelText}>Total Items</Text>
-            <Text style={styles.metricValueText}>1245</Text>
-          </View>
-          <View style={styles.metricItemBox}>
-            <Text style={styles.metricLabelText}>Low Stock</Text>
-            <Text style={styles.metricValueText}>78</Text>
-          </View>
-          <View style={styles.metricItemBox}>
-            <Text style={styles.metricLabelText}>Out of Stock</Text>
-            <Text style={styles.metricValueText}>32</Text>
-          </View>
-        </View>
-
-        <View style={styles.analyticsSectionCard}>
-          <View style={styles.analyticsHeaderRow}>
-            <Text style={styles.analyticsTitleText}>Stock Overview</Text>
-            <TouchableOpacity style={styles.timeframeDropdown} activeOpacity={0.8}>
-              <Text style={styles.timeframeDropdownText}>This Week</Text>
-              <Feather name="chevron-down" size={14} color="#4F5E6D" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.chartBodyFlexLayoutRow}>
-            <StockDonutChart />
-
-            <View style={styles.legendContainerStack}>
-              {STOCK_SEGMENTS.map(segment => (
-                <View key={segment.label} style={styles.legendItemUnit}>
-                  <View style={styles.legendRowHeaderInline}>
-                    <View
-                      style={[styles.legendDotIndicator, {backgroundColor: segment.color}]}
-                    />
-                    <Text style={styles.legendMainLabel}>{segment.label}</Text>
-                  </View>
-                  <Text style={styles.legendSubValue}>{segment.value}</Text>
-                </View>
-              ))}
+        {loading ? (
+          <ActivityIndicator color="#4E929D" style={styles.loader} />
+        ) : (
+          <>
+            <View style={styles.metricsRowGrid}>
+              <View style={styles.metricItemBox}>
+                <Text style={styles.metricLabelText}>Total Items</Text>
+                <Text style={styles.metricValueText}>{overview?.totalItems ?? '—'}</Text>
+              </View>
+              <View style={styles.metricItemBox}>
+                <Text style={styles.metricLabelText}>Low Stock</Text>
+                <Text style={styles.metricValueText}>{overview?.lowStockCount ?? '—'}</Text>
+              </View>
+              <View style={styles.metricItemBox}>
+                <Text style={styles.metricLabelText}>Out of Stock</Text>
+                <Text style={styles.metricValueText}>{overview?.outOfStock ?? '—'}</Text>
+              </View>
             </View>
-          </View>
-        </View>
 
-        <View style={styles.sectionHeaderLineRow}>
-          <Text style={styles.sectionHeadingText}>Low Stock Alert</Text>
-          <TouchableOpacity style={styles.viewAllInlineRow} activeOpacity={0.7}>
-            <Text style={styles.viewAllInlineText}>View All</Text>
-            <Feather name="chevron-right" size={14} color="#7E8B97" />
-          </TouchableOpacity>
-        </View>
+            <View style={styles.analyticsSectionCard}>
+              <View style={styles.analyticsHeaderRow}>
+                <Text style={styles.analyticsTitleText}>Stock Overview</Text>
+                <TouchableOpacity style={styles.timeframeDropdown} activeOpacity={0.8}>
+                  <Text style={styles.timeframeDropdownText}>This Week</Text>
+                  <Feather name="chevron-down" size={14} color="#4F5E6D" />
+                </TouchableOpacity>
+              </View>
 
-        <View style={styles.alertsVerticalStack}>
-          {MOCK_LOW_STOCK.map((item, index) => (
-            <LowStockRow key={`${item.name}-${index}`} item={item} />
-          ))}
-        </View>
+              <View style={styles.chartBodyFlexLayoutRow}>
+                <StockDonutChart segments={stockSegments} />
+
+                <View style={styles.legendContainerStack}>
+                  {stockSegments.map(segment => (
+                    <View key={segment.label} style={styles.legendItemUnit}>
+                      <View style={styles.legendRowHeaderInline}>
+                        <View
+                          style={[styles.legendDotIndicator, {backgroundColor: segment.color}]}
+                        />
+                        <Text style={styles.legendMainLabel}>{segment.label}</Text>
+                      </View>
+                      <Text style={styles.legendSubValue}>{segment.value}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.sectionHeaderLineRow}>
+              <Text style={styles.sectionHeadingText}>Low Stock Alert</Text>
+              <TouchableOpacity style={styles.viewAllInlineRow} activeOpacity={0.7}>
+                <Text style={styles.viewAllInlineText}>View All</Text>
+                <Feather name="chevron-right" size={14} color="#7E8B97" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.alertsVerticalStack}>
+              {lowStockItems.length === 0 ? (
+                <Text style={styles.emptyText}>No low stock items.</Text>
+              ) : (
+                lowStockItems.map(item => <LowStockRow key={item.id} item={item} />)
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       <AdminBottomNav activeTab="inventory" bottomInset={insets.bottom} navigation={navigation} />
@@ -242,6 +347,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 4,
   },
+  loader: {marginVertical: 48},
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -416,6 +522,12 @@ const styles = StyleSheet.create({
   },
   alertsVerticalStack: {
     gap: 10,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#9AA6B2',
+    fontSize: 14,
+    paddingVertical: 24,
   },
   alertCard: {
     flexDirection: 'row',

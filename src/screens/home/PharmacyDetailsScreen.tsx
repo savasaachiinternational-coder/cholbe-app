@@ -1,5 +1,7 @@
-import {useState, type ReactNode} from 'react';
+import {useCallback, useEffect, useState, type ReactNode} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -15,6 +17,16 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
+import {cartApi} from '../../api/cart';
+import {ApiError} from '../../api/client';
+import {
+  formatBdt,
+  productImageUrl,
+  productUnitPrice,
+  productListPrice,
+  unitTypeToVariant,
+} from '../../utils/pharmacyHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyDetails'>;
 type VariantKey = 'PC' | 'Stripe' | 'Box';
@@ -39,20 +51,74 @@ const VARIANTS: {key: VariantKey; label: string}[] = [
 export function PharmacyDetailsScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const productId = route.params.productId;
+  const [product, setProduct] = useState<PharmacyProduct | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('Summary');
   const [selectedVariant, setSelectedVariant] = useState<VariantKey>('Box');
   const [activeThumbnail, setActiveThumbnail] = useState(0);
   const [quantities, setQuantities] = useState<Record<VariantKey, number>>({
     PC: 0,
     Stripe: 0,
-    Box: 5,
+    Box: 1,
   });
 
-  const productName = route.params?.name ?? 'Cetirizine 10 mg';
-  const productType = route.params?.subtitle ?? 'Tablet';
-  const mainImage =
-    route.params?.imageUrl ??
-    'https://via.placeholder.com/300x200/FFA500/FFFFFF?text=Cetirizine+Tablets';
+  const loadProduct = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await pharmacyApi.getById(productId);
+      setProduct(data);
+      const variantKey =
+        unitTypeToVariant(data.unitType) === 'BOX'
+          ? 'Box'
+          : unitTypeToVariant(data.unitType) === 'STRIPE'
+            ? 'Stripe'
+            : 'PC';
+      setSelectedVariant(variantKey);
+      setQuantities({PC: 0, Stripe: 0, Box: 0, [variantKey]: 1});
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Product not found';
+      Alert.alert('Product', message, [{text: 'OK', onPress: () => navigation.goBack()}]);
+    } finally {
+      setLoading(false);
+    }
+  }, [navigation, productId]);
+
+  useEffect(() => {
+    loadProduct();
+  }, [loadProduct]);
+
+  const productName = product?.name ?? 'Product';
+  const productType = product?.genericName ?? product?.category ?? 'Medicine';
+  const mainImage = productImageUrl(product?.imageUrl);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    const qty = quantities[selectedVariant] || 1;
+    if (qty < 1) {
+      Alert.alert('Cart', 'Please select quantity.');
+      return;
+    }
+    setAdding(true);
+    try {
+      await cartApi.addItem(product.id, qty, unitTypeToVariant(product.unitType));
+      navigation.navigate('PharmacyCartOverlay');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not add to cart';
+      Alert.alert('Cart', message);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  if (loading || !product) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator color="#00A884" size="large" />
+      </View>
+    );
+  }
 
   const handleQuantityChange = (variant: VariantKey, delta: number) => {
     setQuantities(prev => ({
@@ -206,9 +272,7 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
         activeOpacity={0.85}
         onPress={() =>
           navigation.push('PharmacyDetails', {
-            name: 'Immunity support',
-            subtitle: 'Vitamin C + Zinc',
-            imageUrl: imgUrl,
+            productId: product.id,
           })
         }>
         <View style={styles.badge}>
@@ -231,8 +295,13 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
         <TouchableOpacity
           style={styles.addToCartBtn}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('PharmacyCartOverlay')}>
-          <Text style={styles.addToCartBtnText}>Add to Cart</Text>
+          onPress={handleAddToCart}
+          disabled={adding}>
+          {adding ? (
+            <ActivityIndicator color="#00A884" size="small" />
+          ) : (
+            <Text style={styles.addToCartBtnText}>Add to Cart</Text>
+          )}
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -252,7 +321,8 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
           <TouchableOpacity
             style={styles.headerButtonCircle}
             activeOpacity={0.7}
-            onPress={() => navigation.navigate('PharmacyCartOverlay')}>
+            onPress={handleAddToCart}
+            disabled={adding}>
             <Feather name="shopping-cart" size={18} color="#7E8B97" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerButtonCircle} activeOpacity={0.7}>
@@ -394,7 +464,8 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
           <TouchableOpacity
             style={styles.footerCheckoutBtn}
             activeOpacity={0.9}
-            onPress={() => navigation.navigate('PharmacyCartOverlay')}>
+            onPress={handleAddToCart}
+            disabled={adding}>
             <Text style={styles.footerCheckoutBtnText}>Add to Cart</Text>
           </TouchableOpacity>
         </View>
@@ -407,6 +478,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9FAFC',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   body: {
     flex: 1,

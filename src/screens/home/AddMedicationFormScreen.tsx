@@ -1,5 +1,7 @@
 import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Switch,
@@ -16,6 +18,8 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
+import {medicationSchedulesApi} from '../../api/medications';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddMedicationForm'>;
 
@@ -39,6 +43,33 @@ export function AddMedicationFormScreen({navigation}: Props) {
   const [reminderBeforeEating, setReminderBeforeEating] = useState(true);
   const [followUpCheck, setFollowUpCheck] = useState(true);
   const [refillInventory, setRefillInventory] = useState(true);
+  const [medicineName, setMedicineName] = useState('');
+  const [dose, setDose] = useState('');
+  const [timeLabel, setTimeLabel] = useState('08:30 AM');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!medicineName.trim()) {
+      Alert.alert('Medication', 'Please enter a medicine name.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await medicationSchedulesApi.create({
+        medicineName: medicineName.trim(),
+        dose: dose.trim() || undefined,
+        instruction: instructionSegment,
+        mealTiming: mealSegment,
+        times: timeLabel ? [timeLabel] : [],
+      });
+      navigation.navigate('MedicineList');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not save medication';
+      Alert.alert('Save failed', message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -110,7 +141,9 @@ export function AddMedicationFormScreen({navigation}: Props) {
           <View style={styles.textInputWrapper}>
             <TextInput
               style={styles.textInput}
-              defaultValue="Amlodipine"
+              value={medicineName}
+              onChangeText={setMedicineName}
+              placeholder="Medicine name"
               placeholderTextColor="#A0A5BA"
             />
             <Feather
@@ -124,11 +157,16 @@ export function AddMedicationFormScreen({navigation}: Props) {
 
         {/* Strength */}
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Strength</Text>
-          <TouchableOpacity style={styles.dropdownTrigger} activeOpacity={0.8}>
-            <Text style={styles.dropdownValue}>5mg</Text>
-            <Feather name="chevron-down" size={20} color="#7D8797" />
-          </TouchableOpacity>
+          <Text style={styles.inputLabel}>Dose</Text>
+          <View style={styles.textInputWrapper}>
+            <TextInput
+              style={styles.textInput}
+              value={dose}
+              onChangeText={setDose}
+              placeholder="e.g. 1 tablet"
+              placeholderTextColor="#A0A5BA"
+            />
+          </View>
         </View>
 
         {/* Frequency */}
@@ -176,7 +214,13 @@ export function AddMedicationFormScreen({navigation}: Props) {
             color="#7D8797"
             style={styles.timeIcon}
           />
-          <Text style={styles.timeText}>08:30 AM</Text>
+          <TextInput
+            style={[styles.timeText, styles.timeInput]}
+            value={timeLabel}
+            onChangeText={setTimeLabel}
+            placeholder="08:30 AM"
+            placeholderTextColor="#A0A5BA"
+          />
           <Feather name="plus" size={18} color="#7D8797" />
         </View>
 
@@ -400,8 +444,13 @@ export function AddMedicationFormScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.saveButton}
           activeOpacity={0.9}
-          onPress={() => navigation.navigate('UploadReport')}>
-          <Text style={styles.saveButtonText}>Save Medication</Text>
+          onPress={handleSave}
+          disabled={saving}>
+          {saving ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Medication</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 
@@ -541,6 +590,7 @@ const styles = StyleSheet.create({
   timeSelectorMt: {marginTop: 12, marginBottom: 0},
   timeIcon: {marginRight: 10},
   timeText: {flex: 1, fontSize: 15, color: '#495057', fontWeight: '500'},
+  timeInput: {padding: 0},
   mealSegmentContainer: {flexDirection: 'row'},
   mealButton: {
     flex: 1,

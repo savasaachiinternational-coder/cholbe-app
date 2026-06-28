@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Switch,
@@ -7,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
@@ -14,13 +17,14 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
+import {SWITCH_TRACK, type ReminderSegmentTab} from './remindersData';
+import {medicationSchedulesApi, type MedicationSchedule} from '../../api/medications';
 import {
-  INITIAL_SWITCH_STATE,
-  REMINDER_SECTIONS,
-  SWITCH_TRACK,
+  allRemindersEnabled,
+  schedulesToReminderSections,
   type ReminderItem,
-  type ReminderSegmentTab,
-} from './remindersData';
+} from '../../api/utils/reminderHelpers';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Reminders'>;
 
@@ -29,10 +33,73 @@ export function RemindersScreen({navigation}: Props) {
   const insets = useSafeAreaInsets();
   const [activeSegmentTab, setActiveSegmentTab] =
     useState<ReminderSegmentTab>('reminders');
-  const [switches, setSwitches] = useState(INITIAL_SWITCH_STATE);
+  const [schedules, setSchedules] = useState<MedicationSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
-  const toggleSwitch = (key: string) => {
-    setSwitches(prev => ({...prev, [key]: !prev[key]}));
+  const loadReminders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await medicationSchedulesApi.list();
+      setSchedules(data);
+    } catch (err) {
+      Alert.alert(
+        'Reminders',
+        err instanceof ApiError ? err.message : 'Could not load reminders',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReminders();
+    }, [loadReminders]),
+  );
+
+  const sections = useMemo(
+    () => schedulesToReminderSections(schedules),
+    [schedules],
+  );
+
+  const masterEnabled = useMemo(
+    () => allRemindersEnabled(schedules),
+    [schedules],
+  );
+
+  const setScheduleActive = async (scheduleId: string, isActive: boolean) => {
+    setUpdating(true);
+    try {
+      await medicationSchedulesApi.update(scheduleId, {isActive});
+      await loadReminders();
+    } catch (err) {
+      Alert.alert(
+        'Reminders',
+        err instanceof ApiError ? err.message : 'Could not update reminder',
+      );
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const toggleMaster = async () => {
+    if (!schedules.length) return;
+    const next = !masterEnabled;
+    setUpdating(true);
+    try {
+      await Promise.all(
+        schedules.map(s => medicationSchedulesApi.update(s.id, {isActive: next})),
+      );
+      await loadReminders();
+    } catch (err) {
+      Alert.alert(
+        'Reminders',
+        err instanceof ApiError ? err.message : 'Could not update reminders',
+      );
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const handleTabPress = (tab: BottomTabKey) => {
@@ -65,7 +132,10 @@ export function RemindersScreen({navigation}: Props) {
           <Feather name="chevron-left" size={24} color="#1E293B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Reminders</Text>
-        <TouchableOpacity style={styles.addReminderTopButton} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.addReminderTopButton}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('AddMedication')}>
           <Feather
             name="plus"
             size={14}
@@ -128,42 +198,57 @@ export function RemindersScreen({navigation}: Props) {
           </Text>
         </TouchableOpacity>
 
-        {REMINDER_SECTIONS.map(section => (
-              <View key={section.id}>
-                <Text style={styles.timePeriodLabelHeader}>{section.label}</Text>
-                {section.items.map(item => (
-                  <ReminderCard
-                    key={item.switchKey}
-                    item={item}
-                    enabled={switches[item.switchKey] ?? true}
-                    onToggle={() => toggleSwitch(item.switchKey)}
-                  />
-                ))}
-              </View>
-            ))}
-
-            <View style={styles.masterSettingsBannerCard}>
-              <View style={styles.masterLeftBlockTextMeta}>
-                <View style={styles.masterIconCircle}>
-                  <Feather name="clock" size={20} color="#0D9488" />
-                </View>
-                <View style={styles.masterTextBlock}>
-                  <Text style={styles.masterTitleMainHeadingText}>
-                    Medication Reminders
-                  </Text>
-                  <Text style={styles.masterDescriptionBodyText}>
-                    Receive medication reminders
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={switches.masterReminders}
-                onValueChange={() => toggleSwitch('masterReminders')}
-                trackColor={SWITCH_TRACK}
-                thumbColor="#FFFFFF"
-                ios_backgroundColor="#CBD5E1"
-              />
+        {loading ? (
+          <ActivityIndicator size="large" color="#0D9488" style={styles.loader} />
+        ) : sections.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No medication reminders yet.</Text>
+            <TouchableOpacity
+              style={styles.emptyButton}
+              onPress={() => navigation.navigate('AddMedication')}>
+              <Text style={styles.emptyButtonText}>Add medication</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          sections.map(section => (
+            <View key={section.id}>
+              <Text style={styles.timePeriodLabelHeader}>{section.label}</Text>
+              {section.items.map(item => (
+                <ReminderCard
+                  key={item.switchKey}
+                  item={item}
+                  enabled={item.isActive}
+                  disabled={updating}
+                  onToggle={() => setScheduleActive(item.scheduleId, !item.isActive)}
+                />
+              ))}
             </View>
+          ))
+        )}
+
+        <View style={styles.masterSettingsBannerCard}>
+          <View style={styles.masterLeftBlockTextMeta}>
+            <View style={styles.masterIconCircle}>
+              <Feather name="clock" size={20} color="#0D9488" />
+            </View>
+            <View style={styles.masterTextBlock}>
+              <Text style={styles.masterTitleMainHeadingText}>
+                Medication Reminders
+              </Text>
+              <Text style={styles.masterDescriptionBodyText}>
+                Receive medication reminders
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={masterEnabled}
+            onValueChange={toggleMaster}
+            disabled={updating || schedules.length === 0}
+            trackColor={SWITCH_TRACK}
+            thumbColor="#FFFFFF"
+            ios_backgroundColor="#CBD5E1"
+          />
+        </View>
       </ScrollView>
 
       <TouchableOpacity
@@ -186,10 +271,12 @@ export function RemindersScreen({navigation}: Props) {
 function ReminderCard({
   item,
   enabled,
+  disabled,
   onToggle,
 }: {
   item: ReminderItem;
   enabled: boolean;
+  disabled?: boolean;
   onToggle: () => void;
 }) {
   return (
@@ -217,6 +304,7 @@ function ReminderCard({
         <Switch
           value={enabled}
           onValueChange={onToggle}
+          disabled={disabled}
           trackColor={SWITCH_TRACK}
           thumbColor="#FFFFFF"
           ios_backgroundColor="#CBD5E1"
@@ -267,6 +355,27 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
+  },
+  loader: {
+    marginVertical: 32,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyText: {
+    color: '#64748B',
+    marginBottom: 12,
+  },
+  emptyButton: {
+    backgroundColor: '#0D9488',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  emptyButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   tabsSegmentContainer: {
     flexDirection: 'row',

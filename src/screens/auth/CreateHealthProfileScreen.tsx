@@ -1,5 +1,7 @@
 import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +17,8 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {authApi} from '../../api/auth';
+import {ApiError} from '../../api/client';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -37,6 +41,36 @@ export function CreateHealthProfileScreen({
   const [password, setPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleContinue = async () => {
+    if (!fullName.trim() || !email.trim() || !password) {
+      Alert.alert('Create account', 'Please fill in all fields.');
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert('Create account', 'Password must be at least 8 characters.');
+      return;
+    }
+    if (!agreeToTerms) {
+      Alert.alert('Create account', 'Please agree to the Terms & Privacy Policy.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await authApi.register({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password,
+      });
+      onContinue(email.trim(), fullName.trim());
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Registration failed';
+      Alert.alert('Registration failed', message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -170,10 +204,15 @@ export function CreateHealthProfileScreen({
 
             <View style={styles.footerSection}>
               <TouchableOpacity
-                style={styles.continueButton}
+                style={[styles.continueButton, loading && styles.buttonDisabled]}
                 activeOpacity={0.85}
-                onPress={() => onContinue(email, fullName)}>
-                <Text style={styles.continueButtonText}>Continue</Text>
+                disabled={loading}
+                onPress={handleContinue}>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                )}
               </TouchableOpacity>
 
               <View style={styles.dividerRow}>
@@ -334,6 +373,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   continueButtonText: {
     color: '#FFFFFF',

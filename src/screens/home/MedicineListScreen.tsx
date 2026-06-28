@@ -1,48 +1,60 @@
-import {Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {useCallback, useState} from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../navigation/types';
+import {
+  medicationSchedulesApi,
+  type MedicationSchedule,
+} from '../../api/medications';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MedicineList'>;
 const {width} = Dimensions.get('window');
 
+function formatMealTiming(value: string | null) {
+  if (!value) return '—';
+  return value === 'before' ? 'Before Meal' : value === 'after' ? 'After Meal' : value;
+}
+
 export function MedicineListScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [items, setItems] = useState<MedicationSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const medicineListData = [
-    {
-      id: '1',
-      name: 'Thyrox 50mg',
-      pills: '2 Pills',
-      instruction: 'After Eating',
-      time: '2:45 PM',
-    },
-    {
-      id: '2',
-      name: 'Thyrox 50mg',
-      pills: '2 Pills',
-      instruction: 'After Eating',
-      time: '2:45 PM',
-    },
-    {
-      id: '3',
-      name: 'Thyrox 50mg',
-      pills: '2 Pills',
-      instruction: 'After Eating',
-      time: '2:45 PM',
-    },
-    {
-      id: '4',
-      name: 'Thyrox 50mg',
-      pills: '2 Pills',
-      instruction: 'After Eating',
-      time: '2:45 PM',
-    },
-  ];
+  const loadMedications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await medicationSchedulesApi.list();
+      setItems(data);
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load medications';
+      Alert.alert('Medications', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadMedications();
+    }, [loadMedications]),
+  );
 
   return (
     <View style={styles.container}>
@@ -83,17 +95,22 @@ export function MedicineListScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.uploadMedicineBar}
           activeOpacity={0.9}
-          onPress={() => navigation.navigate('UploadReport')}>
+          onPress={() => navigation.navigate('AddMedicationForm')}>
           <MaterialCommunityIcons
-            name="cloud-upload-outline"
+            name="plus"
             size={24}
             color="#FFFFFF"
             style={styles.uploadIcon}
           />
-          <Text style={styles.uploadMedicineBarText}>Upload Medicine</Text>
+          <Text style={styles.uploadMedicineBarText}>Add Medication</Text>
         </TouchableOpacity>
 
-        {medicineListData.map(item => (
+        {loading ? (
+          <ActivityIndicator color="#45A096" style={styles.loader} />
+        ) : items.length === 0 ? (
+          <Text style={styles.emptyText}>No medications yet. Tap Add Medication.</Text>
+        ) : (
+          items.map(item => (
           <View key={item.id} style={styles.medicineListCard}>
             <View style={styles.pillIconContainer}>
               <MaterialCommunityIcons
@@ -105,18 +122,22 @@ export function MedicineListScreen({navigation}: Props) {
             </View>
 
             <View style={styles.medicineCardDetails}>
-              <Text style={styles.medicineCardTitle}>{item.name}</Text>
+              <Text style={styles.medicineCardTitle}>{item.medicineName}</Text>
               <View style={styles.metaLabelRow}>
                 <View style={styles.orangeListDot} />
-                <Text style={styles.metaLabelText}>{item.pills}</Text>
+                <Text style={styles.metaLabelText}>{item.dose ?? '—'}</Text>
 
                 <View style={styles.orangeListDot} />
-                <Text style={styles.metaLabelText}>{item.instruction}</Text>
+                <Text style={styles.metaLabelText}>
+                  {formatMealTiming(item.mealTiming)}
+                </Text>
               </View>
             </View>
 
             <View style={styles.cardRightColumn}>
-              <Text style={styles.timestampText}>{item.time}</Text>
+              <Text style={styles.timestampText}>
+                {item.times[0] ?? '—'}
+              </Text>
               <TouchableOpacity
                 style={styles.viewReportButton}
                 activeOpacity={0.7}
@@ -125,7 +146,8 @@ export function MedicineListScreen({navigation}: Props) {
               </TouchableOpacity>
             </View>
           </View>
-        ))}
+          ))
+        )}
       </ScrollView>
 
       <TouchableOpacity
@@ -252,6 +274,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   uploadIcon: {marginRight: 10},
+  loader: {marginVertical: 24},
+  emptyText: {
+    textAlign: 'center',
+    color: '#8A94A6',
+    fontSize: 14,
+    marginTop: 8,
+  },
   medicineListCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,

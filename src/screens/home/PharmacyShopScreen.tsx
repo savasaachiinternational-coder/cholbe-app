@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -9,12 +11,27 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
+import {cartApi} from '../../api/cart';
+import {ApiError} from '../../api/client';
+import {
+  discountPercent,
+  formatBdt,
+  groupProductsForShop,
+  matchesShopCategory,
+  productImageUrl,
+  productUnitPrice,
+  productListPrice,
+  productVolumeLabel,
+  unitTypeToVariant,
+} from '../../utils/pharmacyHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyShop'>;
 
@@ -23,34 +40,82 @@ const CARD_SPACING = 12;
 const CARD_WIDTH = (width - 32 - CARD_SPACING) / 2;
 
 const FILTER_CATEGORIES = ['All Items', 'Medicines', "Women's Care", 'Body Care'];
-const PRODUCT_SECTIONS = ['Top Picks', 'Baby Products', 'Oral & Body Care'];
 
 export function PharmacyShopScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('All Items');
+  const [search, setSearch] = useState('');
+  const [products, setProducts] = useState<PharmacyProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [cartCount, setCartCount] = useState(0);
+  const [addingId, setAddingId] = useState<string | null>(null);
 
-  const renderProductCard = (index: number) => {
-    const isOrangePack = index % 2 !== 0;
-    const imgUrl = isOrangePack
-      ? 'https://via.placeholder.com/150/FF8C00/FFFFFF?text=Immune+Pack'
-      : 'https://via.placeholder.com/150/4682B4/FFFFFF?text=Pills+Bottle';
-    const product = {
-      name: 'Immunity support',
-      subtitle: 'Vitamin C + Zinc',
-      imageUrl: imgUrl,
-      price: '$120',
-      oldPrice: '$10',
-    };
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [productList, cart] = await Promise.all([
+        pharmacyApi.list(search.trim() ? {search: search.trim()} : undefined),
+        cartApi.get().catch(() => null),
+      ]);
+      setProducts(productList);
+      setCartCount(cart?.items.reduce((n, i) => n + i.quantity, 0) ?? 0);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load pharmacy';
+      Alert.alert('Pharmacy', message);
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
+
+  const filteredProducts = useMemo(
+    () => products.filter(p => matchesShopCategory(p, activeCategory)),
+    [products, activeCategory],
+  );
+
+  const sections = useMemo(
+    () => groupProductsForShop(filteredProducts),
+    [filteredProducts],
+  );
+
+  const handleAddToCart = async (product: PharmacyProduct) => {
+    setAddingId(product.id);
+    try {
+      const cart = await cartApi.addItem(
+        product.id,
+        1,
+        unitTypeToVariant(product.unitType),
+      );
+      setCartCount(cart.items.reduce((n, i) => n + i.quantity, 0));
+      Alert.alert('Added', `${product.name} added to cart.`);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not add to cart';
+      Alert.alert('Cart', message);
+    } finally {
+      setAddingId(null);
+    }
+  };
+
+  const renderProductCard = (product: PharmacyProduct) => {
+    const pct = discountPercent(product);
+    const imgUrl = productImageUrl(product.imageUrl);
 
     return (
-      <View key={index} style={styles.card}>
+      <View key={product.id} style={styles.card}>
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={() => navigation.navigate('PharmacyDetails', product)}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>-10%</Text>
-          </View>
+          onPress={() => navigation.navigate('PharmacyDetails', {productId: product.id})}>
+          {pct != null && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>-{pct}%</Text>
+            </View>
+          )}
 
           <Image source={{uri: imgUrl}} style={styles.productImage} />
 
@@ -58,16 +123,20 @@ export function PharmacyShopScreen({navigation}: Props) {
             <Text style={styles.productTitle} numberOfLines={1}>
               {product.name}
             </Text>
-            <Text style={styles.productSubtitle}>{product.subtitle}</Text>
+            <Text style={styles.productSubtitle} numberOfLines={1}>
+              {product.genericName ?? product.brand ?? ''}
+            </Text>
 
             <View style={styles.metaRow}>
               <View style={styles.sizeContainer}>
                 <Feather name="droplet" size={12} color="#7E8B97" />
-                <Text style={styles.sizeText}>60 ml</Text>
+                <Text style={styles.sizeText}>{productVolumeLabel(product)}</Text>
               </View>
               <View style={styles.priceContainer}>
-                <Text style={styles.oldPrice}>{product.oldPrice}</Text>
-                <Text style={styles.newPrice}>{product.price}</Text>
+                {product.discountPrice != null && (
+                  <Text style={styles.oldPrice}>{formatBdt(productListPrice(product))}</Text>
+                )}
+                <Text style={styles.newPrice}>{formatBdt(productUnitPrice(product))}</Text>
               </View>
             </View>
           </View>
@@ -76,14 +145,19 @@ export function PharmacyShopScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.addToCartBtn}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('PharmacyCartOverlay')}>
-          <Text style={styles.addToCartText}>Add to Cart</Text>
+          disabled={addingId === product.id}
+          onPress={() => handleAddToCart(product)}>
+          {addingId === product.id ? (
+            <ActivityIndicator color="#00A884" size="small" />
+          ) : (
+            <Text style={styles.addToCartText}>Add to Cart</Text>
+          )}
         </TouchableOpacity>
       </View>
     );
   };
 
-  const renderSection = (title: string) => (
+  const renderSection = (title: string, items: PharmacyProduct[]) => (
     <View style={styles.sectionContainer} key={title}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{title}</Text>
@@ -93,7 +167,7 @@ export function PharmacyShopScreen({navigation}: Props) {
         </TouchableOpacity>
       </View>
       <View style={styles.grid}>
-        {[1, 2].map(item => renderProductCard(item))}
+        {items.slice(0, 2).map(item => renderProductCard(item))}
       </View>
     </View>
   );
@@ -114,7 +188,13 @@ export function PharmacyShopScreen({navigation}: Props) {
             activeOpacity={0.7}
             onPress={() => navigation.navigate('PharmacyCartOverlay')}>
             <Feather name="shopping-cart" size={22} color="#1A1C1E" />
-            <View style={styles.cartBadge} />
+            {cartCount > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>
+                  {cartCount > 9 ? '9+' : cartCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerButton}
@@ -137,8 +217,12 @@ export function PharmacyShopScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={loadData}
+            returnKeyType="search"
           />
-          <TouchableOpacity style={styles.filterButton} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.filterButton} activeOpacity={0.7} onPress={loadData}>
             <MaterialCommunityIcons name="tune" size={20} color="#00A884" />
           </TouchableOpacity>
         </View>
@@ -163,7 +247,13 @@ export function PharmacyShopScreen({navigation}: Props) {
           })}
         </ScrollView>
 
-        {PRODUCT_SECTIONS.map(section => renderSection(section))}
+        {loading ? (
+          <ActivityIndicator color="#00A884" style={styles.loader} />
+        ) : sections.length === 0 ? (
+          <Text style={styles.emptyText}>No products found.</Text>
+        ) : (
+          sections.map(section => renderSection(section.title, section.items))
+        )}
       </ScrollView>
 
       <TouchableOpacity
@@ -218,10 +308,7 @@ export function PharmacyShopScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFC',
-  },
-  scrollContainer: {
-    paddingTop: 4,
+    backgroundColor: '#F6F8FB',
   },
   header: {
     flexDirection: 'row',
@@ -229,30 +316,43 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1C1E',
-    flex: 1,
-    marginLeft: 12,
-  },
-  headerRightIcons: {
-    flexDirection: 'row',
-    gap: 16,
+    backgroundColor: '#F6F8FB',
   },
   headerButton: {
     padding: 4,
     position: 'relative',
   },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1C1E',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerRightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   cartBadge: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E26D6D',
+    top: 0,
+    right: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#DC6468',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+  },
+  cartBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  scrollContainer: {
+    paddingTop: 4,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -261,56 +361,60 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 24,
     paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#EAEFF5',
     height: 48,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.03,
-    shadowRadius: 2,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: '#ECEFF3',
+    marginBottom: 12,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     color: '#1A1C1E',
+    padding: 0,
   },
   filterButton: {
     padding: 4,
   },
   categoriesContent: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingBottom: 16,
     gap: 8,
   },
   chip: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F0F3F6',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#ECEFF3',
     marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   activeChip: {
-    backgroundColor: '#E26D6D',
+    backgroundColor: '#DC6468',
+    borderColor: '#DC6468',
   },
   chipText: {
-    color: '#4F5E6D',
-    fontWeight: '500',
     fontSize: 13,
+    color: '#7E8B97',
+    fontWeight: '500',
   },
   activeChipText: {
     color: '#FFFFFF',
-    fontWeight: '500',
-    fontSize: 13,
+    fontWeight: '600',
+  },
+  loader: {marginVertical: 40},
+  emptyText: {
+    textAlign: 'center',
+    color: '#9AA6B2',
+    marginVertical: 24,
+    fontSize: 14,
   },
   sectionContainer: {
-    paddingHorizontal: 16,
     marginBottom: 20,
+    paddingHorizontal: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -319,8 +423,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#1A1C1E',
   },
   viewAllRow: {
@@ -328,12 +432,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewAllText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#7E8B97',
     marginRight: 2,
   },
   grid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: CARD_SPACING,
   },
@@ -341,39 +446,39 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 12,
+    padding: 10,
+    marginBottom: CARD_SPACING,
     borderWidth: 1,
-    borderColor: '#EAEFF5',
-    position: 'relative',
+    borderColor: '#ECEFF3',
   },
   badge: {
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: '#E26D6D',
+    backgroundColor: '#DC6468',
     borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    zIndex: 10,
+    zIndex: 2,
   },
   badgeText: {
     color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   productImage: {
     width: '100%',
-    height: 110,
-    borderRadius: 10,
-    resizeMode: 'cover',
+    height: 100,
+    borderRadius: 12,
     marginBottom: 8,
+    backgroundColor: '#F0F3F6',
   },
   infoContainer: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   productTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#1A1C1E',
   },
   productSubtitle: {
@@ -385,7 +490,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
   sizeContainer: {
     flexDirection: 'row',
@@ -393,7 +498,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sizeText: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#7E8B97',
   },
   priceContainer: {
@@ -402,63 +507,64 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   oldPrice: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#9AA6B2',
     textDecorationLine: 'line-through',
   },
   newPrice: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: '#1A1C1E',
   },
   addToCartBtn: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#00A884',
     borderRadius: 20,
     paddingVertical: 8,
     alignItems: 'center',
+    minHeight: 36,
     justifyContent: 'center',
   },
   addToCartText: {
     color: '#00A884',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   fab: {
     position: 'absolute',
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#7CD1A1',
+    right: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#00A884',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   bottomNav: {
+    flexDirection: 'row',
+    minHeight: 74,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F2F7',
+    justifyContent: 'space-around',
+    alignItems: 'center',
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    minHeight: 65,
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#EAEFF5',
-    justifyContent: 'space-around',
-    alignItems: 'center',
   },
   navItem: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    width: width / 5,
   },
   navText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#9AA6B2',
     marginTop: 4,
     fontWeight: '500',

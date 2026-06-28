@@ -1,4 +1,7 @@
+import {useEffect, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -13,20 +16,75 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
+import {appointmentsApi} from '../../api/appointments';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WaitingRoom'>;
 
 const DOCTOR_AVATAR = require('../../assets/b2.png');
 
+function formatCountdown(target: Date): string {
+  const diffMs = target.getTime() - Date.now();
+  if (diffMs <= 0) return '00:00';
+  const totalSec = Math.floor(diffMs / 1000);
+  const min = Math.floor(totalSec / 60)
+    .toString()
+    .padStart(2, '0');
+  const sec = (totalSec % 60).toString().padStart(2, '0');
+  return `${min}:${sec}`;
+}
+
 export function WaitingRoomScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const appointmentId = route.params.appointmentId;
 
-  const doctorName = route.params?.doctorName ?? 'Dr. Ahmed';
-  const specialty = route.params?.specialty ?? 'Cardiologist';
+  const [doctorName, setDoctorName] = useState(route.params?.doctorName ?? 'Doctor');
+  const [specialty, setSpecialty] = useState(route.params?.specialty ?? 'Specialist');
+  const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState('--:--');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const appt = await appointmentsApi.getById(appointmentId);
+        if (!mounted) return;
+        setDoctorName(appt.doctor.user.fullName);
+        setSpecialty(appt.doctor.specialty);
+        setScheduledAt(new Date(appt.scheduledDate));
+      } catch (err) {
+        const message = err instanceof ApiError ? err.message : 'Could not load appointment';
+        Alert.alert('Waiting room', message);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [appointmentId]);
+
+  useEffect(() => {
+    if (!scheduledAt) return;
+    const tick = () => setCountdown(formatCountdown(scheduledAt));
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [scheduledAt]);
+
+  const canJoin = useMemo(() => {
+    if (!scheduledAt) return true;
+    return scheduledAt.getTime() - Date.now() <= 60 * 60 * 1000;
+  }, [scheduledAt, countdown]);
 
   const openChat = () => {
-    navigation.navigate('ConsultationChat', {doctorName, specialty});
+    navigation.navigate('ConsultationChat', {
+      doctorName,
+      specialty,
+      appointmentId,
+    });
   };
 
   const handleTabPress = (tab: BottomTabKey) => {
@@ -48,6 +106,14 @@ export function WaitingRoomScreen({navigation, route}: Props) {
     }
     navigation.navigate('Home');
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#0D9488" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -74,12 +140,9 @@ export function WaitingRoomScreen({navigation, route}: Props) {
           {paddingBottom: insets.bottom + 120},
         ]}>
         <View style={styles.countdownContainer}>
-          <Text style={styles.countdownTitle}>
-            You consultation is scheduled
-          </Text>
+          <Text style={styles.countdownTitle}>Your consultation is scheduled</Text>
           <Text style={styles.countdownSubtitle}>
-            Call starts in{' '}
-            <Text style={styles.countdownTimer}>02:45 minutes</Text>
+            Call starts in <Text style={styles.countdownTimer}>{countdown} minutes</Text>
           </Text>
         </View>
 
@@ -94,74 +157,28 @@ export function WaitingRoomScreen({navigation, route}: Props) {
           </View>
 
           <TouchableOpacity
-            style={styles.joinCallButton}
+            style={[styles.joinCallButton, !canJoin && styles.joinCallDisabled]}
             activeOpacity={0.9}
+            disabled={!canJoin}
             onPress={() =>
-              navigation.navigate('ActiveVideoCall', {doctorName, specialty})
+              navigation.navigate('ActiveVideoCall', {
+                appointmentId,
+                doctorName,
+                specialty,
+              })
             }>
-            <Text style={styles.joinCallButtonText}>Join Video Call</Text>
+            <Text style={styles.joinCallButtonText}>
+              {canJoin ? 'Join Video Call' : 'Available 1 hour before start'}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.diagnosticGridRow}>
             <DiagnosticItem icon="camera" label="Camera" status="Ready" />
-            <DiagnosticItem
-              icon="mic"
-              label="Mic"
-              status="Ready"
-              withDivider
-            />
-            <DiagnosticItem
-              icon="wifi"
-              label="Network"
-              status="Good"
-              withDivider
-            />
-          </View>
-
-          <Text style={styles.cardInfoDisclaimer}>
-            Please be ready before the call starts.{'\n'}Ensure a good internet
-            connections.
-          </Text>
-
-          <View style={styles.cardNavContainer}>
-            <TouchableOpacity
-              style={styles.cardNavRowButton}
-              activeOpacity={0.8}>
-              <View style={styles.cardNavLeftMeta}>
-                <Feather name="headphones" size={20} color="#0D9488" />
-                <Text style={styles.cardNavButtonLabel}>
-                  Switch to Audio Call
-                </Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="#64748B" />
-            </TouchableOpacity>
-
-            <View style={styles.cardNavDividerLine} />
-
-            <TouchableOpacity
-              style={styles.cardNavRowButton}
-              activeOpacity={0.8}
-              onPress={openChat}>
-              <View style={styles.cardNavLeftMeta}>
-                <Feather name="message-circle" size={20} color="#0D9488" />
-                <Text style={styles.cardNavButtonLabel}>Chat With Doctor</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="#64748B" />
-            </TouchableOpacity>
+            <DiagnosticItem icon="mic" label="Mic" status="Ready" withDivider />
+            <DiagnosticItem icon="wifi" label="Network" status="Good" withDivider />
           </View>
         </View>
-
-        <Text style={styles.systemDisclaimerNoticeText}>
-          This is a paid consultation. By using this services, you agree to our
-          Terms.
-        </Text>
       </ScrollView>
-
-      <TouchableOpacity
-        style={[styles.floatingScanButton, {bottom: insets.bottom + 90}]}
-        activeOpacity={0.85}>
-        <Feather name="maximize" size={24} color="#1E293B" />
-      </TouchableOpacity>
 
       <View style={styles.bottomNavWrap}>
         <HomeBottomNav
@@ -186,15 +203,10 @@ function DiagnosticItem({
   withDivider?: boolean;
 }) {
   return (
-    <View style={[styles.diagnosticItem, withDivider && styles.dividerLeft]}>
-      <View style={styles.iconLabelRow}>
-        <Feather name={icon} size={18} color="#0D9488" />
-        <Text style={styles.diagnosticLabel}>{label}</Text>
-      </View>
-      <View style={styles.statusCheckRow}>
-        <Feather name="check" size={14} color="#0D9488" />
-        <Text style={styles.statusCheckText}>{status}</Text>
-      </View>
+    <View style={[styles.diagnosticItem, withDivider && styles.diagnosticDivider]}>
+      <Feather name={icon} size={18} color="#0D9488" />
+      <Text style={styles.diagnosticLabel}>{label}</Text>
+      <Text style={styles.diagnosticStatus}>{status}</Text>
     </View>
   );
 }
@@ -202,76 +214,68 @@ function DiagnosticItem({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: '#F8FAFC',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
   },
   iconButton: {
-    padding: 4,
-    width: 32,
+    width: 40,
+    height: 40,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1E293B',
-    flex: 1,
-    textAlign: 'center',
   },
   scrollContent: {
     paddingHorizontal: 16,
   },
   countdownContainer: {
     alignItems: 'center',
-    marginTop: 28,
-    marginBottom: 24,
+    marginBottom: 20,
+    marginTop: 8,
   },
   countdownTitle: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#64748B',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 6,
   },
   countdownSubtitle: {
     fontSize: 14,
     color: '#64748B',
-    marginTop: 6,
-    fontWeight: '500',
   },
   countdownTimer: {
-    color: '#14B8A6',
+    color: '#0D9488',
     fontWeight: '700',
   },
   roomCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 20,
     padding: 20,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 2,
   },
   doctorProfileBlock: {
     alignItems: 'center',
-    marginTop: 8,
     marginBottom: 20,
   },
   doctorAvatar: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#E2E8F0',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   doctorName: {
     fontSize: 18,
@@ -284,133 +288,60 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   greenDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#22C55E',
     marginRight: 6,
   },
   specialtyText: {
     fontSize: 13,
     color: '#64748B',
-    fontWeight: '500',
   },
   joinCallButton: {
-    backgroundColor: '#408E91',
-    borderRadius: 14,
+    backgroundColor: '#0D9488',
+    borderRadius: 24,
     paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  joinCallDisabled: {
+    backgroundColor: '#94A3B8',
   },
   joinCallButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   diagnosticGridRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#F1F5F9',
-    paddingVertical: 14,
-    marginBottom: 16,
+    justifyContent: 'space-between',
   },
   diagnosticItem: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 8,
   },
-  dividerLeft: {
+  diagnosticDivider: {
     borderLeftWidth: 1,
-    borderLeftColor: '#F1F5F9',
-  },
-  iconLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    borderRightWidth: 1,
+    borderColor: '#E2E8F0',
   },
   diagnosticLabel: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#64748B',
-    fontWeight: '500',
+    marginTop: 4,
   },
-  statusCheckRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    gap: 2,
-  },
-  statusCheckText: {
+  diagnosticStatus: {
     fontSize: 12,
-    color: '#0D9488',
     fontWeight: '600',
-  },
-  cardInfoDisclaimer: {
-    fontSize: 13,
-    color: '#64748B',
-    lineHeight: 18,
-    fontWeight: '500',
-    marginBottom: 20,
-  },
-  cardNavContainer: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  cardNavRowButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  cardNavLeftMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  cardNavButtonLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  cardNavDividerLine: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginHorizontal: 16,
-  },
-  systemDisclaimerNoticeText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 16,
-    marginTop: 28,
-    paddingHorizontal: 16,
-    fontWeight: '500',
-  },
-  floatingScanButton: {
-    position: 'absolute',
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#A7F3D0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
-    zIndex: 99,
+    color: '#1E293B',
+    marginTop: 2,
   },
   bottomNavWrap: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 10,
   },
 });

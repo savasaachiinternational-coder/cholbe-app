@@ -1,5 +1,7 @@
-import {useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,10 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {adminApi} from '../../api/admin';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
@@ -23,6 +28,15 @@ import {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AOrders'>;
 
+type ApiOrder = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  createdAt: string;
+  customer: {fullName: string; phone: string | null};
+  vendor?: {pharmacyName: string} | null;
+};
+
 type OrderRecord = {
   id: string;
   customerName: string;
@@ -32,56 +46,52 @@ type OrderRecord = {
   status: AdminOrderStatus;
 };
 
-const MOCK_ORDERS: OrderRecord[] = [
-  {
-    id: '#RK123457',
-    customerName: 'Rayhan Ullah',
-    pharmacyName: 'Medicare Pharmacy',
-    phone: '01677589448',
-    timeAgo: '2 min ago',
-    status: 'Delivered',
-  },
-  {
-    id: '#RK123457',
-    customerName: 'Rayhan Ullah',
-    pharmacyName: 'Medicare Pharmacy',
-    phone: '01677589448',
-    timeAgo: '2 min ago',
-    status: 'Processing',
-  },
-  {
-    id: '#RK123457',
-    customerName: 'Rayhan Ullah',
-    pharmacyName: 'Medicare Pharmacy',
-    phone: '01677589448',
-    timeAgo: '2 min ago',
-    status: 'Delivered',
-  },
-  {
-    id: '#RK123457',
-    customerName: 'Rayhan Ullah',
-    pharmacyName: 'Medicare Pharmacy',
-    phone: '01677589448',
-    timeAgo: '2 min ago',
-    status: 'Pending',
-  },
-  {
-    id: '#RK123457',
-    customerName: 'Rayhan Ullah',
-    pharmacyName: 'Medicare Pharmacy',
-    phone: '01677589448',
-    timeAgo: '2 min ago',
-    status: 'Delivered',
-  },
-  {
-    id: '#RK123457',
-    customerName: 'Rayhan Ullah',
-    pharmacyName: 'Medicare Pharmacy',
-    phone: '01677589448',
-    timeAgo: '2 min ago',
-    status: 'Cancelled',
-  },
-];
+function mapOrderStatus(status: string): AdminOrderStatus {
+  switch (status) {
+    case 'PENDING':
+      return 'Pending';
+    case 'PREPARING':
+    case 'CONFIRMED':
+    case 'ON_THE_WAY':
+      return 'Processing';
+    case 'DELIVERED':
+      return 'Delivered';
+    case 'CANCELLED':
+      return 'Cancelled';
+    default:
+      return 'Pending';
+  }
+}
+
+function filterToApiStatus(filter: AdminOrderFilter): string | undefined {
+  if (filter === 'All' || filter === 'Processing') return undefined;
+  if (filter === 'Pending') return 'PENDING';
+  if (filter === 'Delivered') return 'DELIVERED';
+  if (filter === 'Cancelled') return 'CANCELLED';
+  return undefined;
+}
+
+function formatTimeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day ago`;
+}
+
+function mapOrder(record: ApiOrder): OrderRecord {
+  return {
+    id: `#${record.orderNumber}`,
+    customerName: record.customer.fullName,
+    pharmacyName: record.vendor?.pharmacyName ?? '—',
+    phone: record.customer.phone ?? '—',
+    timeAgo: formatTimeAgo(record.createdAt),
+    status: mapOrderStatus(record.status),
+  };
+}
 
 function getStatusBadgeStyle(status: AdminOrderStatus) {
   switch (status) {
@@ -111,7 +121,7 @@ function OrderCard({item}: {item: OrderRecord}) {
         />
         <View style={styles.metaTextInfo}>
           <Text style={styles.customerNameText}>{item.customerName}</Text>
-          <View style={styles.pharmacySubRow}>
+          <View style={styles.pharmacyRow}>
             <MaterialCommunityIcons name="hospital-box" size={12} color="#7E8B97" />
             <Text style={styles.pharmacyNameText}>{item.pharmacyName}</Text>
           </View>
@@ -136,13 +146,44 @@ export function AdminOrdersScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<AdminOrderFilter>('All');
+  const [orders, setOrders] = useState<OrderRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminApi.orders(filterToApiStatus(activeFilter));
+      let mapped = (data as ApiOrder[]).map(mapOrder);
+      if (activeFilter === 'Processing') {
+        mapped = mapped.filter(o => o.status === 'Processing');
+      }
+      setOrders(mapped);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load orders';
+      Alert.alert('Orders', message);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeFilter]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [loadOrders]),
+  );
 
   const filteredOrders = useMemo(() => {
-    if (activeFilter === 'All') {
-      return MOCK_ORDERS;
-    }
-    return MOCK_ORDERS.filter(order => order.status === activeFilter);
-  }, [activeFilter]);
+    const q = search.trim().toLowerCase();
+    if (!q) return orders;
+    return orders.filter(
+      o =>
+        o.id.toLowerCase().includes(q) ||
+        o.customerName.toLowerCase().includes(q) ||
+        o.pharmacyName.toLowerCase().includes(q) ||
+        o.phone.includes(q),
+    );
+  }, [orders, search]);
 
   return (
     <View style={styles.container}>
@@ -174,6 +215,8 @@ export function AdminOrdersScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
             <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
@@ -209,9 +252,15 @@ export function AdminOrdersScreen({navigation}: Props) {
         </View>
 
         <View style={styles.itemsVerticalStack}>
-          {filteredOrders.map((recordItem, index) => (
-            <OrderCard key={`${recordItem.id}-${index}`} item={recordItem} />
-          ))}
+          {loading ? (
+            <ActivityIndicator color="#4E929D" style={styles.loader} />
+          ) : filteredOrders.length === 0 ? (
+            <Text style={styles.emptyText}>No orders found.</Text>
+          ) : (
+            filteredOrders.map((recordItem, index) => (
+              <OrderCard key={`${recordItem.id}-${index}`} item={recordItem} />
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -318,6 +367,13 @@ const styles = StyleSheet.create({
   itemsVerticalStack: {
     gap: 12,
   },
+  loader: {marginVertical: 32},
+  emptyText: {
+    textAlign: 'center',
+    color: '#9AA6B2',
+    fontSize: 14,
+    paddingVertical: 32,
+  },
   orderCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
@@ -364,7 +420,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1A1C1E',
   },
-  pharmacySubRow: {
+  pharmacyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,

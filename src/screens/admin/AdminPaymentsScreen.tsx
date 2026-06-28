@@ -1,4 +1,7 @@
+import {useCallback, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -7,10 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {adminApi} from '../../api/admin';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
@@ -19,7 +25,20 @@ type Props = NativeStackScreenProps<RootStackParamList, 'APayments'>;
 
 type PaymentStatus = 'Paid' | 'failed';
 
+type ApiPayment = {
+  id: string;
+  amount: string | number;
+  status: string;
+  createdAt: string;
+  order: {
+    orderNumber: string;
+    createdAt: string;
+    customer: {fullName: string};
+  };
+};
+
 type InvoiceRecord = {
+  id: string;
   orderId: string;
   name: string;
   date: string;
@@ -27,13 +46,32 @@ type InvoiceRecord = {
   status: PaymentStatus;
 };
 
-const MOCK_INVOICES: InvoiceRecord[] = [
-  {orderId: '#RK123457', name: 'Rayhan Ullah', date: '01 May 2026', amount: '1250', status: 'Paid'},
-  {orderId: '#RK123457', name: 'Rayhan Ullah', date: '01 May 2026', amount: '1250', status: 'Paid'},
-  {orderId: '#RK123457', name: 'Rayhan Ullah', date: '01 May 2026', amount: '1250', status: 'failed'},
-  {orderId: '#RK123457', name: 'Rayhan Ullah', date: '01 May 2026', amount: '1250', status: 'Paid'},
-  {orderId: '#RK123457', name: 'Rayhan Ullah', date: '01 May 2026', amount: '1250', status: 'Paid'},
-];
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function mapPaymentStatus(status: string): PaymentStatus {
+  return status === 'PAID' ? 'Paid' : 'failed';
+}
+
+function mapPayment(record: ApiPayment): InvoiceRecord {
+  const amount =
+    typeof record.amount === 'string' ? parseFloat(record.amount) : record.amount;
+  return {
+    id: record.id,
+    orderId: `#${record.order.orderNumber}`,
+    name: record.order.customer.fullName,
+    date: formatDate(record.order.createdAt ?? record.createdAt),
+    amount: String(Math.round(amount || 0)),
+    status: mapPaymentStatus(record.status),
+  };
+}
 
 function InvoiceCard({item, isLast}: {item: InvoiceRecord; isLast: boolean}) {
   const isPaid = item.status === 'Paid';
@@ -66,6 +104,39 @@ function InvoiceCard({item, isLast}: {item: InvoiceRecord; isLast: boolean}) {
 export function AdminPaymentsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const loadPayments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await adminApi.payments();
+      setInvoices((data as ApiPayment[]).map(mapPayment));
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load payments';
+      Alert.alert('Payments', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPayments();
+    }, [loadPayments]),
+  );
+
+  const filteredInvoices = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return invoices;
+    return invoices.filter(
+      i =>
+        i.orderId.toLowerCase().includes(q) ||
+        i.name.toLowerCase().includes(q) ||
+        i.amount.includes(q),
+    );
+  }, [invoices, search]);
 
   return (
     <View style={styles.container}>
@@ -97,6 +168,8 @@ export function AdminPaymentsScreen({navigation}: Props) {
             placeholder="Search"
             placeholderTextColor="#9AA6B2"
             style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
             <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
@@ -104,13 +177,19 @@ export function AdminPaymentsScreen({navigation}: Props) {
         </View>
 
         <View style={styles.recordsContainerCard}>
-          {MOCK_INVOICES.map((invoice, index) => (
-            <InvoiceCard
-              key={`${invoice.orderId}-${index}`}
-              item={invoice}
-              isLast={index === MOCK_INVOICES.length - 1}
-            />
-          ))}
+          {loading ? (
+            <ActivityIndicator color="#4E929D" style={styles.loader} />
+          ) : filteredInvoices.length === 0 ? (
+            <Text style={styles.emptyText}>No payments found.</Text>
+          ) : (
+            filteredInvoices.map((invoice, index) => (
+              <InvoiceCard
+                key={invoice.id}
+                item={invoice}
+                isLast={index === filteredInvoices.length - 1}
+              />
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -173,6 +252,14 @@ const styles = StyleSheet.create({
     borderColor: '#ECEFF3',
     paddingTop: 4,
     paddingBottom: 4,
+    minHeight: 120,
+  },
+  loader: {marginVertical: 32},
+  emptyText: {
+    textAlign: 'center',
+    color: '#9AA6B2',
+    fontSize: 14,
+    paddingVertical: 32,
   },
   invoiceRowItem: {
     paddingHorizontal: 16,

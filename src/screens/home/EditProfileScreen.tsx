@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -15,10 +17,10 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
-import {
-  EDIT_EMERGENCY_CONTACTS,
-  EDIT_PROFILE_FORM,
-} from './editProfileData';
+import {authApi} from '../../api/auth';
+import {profileApi, type EmergencyContact} from '../../api/profile';
+import {ApiError} from '../../api/client';
+import {useFocusEffect} from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditProfile'>;
 
@@ -28,13 +30,44 @@ export function EditProfileScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
 
-  const [name, setName] = useState(EDIT_PROFILE_FORM.name);
-  const [age, setAge] = useState(EDIT_PROFILE_FORM.age);
-  const [gender, setGender] = useState(EDIT_PROFILE_FORM.gender);
-  const [bloodGroup, setBloodGroup] = useState(EDIT_PROFILE_FORM.bloodGroup);
-  const [address, setAddress] = useState(EDIT_PROFILE_FORM.address);
-  const [phone, setPhone] = useState(EDIT_PROFILE_FORM.phone);
-  const [email, setEmail] = useState(EDIT_PROFILE_FORM.email);
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
+
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const overview = await profileApi.overview();
+      const user = overview.user;
+      const patient = user.patientProfile;
+      setName(user.fullName ?? '');
+      setAge(patient?.age != null ? String(patient.age) : '');
+      setGender(patient?.gender ?? '');
+      setBloodGroup(patient?.bloodGroup ?? '');
+      setAddress(overview.defaultAddress?.formattedAddress ?? '');
+      setPhone(user.phone ?? '');
+      setEmail(user.email ?? '');
+      setEmergencyContacts(patient?.emergencyContacts ?? []);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load profile';
+      Alert.alert('Edit profile', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile]),
+  );
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -56,9 +89,34 @@ export function EditProfileScreen({navigation}: Props) {
     navigation.navigate('Home');
   };
 
-  const saveProfile = () => {
-    navigation.goBack();
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      await authApi.updateMe({
+        fullName: name.trim() || undefined,
+        phone: phone.trim() || undefined,
+      });
+      await profileApi.updatePatient({
+        age: age ? Number(age) : undefined,
+        gender: gender.trim() || undefined,
+        bloodGroup: bloodGroup.trim() || undefined,
+      });
+      navigation.goBack();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not save profile';
+      Alert.alert('Edit profile', message);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#0D9488" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -122,15 +180,19 @@ export function EditProfileScreen({navigation}: Props) {
         <Text style={styles.blockSectionHeading}>Emergency Contact</Text>
 
         <View style={styles.emergencyCardListBlock}>
-          {EDIT_EMERGENCY_CONTACTS.map((contact, index) => (
+          {emergencyContacts.map((contact, index) => (
             <View
               key={contact.id}
               style={[
                 styles.emergencyCardRow,
-                index === EDIT_EMERGENCY_CONTACTS.length - 1 &&
+                index === emergencyContacts.length - 1 &&
                   styles.emergencyCardRowLast,
               ]}>
-              <Image source={contact.avatar} style={styles.contactAvatarThumb} />
+              <View style={styles.contactAvatarPlaceholder}>
+                <Text style={styles.contactAvatarInitial}>
+                  {contact.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
               <View style={styles.contactTextMeta}>
                 <Text style={styles.contactNameTitle}>{contact.name}</Text>
                 <Text style={styles.contactRelationLabel}>
@@ -162,8 +224,13 @@ export function EditProfileScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.saveProfileButton}
           activeOpacity={0.9}
+          disabled={saving}
           onPress={saveProfile}>
-          <Text style={styles.saveProfileButtonText}>Save Profile</Text>
+          {saving ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.saveProfileButtonText}>Save Profile</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 
@@ -217,6 +284,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F6F8FA',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -331,6 +402,19 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     backgroundColor: '#CBD5E1',
+  },
+  contactAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactAvatarInitial: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#475569',
   },
   contactTextMeta: {
     marginLeft: 12,

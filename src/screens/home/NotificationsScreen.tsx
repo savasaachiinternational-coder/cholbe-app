@@ -1,12 +1,14 @@
-import {useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
-  Image,
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -16,29 +18,76 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {
-  NOTIFICATION_SECTIONS,
   matchesNotificationTab,
   type NotificationFilterTab,
-  type NotificationItem,
 } from './notificationsData';
+import {notificationsApi, type Notification} from '../../api/notifications';
+import {ApiError} from '../../api/client';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
+
+function formatSection(dateStr: string): string {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+  if (sameDay(date, today)) return 'Today';
+  if (sameDay(date, yesterday)) return 'Yesterday';
+  return date.toLocaleDateString('en-GB', {day: 'numeric', month: 'short'});
+}
+
+function formatTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
 
 export function NotificationsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<NotificationFilterTab>('all');
+  const [items, setItems] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredSections = useMemo(
-    () =>
-      NOTIFICATION_SECTIONS.map(section => ({
-        ...section,
-        items: section.items.filter(item =>
-          matchesNotificationTab(item.category, activeTab),
-        ),
-      })).filter(section => section.items.length > 0),
-    [activeTab],
+  const loadNotifications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await notificationsApi.list();
+      setItems(data);
+    } catch (err) {
+      Alert.alert('Notifications', err instanceof ApiError ? err.message : 'Could not load');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadNotifications();
+    }, [loadNotifications]),
   );
+
+  const filteredSections = useMemo(() => {
+    const filtered = items.filter(item =>
+      matchesNotificationTab(item.category as never, activeTab),
+    );
+    const map = new Map<string, Notification[]>();
+    filtered.forEach(n => {
+      const key = formatSection(n.createdAt);
+      const list = map.get(key) ?? [];
+      list.push(n);
+      map.set(key, list);
+    });
+    return Array.from(map.entries()).map(([title, sectionItems]) => ({
+      title,
+      items: sectionItems,
+    }));
+  }, [items, activeTab]);
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -60,6 +109,15 @@ export function NotificationsScreen({navigation}: Props) {
     navigation.navigate('Home');
   };
 
+  const markRead = async (id: string) => {
+    try {
+      await notificationsApi.markRead(id);
+      loadNotifications();
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
@@ -70,74 +128,75 @@ export function NotificationsScreen({navigation}: Props) {
           <Feather name="chevron-left" size={24} color="#1E293B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity
+          style={styles.markAllButton}
+          onPress={() => notificationsApi.markAllRead().then(loadNotifications)}>
+          <Text style={styles.markAllText}>Read all</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {paddingBottom: insets.bottom + 110},
-        ]}>
-        <View style={styles.tabsContainer}>
-          {(
-            [
-              {key: 'all' as const, label: 'All'},
-              {key: 'reminders' as const, label: 'Reminders'},
-              {key: 'alerts' as const, label: 'Alerts'},
-            ] as const
-          ).map(tab => (
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
+        contentContainerStyle={styles.filterContent}>
+        {(['all', 'medication', 'order', 'appointment'] as NotificationFilterTab[]).map(
+          tab => (
             <TouchableOpacity
-              key={tab.key}
-              style={[
-                styles.tabButton,
-                activeTab === tab.key && styles.activeTabButton,
-              ]}
-              activeOpacity={0.85}
-              onPress={() => {
-                if (tab.key === 'reminders') {
-                  navigation.navigate('Reminders');
-                  return;
-                }
-                if (tab.key === 'alerts') {
-                  navigation.navigate('Alerts');
-                  return;
-                }
-                setActiveTab(tab.key);
-              }}>
+              key={tab}
+              style={[styles.filterChip, activeTab === tab && styles.filterChipActive]}
+              onPress={() => setActiveTab(tab)}>
               <Text
                 style={[
-                  styles.tabButtonText,
-                  activeTab === tab.key && styles.activeTabButtonText,
+                  styles.filterChipText,
+                  activeTab === tab && styles.filterChipTextActive,
                 ]}>
-                {tab.label}
+                {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity
-          style={styles.settingsLinkButton}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('Reminders')}>
-          <Text style={styles.settingsLinkText}>Notification Settings</Text>
-        </TouchableOpacity>
-
-        {filteredSections.map(section => (
-          <View key={section.id}>
-            <Text style={styles.dateSectionHeader}>{section.dateLabel}</Text>
-            {section.items.map(item => (
-              <NotificationCard key={item.id} item={item} />
-            ))}
-          </View>
-        ))}
+          ),
+        )}
       </ScrollView>
 
-      <TouchableOpacity
-        style={[styles.floatingScanButton, {bottom: insets.bottom + 90}]}
-        activeOpacity={0.85}>
-        <Feather name="maximize" size={24} color="#1E293B" />
-      </TouchableOpacity>
+      {loading ? (
+        <ActivityIndicator size="large" color="#0D9488" style={styles.loader} />
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {paddingBottom: insets.bottom + 110},
+          ]}>
+          {filteredSections.length === 0 ? (
+            <Text style={styles.emptyText}>No notifications yet.</Text>
+          ) : (
+            filteredSections.map(section => (
+              <View key={section.title}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+                {section.items.map(item => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[styles.notificationCard, !item.isRead && styles.unreadCard]}
+                    activeOpacity={0.85}
+                    onPress={() => markRead(item.id)}>
+                    <View style={styles.iconCircle}>
+                      <FontAwesome name="bell" size={16} color="#0D9488" />
+                    </View>
+                    <View style={styles.notificationBody}>
+                      <Text style={styles.notificationTitle}>{item.title}</Text>
+                      <Text style={styles.notificationMessage}>{item.body}</Text>
+                      <Text style={styles.notificationTime}>
+                        {formatTime(item.createdAt)}
+                      </Text>
+                    </View>
+                    {!item.isRead ? <View style={styles.unreadDot} /> : null}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ))
+          )}
+        </ScrollView>
+      )}
 
       <View style={styles.bottomNavWrap}>
         <HomeBottomNav
@@ -150,299 +209,76 @@ export function NotificationsScreen({navigation}: Props) {
   );
 }
 
-function NotificationCard({item}: {item: NotificationItem}) {
-  if (item.category === 'managed' && item.managedMember) {
-    return (
-      <View style={styles.notificationCard}>
-        <View style={styles.managedHeaderRow}>
-          <CategoryIcon category="followup" />
-          <View style={styles.cardTextContentMetaManaged}>
-            <Text style={styles.cardHeadingTitleText}>{item.title}</Text>
-          </View>
-          <Text style={styles.inlineRightUtilityLabel}>Managed</Text>
-        </View>
-        <TouchableOpacity style={styles.embeddedUserRowAction} activeOpacity={0.8}>
-          <Image
-            source={item.managedMember.avatar}
-            style={styles.embeddedAvatarThumb}
-          />
-          <View style={styles.embeddedTextMetaBlock}>
-            <Text style={styles.embeddedProfileName}>
-              {item.managedMember.name}
-            </Text>
-            <Text style={styles.embeddedProfileRelationship}>
-              {item.managedMember.relation}
-            </Text>
-          </View>
-          <Feather name="chevron-right" size={18} color="#94A3B8" />
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.notificationCard}>
-      <View style={styles.cardInnerContentRow}>
-        <CategoryIcon category={item.category} />
-        <View style={styles.cardTextContentMeta}>
-          <Text style={styles.cardHeadingTitleText}>{item.title}</Text>
-          {item.body ? (
-            <Text style={styles.cardBodyDescriptionText}>{item.body}</Text>
-          ) : null}
-          {item.time ? (
-            <Text style={styles.cardTimestampText}>{item.time}</Text>
-          ) : null}
-        </View>
-        {item.showMarkTaken ? (
-          <TouchableOpacity
-            style={styles.inlineActionLinkTextButton}
-            activeOpacity={0.8}>
-            <Text style={styles.inlineActionLinkText}>Mark as Taken</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
-function CategoryIcon({category}: {category: NotificationItem['category']}) {
-  if (category === 'medication') {
-    return (
-      <View style={[styles.categoryIconCircle, styles.iconMedication]}>
-        <FontAwesome name="medkit" size={18} color="#0D9488" />
-      </View>
-    );
-  }
-  if (category === 'missed_dose') {
-    return (
-      <View style={[styles.categoryIconCircle, styles.iconAlert]}>
-        <Feather name="alert-circle" size={18} color="#EF4444" />
-      </View>
-    );
-  }
-  return (
-    <View style={[styles.categoryIconCircle, styles.iconFollowup]}>
-      <Feather name="activity" size={18} color="#2563EB" />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F6FA',
-  },
+  container: {flex: 1, backgroundColor: '#F8FAFC'},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 14,
-    backgroundColor: '#F5F6FA',
+    paddingBottom: 12,
   },
-  backButton: {
-    padding: 4,
-    width: 32,
-  },
+  backButton: {padding: 4, width: 32},
   headerTitle: {
+    flex: 1,
+    textAlign: 'center',
     fontSize: 18,
     fontWeight: '700',
     color: '#1E293B',
-    flex: 1,
-    textAlign: 'center',
   },
-  headerSpacer: {
-    width: 32,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
+  markAllButton: {padding: 4},
+  markAllText: {fontSize: 13, color: '#0D9488', fontWeight: '600'},
+  filterScroll: {maxHeight: 44, marginBottom: 8},
+  filterContent: {paddingHorizontal: 16, gap: 8},
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
     backgroundColor: '#E2E8F0',
-    borderRadius: 14,
-    padding: 4,
-    marginTop: 12,
-    marginBottom: 14,
+    marginRight: 8,
   },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-  },
-  activeTabButton: {
-    backgroundColor: '#408E91',
-  },
-  tabButtonText: {
-    fontSize: 14,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  activeTabButtonText: {
-    color: '#FFFFFF',
-  },
-  settingsLinkButton: {
-    alignSelf: 'center',
-    paddingVertical: 4,
-    marginBottom: 20,
-  },
-  settingsLinkText: {
-    color: '#14B8A6',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  dateSectionHeader: {
+  filterChipActive: {backgroundColor: '#0D9488'},
+  filterChipText: {fontSize: 13, color: '#64748B', fontWeight: '600'},
+  filterChipTextActive: {color: '#FFFFFF'},
+  scrollContent: {paddingHorizontal: 16},
+  sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#475569',
-    marginTop: 12,
+    color: '#64748B',
     marginBottom: 10,
+    marginTop: 8,
   },
   notificationCard: {
+    flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderRadius: 12,
     padding: 14,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.01,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  cardInnerContentRow: {
-    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'flex-start',
-    position: 'relative',
   },
-  managedHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    position: 'relative',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    paddingBottom: 12,
-  },
-  categoryIconCircle: {
+  unreadCard: {borderColor: '#99F6E4', backgroundColor: '#F0FDFA'},
+  iconCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: '#CCFBF1',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    marginRight: 12,
   },
-  iconMedication: {
-    backgroundColor: '#E6F4F1',
-  },
-  iconAlert: {
-    backgroundColor: '#FEE2E2',
-  },
-  iconFollowup: {
-    backgroundColor: '#EFF6FF',
-  },
-  cardTextContentMeta: {
-    marginLeft: 12,
-    flex: 1,
-    paddingRight: 60,
-  },
-  cardTextContentMetaManaged: {
-    marginLeft: 12,
-    flex: 1,
-    paddingRight: 56,
-  },
-  cardHeadingTitleText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1E293B',
-    lineHeight: 18,
-  },
-  cardBodyDescriptionText: {
-    fontSize: 12,
-    color: '#64748B',
-    lineHeight: 16,
-    fontWeight: '500',
+  notificationBody: {flex: 1},
+  notificationTitle: {fontSize: 15, fontWeight: '700', color: '#1E293B'},
+  notificationMessage: {fontSize: 13, color: '#64748B', marginTop: 4},
+  notificationTime: {fontSize: 11, color: '#94A3B8', marginTop: 6},
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#0D9488',
     marginTop: 4,
   },
-  cardTimestampText: {
-    fontSize: 11,
-    color: '#94A3B8',
-    fontWeight: '500',
-    marginTop: 6,
-  },
-  inlineActionLinkTextButton: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: '#FFFFFF',
-  },
-  inlineActionLinkText: {
-    fontSize: 10,
-    color: '#0D9488',
-    fontWeight: '700',
-  },
-  inlineRightUtilityLabel: {
-    position: 'absolute',
-    right: 0,
-    top: 4,
-    fontSize: 11,
-    color: '#94A3B8',
-    fontWeight: '500',
-  },
-  embeddedUserRowAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 4,
-  },
-  embeddedAvatarThumb: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#CBD5E1',
-  },
-  embeddedTextMetaBlock: {
-    marginLeft: 10,
-    flex: 1,
-  },
-  embeddedProfileName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  embeddedProfileRelationship: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '500',
-    marginTop: 1,
-  },
-  floatingScanButton: {
-    position: 'absolute',
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#A7F3D0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
-    zIndex: 99,
-  },
-  bottomNavWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 10,
-  },
+  loader: {marginTop: 40},
+  emptyText: {textAlign: 'center', color: '#64748B', marginTop: 40},
+  bottomNavWrap: {position: 'absolute', left: 0, right: 0, bottom: 0},
 });

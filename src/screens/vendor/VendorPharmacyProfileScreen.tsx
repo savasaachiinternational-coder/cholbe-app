@@ -1,5 +1,7 @@
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -8,17 +10,31 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {vendorApi} from '../../api/vendor';
+import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import {productImageUrl} from '../../utils/pharmacyHelpers';
 import {VendorBottomNav} from './VendorBottomNav';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VProfile'>;
 type ExpandedSection = 'store' | 'wallet' | 'vault' | null;
+
+type VendorProfile = {
+  id: string;
+  pharmacyName: string;
+  phone?: string | null;
+  address?: string | null;
+  isStoreOpen: boolean;
+  bannerUrl?: string | null;
+  user?: {fullName: string; phone?: string | null};
+};
 
 const VAULT_DOCUMENTS = ['Drug License_2024.pdf', 'Trade License_Uttara.png', 'NID-Card'];
 
@@ -61,12 +77,54 @@ function SettingRow({icon, title, subtitle, expanded, onPress}: SettingRowProps)
 export function VendorPharmacyProfileScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [vendor, setVendor] = useState<VendorProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(true);
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
+
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await vendorApi.dashboard();
+      const profile = (data as {vendor: VendorProfile}).vendor;
+      setVendor(profile);
+      setIsStoreOpen(profile.isStoreOpen);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load profile';
+      Alert.alert('Profile', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile]),
+  );
+
+  const saveProfile = useCallback(async () => {
+    setSaving(true);
+    try {
+      const updated = await vendorApi.updateProfile({isStoreOpen});
+      setVendor(updated as VendorProfile);
+      Alert.alert('Profile', 'Changes saved successfully.');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not save profile';
+      Alert.alert('Profile', message);
+    } finally {
+      setSaving(false);
+    }
+  }, [isStoreOpen]);
 
   const toggleSection = (section: Exclude<ExpandedSection, null>) => {
     setExpandedSection(current => (current === section ? null : section));
   };
+
+  const bannerUri = vendor?.bannerUrl
+    ? productImageUrl(vendor.bannerUrl)
+    : 'https://via.placeholder.com/350x150/A7F3D0/000000?text=Pharmacy+Interior';
 
   return (
     <View style={styles.container}>
@@ -83,231 +141,246 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {paddingBottom: 85 + insets.bottom},
-        ]}>
-        <View style={styles.storeMainCard}>
-          <Image
-            source={{
-              uri: 'https://via.placeholder.com/350x150/A7F3D0/000000?text=Pharmacy+Interior',
-            }}
-            style={styles.storeBannerImage}
-          />
-          <View style={styles.storeTextInfoBlock}>
-            <View style={styles.storeTitleRow}>
-              <Text style={styles.storeNameText}>Rahman Pharmacy</Text>
-              <View style={styles.verifiedBadge}>
-                <MaterialIcons name="verified" size={12} color="#47B39D" />
-                <Text style={styles.verifiedBadgeText}>Verified</Text>
-              </View>
-            </View>
-            <View style={styles.locationRow}>
-              <Feather name="map-pin" size={12} color="#7E8B97" />
-              <Text style={styles.locationText}>Dhanmondi, Dhaka, Bangladesh</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.pharmacistCard}>
-          <Text style={styles.pharmacistSectionLabel}>Licensed Pharmacist</Text>
-          <View style={styles.pharmacistProfileRow}>
-            <Image
-              source={{uri: 'https://via.placeholder.com/50/CBD5E1/000000?text=Doctor'}}
-              style={styles.pharmacistAvatar}
-            />
-            <View style={styles.pharmacistDetails}>
-              <Text style={styles.pharmacistName}>Rahman Uddin</Text>
-              <Text style={styles.pharmacistReg}>Reg No: #P-88241</Text>
-            </View>
-          </View>
-          <View style={styles.licenseFooterRow}>
-            <Text style={styles.licenseNumberText}>License: DL-2023-A992</Text>
-            <Text style={styles.licenseStatusText}>Active</Text>
-          </View>
-        </View>
-
-        <View style={styles.metricsRowGroup}>
-          <View style={styles.metricScoreBox}>
-            <Text style={styles.metricScoreValue}>4.8</Text>
-            <Text style={styles.metricScoreLabel}>Rating</Text>
-          </View>
-          <View style={styles.metricScoreBox}>
-            <Text style={styles.metricScoreValue}>98%</Text>
-            <Text style={styles.metricScoreLabel}>Acceptance</Text>
-          </View>
-        </View>
-
-        <SectionHeader title="Store Settings" />
-        <View style={styles.settingCardWrapper}>
-          <SettingRow
-            icon="shopping-bag"
-            title="Store Settings"
-            subtitle="Store Operational Control"
-            expanded={expandedSection === 'store'}
-            onPress={() => toggleSection('store')}
-          />
-
-          {expandedSection === 'store' ? (
-            <>
-              <View style={styles.storeStatusToggleRow}>
-                <View>
-                  <Text style={styles.toggleRowMainText}>
-                    Store Status:
-                    <Text style={isStoreOpen ? styles.statusOpenText : styles.statusClosedText}>
-                      {isStoreOpen ? ' Open' : ' Closed'}
-                    </Text>
-                  </Text>
-                  <Text style={styles.toggleRowSubText}>Visible to patients</Text>
+      {loading && !vendor ? (
+        <ActivityIndicator color="#4E929D" style={styles.loader} />
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {paddingBottom: 85 + insets.bottom},
+          ]}>
+          <View style={styles.storeMainCard}>
+            <Image source={{uri: bannerUri}} style={styles.storeBannerImage} />
+            <View style={styles.storeTextInfoBlock}>
+              <View style={styles.storeTitleRow}>
+                <Text style={styles.storeNameText}>{vendor?.pharmacyName ?? '—'}</Text>
+                <View style={styles.verifiedBadge}>
+                  <MaterialIcons name="verified" size={12} color="#47B39D" />
+                  <Text style={styles.verifiedBadgeText}>Verified</Text>
                 </View>
-                <Switch
-                  value={isStoreOpen}
-                  onValueChange={setIsStoreOpen}
-                  trackColor={{false: '#CBD5E1', true: '#47B39D'}}
-                  thumbColor="#FFFFFF"
-                />
               </View>
+              <View style={styles.locationRow}>
+                <Feather name="map-pin" size={12} color="#7E8B97" />
+                <Text style={styles.locationText}>{vendor?.address ?? '—'}</Text>
+              </View>
+            </View>
+          </View>
 
-              <View style={styles.operationalSubContainer}>
-                <View style={styles.operationalHeaderInline}>
-                  <Text style={styles.operationalTitleMain}>Operational Controls</Text>
-                  <TouchableOpacity activeOpacity={0.7}>
-                    <Feather name="edit-2" size={14} color="#1A1C1E" />
+          <View style={styles.pharmacistCard}>
+            <Text style={styles.pharmacistSectionLabel}>Licensed Pharmacist</Text>
+            <View style={styles.pharmacistProfileRow}>
+              <Image
+                source={{uri: 'https://via.placeholder.com/50/CBD5E1/000000?text=Doctor'}}
+                style={styles.pharmacistAvatar}
+              />
+              <View style={styles.pharmacistDetails}>
+                <Text style={styles.pharmacistName}>{vendor?.user?.fullName ?? '—'}</Text>
+                <Text style={styles.pharmacistReg}>
+                  Phone: {vendor?.phone ?? vendor?.user?.phone ?? '—'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.licenseFooterRow}>
+              <Text style={styles.licenseNumberText}>
+                ID: {vendor?.id?.slice(0, 8).toUpperCase() ?? '—'}
+              </Text>
+              <Text style={styles.licenseStatusText}>
+                {isStoreOpen ? 'Active' : 'Closed'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.metricsRowGroup}>
+            <View style={styles.metricScoreBox}>
+              <Text style={styles.metricScoreValue}>4.8</Text>
+              <Text style={styles.metricScoreLabel}>Rating</Text>
+            </View>
+            <View style={styles.metricScoreBox}>
+              <Text style={styles.metricScoreValue}>98%</Text>
+              <Text style={styles.metricScoreLabel}>Acceptance</Text>
+            </View>
+          </View>
+
+          <SectionHeader title="Store Settings" />
+          <View style={styles.settingCardWrapper}>
+            <SettingRow
+              icon="shopping-bag"
+              title="Store Settings"
+              subtitle="Store Operational Control"
+              expanded={expandedSection === 'store'}
+              onPress={() => toggleSection('store')}
+            />
+
+            {expandedSection === 'store' ? (
+              <>
+                <View style={styles.storeStatusToggleRow}>
+                  <View>
+                    <Text style={styles.toggleRowMainText}>
+                      Store Status:
+                      <Text style={isStoreOpen ? styles.statusOpenText : styles.statusClosedText}>
+                        {isStoreOpen ? ' Open' : ' Closed'}
+                      </Text>
+                    </Text>
+                    <Text style={styles.toggleRowSubText}>Visible to patients</Text>
+                  </View>
+                  <Switch
+                    value={isStoreOpen}
+                    onValueChange={setIsStoreOpen}
+                    trackColor={{false: '#CBD5E1', true: '#47B39D'}}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+
+                <View style={styles.operationalSubContainer}>
+                  <View style={styles.operationalHeaderInline}>
+                    <Text style={styles.operationalTitleMain}>Operational Controls</Text>
+                    <TouchableOpacity activeOpacity={0.7}>
+                      <Feather name="edit-2" size={14} color="#1A1C1E" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.controlItemLineRow}>
+                    <Text style={styles.controlLabelText}>Pharmacy Name</Text>
+                    <Text style={styles.controlValueText}>{vendor?.pharmacyName ?? '—'}</Text>
+                  </View>
+                  <View style={styles.controlItemLineRow}>
+                    <Text style={styles.controlLabelText}>Address</Text>
+                    <Text style={styles.controlValueText}>{vendor?.address ?? '—'}</Text>
+                  </View>
+                  <View style={styles.controlItemLineRow}>
+                    <Text style={styles.controlLabelText}>Contact Phone</Text>
+                    <Text style={styles.controlValueText}>
+                      {vendor?.phone ?? vendor?.user?.phone ?? '—'}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.saveOperationsButton}
+                    activeOpacity={0.9}
+                    disabled={saving}
+                    onPress={saveProfile}>
+                    {saving ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.saveOperationsButtonText}>Save Operational Changes</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
+              </>
+            ) : null}
+          </View>
 
-                <View style={styles.controlItemLineRow}>
-                  <Text style={styles.controlLabelText}>Operating Hours</Text>
-                  <Text style={styles.controlValueText}>9AM-11PM</Text>
-                </View>
-                <View style={styles.controlItemLineRow}>
-                  <Text style={styles.controlLabelText}>Delivery Range</Text>
-                  <Text style={styles.controlValueText}>5 KM Radius</Text>
-                </View>
-                <View style={styles.controlItemLineRow}>
-                  <Text style={styles.controlLabelText}>Delivery Charge</Text>
-                  <Text style={styles.controlValueText}>TK 60.00</Text>
+          <SectionHeader title="Wallet & Payouts" />
+          <View style={styles.settingCardWrapper}>
+            <SettingRow
+              icon="credit-card"
+              title="Financial Payout Management"
+              subtitle="A transparent and secure banking section."
+              expanded={expandedSection === 'wallet'}
+              onPress={() => toggleSection('wallet')}
+            />
+
+            {expandedSection === 'wallet' ? (
+              <>
+                <View style={styles.revenueBannerCyanCard}>
+                  <Text style={styles.revenueBannerLabel}>Total Earnings Available</Text>
+                  <Text style={styles.revenueBannerValue}>Tk 24,500</Text>
+                  <View style={styles.payoutNoticeBadge}>
+                    <Text style={styles.payoutNoticeText}>Next Auto-Payout: Sunday, 10 May</Text>
+                  </View>
                 </View>
 
-                <TouchableOpacity style={styles.saveOperationsButton} activeOpacity={0.9}>
-                  <Text style={styles.saveOperationsButtonText}>Save Operational Changes</Text>
+                <Text style={styles.payoutListHeaderLabel}>Wallet & Payout</Text>
+
+                <View style={styles.paymentMethodItemRow}>
+                  <MaterialCommunityIcons name="bank-outline" size={22} color="#4E929D" />
+                  <View style={styles.paymentMethodMeta}>
+                    <Text style={styles.paymentMethodTitleName}>Dutch Bangla Bank</Text>
+                    <Text style={styles.paymentMethodMaskedId}>xxx-xxx-5678</Text>
+                  </View>
+                  <View style={styles.primaryPaymentMethodBadge}>
+                    <Text style={styles.primaryPaymentMethodBadgeText}>Primary</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.paymentMethodItemRow} activeOpacity={0.7}>
+                  <View style={styles.miniBKashIconMock}>
+                    <Text style={styles.miniBrandLetter}>b</Text>
+                  </View>
+                  <View style={styles.paymentMethodMeta}>
+                    <Text style={styles.paymentMethodTitleName}>bkash Merchant</Text>
+                    <Text style={styles.paymentMethodMaskedId}>017xx-xxx678</Text>
+                  </View>
+                  <Feather name="chevron-right" size={16} color="#7E8B97" />
                 </TouchableOpacity>
-              </View>
-            </>
-          ) : null}
-        </View>
+              </>
+            ) : null}
+          </View>
 
-        <SectionHeader title="Wallet & Payouts" />
-        <View style={styles.settingCardWrapper}>
-          <SettingRow
-            icon="credit-card"
-            title="Financial Payout Management"
-            subtitle="A transparent and secure banking section."
-            expanded={expandedSection === 'wallet'}
-            onPress={() => toggleSection('wallet')}
-          />
+          <SectionHeader title="Document Vault" />
+          <View style={styles.settingCardWrapper}>
+            <SettingRow
+              icon="shield"
+              title="Document Vault & Security"
+              subtitle="A private section for handling sensitive legal documents."
+              expanded={expandedSection === 'vault'}
+              onPress={() => toggleSection('vault')}
+            />
 
-          {expandedSection === 'wallet' ? (
-            <>
-              <View style={styles.revenueBannerCyanCard}>
-                <Text style={styles.revenueBannerLabel}>Total Earnings Available</Text>
-                <Text style={styles.revenueBannerValue}>Tk 24,500</Text>
-                <View style={styles.payoutNoticeBadge}>
-                  <Text style={styles.payoutNoticeText}>Next Auto-Payout: Sunday, 10 May</Text>
-                </View>
-              </View>
-
-              <Text style={styles.payoutListHeaderLabel}>Wallet & Payout</Text>
-
-              <View style={styles.paymentMethodItemRow}>
-                <MaterialCommunityIcons name="bank-outline" size={22} color="#4E929D" />
-                <View style={styles.paymentMethodMeta}>
-                  <Text style={styles.paymentMethodTitleName}>Dutch Bangla Bank</Text>
-                  <Text style={styles.paymentMethodMaskedId}>xxx-xxx-5678</Text>
-                </View>
-                <View style={styles.primaryPaymentMethodBadge}>
-                  <Text style={styles.primaryPaymentMethodBadgeText}>Primary</Text>
-                </View>
-              </View>
-
-              <TouchableOpacity style={styles.paymentMethodItemRow} activeOpacity={0.7}>
-                <View style={styles.miniBKashIconMock}>
-                  <Text style={styles.miniBrandLetter}>b</Text>
-                </View>
-                <View style={styles.paymentMethodMeta}>
-                  <Text style={styles.paymentMethodTitleName}>bkash Merchant</Text>
-                  <Text style={styles.paymentMethodMaskedId}>017xx-xxx678</Text>
-                </View>
-                <Feather name="chevron-right" size={16} color="#7E8B97" />
-              </TouchableOpacity>
-            </>
-          ) : null}
-        </View>
-
-        <SectionHeader title="Document Vault" />
-        <View style={styles.settingCardWrapper}>
-          <SettingRow
-            icon="shield"
-            title="Document Vault & Security"
-            subtitle="A private section for handling sensitive legal documents."
-            expanded={expandedSection === 'vault'}
-            onPress={() => toggleSection('vault')}
-          />
-
-          {expandedSection === 'vault' ? (
-            <>
-              {VAULT_DOCUMENTS.map(docName => (
-                <View key={docName} style={styles.vaultDocumentLineItemRow}>
-                  <View style={styles.vaultDocumentLeftMetaGroup}>
-                    <Feather name="file-text" size={18} color="#1A1C1E" />
-                    <Text style={styles.vaultDocumentTitleFileName}>{docName}</Text>
+            {expandedSection === 'vault' ? (
+              <>
+                {VAULT_DOCUMENTS.map(docName => (
+                  <View key={docName} style={styles.vaultDocumentLineItemRow}>
+                    <View style={styles.vaultDocumentLeftMetaGroup}>
+                      <Feather name="file-text" size={18} color="#1A1C1E" />
+                      <Text style={styles.vaultDocumentTitleFileName}>{docName}</Text>
+                    </View>
+                    <View style={styles.vaultDocumentVerifiedBadge}>
+                      <Text style={styles.vaultDocumentVerifiedBadgeText}>Verified</Text>
+                    </View>
                   </View>
-                  <View style={styles.vaultDocumentVerifiedBadge}>
-                    <Text style={styles.vaultDocumentVerifiedBadgeText}>Verified</Text>
-                  </View>
+                ))}
+
+                <TouchableOpacity style={styles.uploadVaultDocumentButton} activeOpacity={0.8}>
+                  <Feather name="plus" size={18} color="#1A1C1E" />
+                  <Text style={styles.uploadVaultDocumentButtonText}>Upload New Document</Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
+          </View>
+
+          <SectionHeader title="App Settings" />
+          <View style={styles.appLinksCardContainer}>
+            <TouchableOpacity
+              style={styles.appSettingsLinkRow}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Notifications')}>
+              <View style={styles.appSettingsLinkLeftGroup}>
+                <Feather name="bell" size={18} color="#4E929D" />
+                <View>
+                  <Text style={styles.appSettingsMainLabel}>Notifications</Text>
+                  <Text style={styles.appSettingsSubLabel}>Manage reminders and alerts</Text>
                 </View>
-              ))}
-
-              <TouchableOpacity style={styles.uploadVaultDocumentButton} activeOpacity={0.8}>
-                <Feather name="plus" size={18} color="#1A1C1E" />
-                <Text style={styles.uploadVaultDocumentButtonText}>Upload New Document</Text>
-              </TouchableOpacity>
-            </>
-          ) : null}
-        </View>
-
-        <SectionHeader title="App Settings" />
-        <View style={styles.appLinksCardContainer}>
-          <TouchableOpacity
-            style={styles.appSettingsLinkRow}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('Notifications')}>
-            <View style={styles.appSettingsLinkLeftGroup}>
-              <Feather name="bell" size={18} color="#4E929D" />
-              <View>
-                <Text style={styles.appSettingsMainLabel}>Notifications</Text>
-                <Text style={styles.appSettingsSubLabel}>Manage reminders and alerts</Text>
               </View>
-            </View>
-            <Feather name="chevron-right" size={16} color="#7E8B97" />
-          </TouchableOpacity>
+              <Feather name="chevron-right" size={16} color="#7E8B97" />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.appSettingsLinkRow, styles.appSettingsLinkRowLast]}
-            activeOpacity={0.7}>
-            <View style={styles.appSettingsLinkLeftGroup}>
-              <Feather name="globe" size={18} color="#4E929D" />
-              <View>
-                <Text style={styles.appSettingsMainLabel}>Language</Text>
-                <Text style={styles.appSettingsSubLabel}>English</Text>
+            <TouchableOpacity
+              style={[styles.appSettingsLinkRow, styles.appSettingsLinkRowLast]}
+              activeOpacity={0.7}>
+              <View style={styles.appSettingsLinkLeftGroup}>
+                <Feather name="globe" size={18} color="#4E929D" />
+                <View>
+                  <Text style={styles.appSettingsMainLabel}>Language</Text>
+                  <Text style={styles.appSettingsSubLabel}>English</Text>
+                </View>
               </View>
-            </View>
-            <Feather name="chevron-right" size={16} color="#7E8B97" />
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+              <Feather name="chevron-right" size={16} color="#7E8B97" />
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
 
       <VendorBottomNav activeTab="profile" bottomInset={insets.bottom} navigation={navigation} />
     </View>
@@ -318,6 +391,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F6F8FB',
+  },
+  loader: {
+    marginTop: 40,
   },
   scrollContent: {
     paddingTop: 4,
@@ -597,6 +673,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#1A1C1E',
     fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 8,
   },
   saveOperationsButton: {
     backgroundColor: '#E26D6D',

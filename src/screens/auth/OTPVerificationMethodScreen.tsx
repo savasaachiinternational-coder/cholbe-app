@@ -1,4 +1,7 @@
+import {useState} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   StyleSheet,
   Text,
@@ -9,19 +12,40 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {authApi} from '../../api/auth';
+import {ApiError} from '../../api/client';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
 export type OtpDeliveryMethod = 'sms' | 'email';
 
 type Props = {
+  contact: string;
   onBack: () => void;
   onSelectMethod: (method: OtpDeliveryMethod) => void;
 };
 
-export function OTPVerificationMethodScreen({onBack, onSelectMethod}: Props) {
+export function OTPVerificationMethodScreen({contact, onBack, onSelectMethod}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const [loading, setLoading] = useState(false);
+
+  const handleSelect = async (method: OtpDeliveryMethod) => {
+    setLoading(true);
+    try {
+      const channel = method === 'sms' ? 'SMS' : 'EMAIL';
+      const res = await authApi.sendOtp(contact, channel);
+      if (res.debugCode) {
+        Alert.alert('OTP sent', `Dev code: ${res.debugCode}`);
+      }
+      onSelectMethod(method);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not send OTP';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -69,9 +93,10 @@ export function OTPVerificationMethodScreen({onBack, onSelectMethod}: Props) {
 
           <View style={styles.selectionSection}>
             <TouchableOpacity
-              style={styles.smsButton}
+              style={[styles.smsButton, loading && styles.buttonDisabled]}
               activeOpacity={0.85}
-              onPress={() => onSelectMethod('sms')}>
+              disabled={loading}
+              onPress={() => handleSelect('sms')}>
               <Feather
                 name="smartphone"
                 size={22}
@@ -82,9 +107,10 @@ export function OTPVerificationMethodScreen({onBack, onSelectMethod}: Props) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.emailButton}
+              style={[styles.emailButton, loading && styles.buttonDisabled]}
               activeOpacity={0.85}
-              onPress={() => onSelectMethod('email')}>
+              disabled={loading}
+              onPress={() => handleSelect('email')}>
               <Feather
                 name="message-square"
                 size={22}
@@ -204,5 +230,8 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginRight: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
