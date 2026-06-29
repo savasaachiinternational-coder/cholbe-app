@@ -26,6 +26,7 @@ import {PatientInformationScreen} from './src/screens/auth/PatientInformationScr
 import {VerificationScreen} from './src/screens/auth/VerificationScreen';
 import {RootNavigator} from './src/navigation/RootNavigator';
 import {MedicationDraftProvider} from './src/context/MedicationDraftContext';
+import {NotificationProvider} from './src/context/NotificationContext';
 import {OnboardingScreen} from './src/screens/onboarding/OnboardingScreen';
 import {SplashScreen} from './src/screens/onboarding/SplashScreen';
 
@@ -256,9 +257,11 @@ function App() {
       )}
       {phase === 'main' && (
         <NavigationContainer theme={isDarkMode ? DarkTheme : navigationTheme}>
-          <MedicationDraftProvider>
-            <RootNavigator initialRouteName={initialRoute} />
-          </MedicationDraftProvider>
+          <NotificationProvider>
+            <MedicationDraftProvider>
+              <RootNavigator initialRouteName={initialRoute} />
+            </MedicationDraftProvider>
+          </NotificationProvider>
         </NavigationContainer>
       )}
     </SafeAreaProvider>

@@ -21,7 +21,8 @@ export async function uploadFile(
     | '/uploads/prescription'
     | '/uploads/product-image'
     | '/uploads/avatar'
-    | '/uploads/chat-attachment',
+    | '/uploads/chat-attachment'
+    | '/uploads/vendor-document',
   uri: string,
   fileName: string,
   mimeType: string,

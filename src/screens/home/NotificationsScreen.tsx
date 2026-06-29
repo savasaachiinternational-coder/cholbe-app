@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -23,8 +23,22 @@ import {
 } from './notificationsData';
 import {notificationsApi, type Notification} from '../../api/notifications';
 import {ApiError} from '../../api/client';
+import {useNotificationBadge} from '../../context/NotificationContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
+
+const FILTER_TABS: NotificationFilterTab[] = [
+  'all',
+  'order',
+  'appointment',
+  'medication',
+  'vendor',
+];
+const FILTER_TAB_SCROLL_STEP = 140;
+
+function filterTabLabel(tab: NotificationFilterTab) {
+  return tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1);
+}
 
 function formatSection(dateStr: string): string {
   const date = new Date(dateStr);
@@ -47,12 +61,33 @@ function formatTime(dateStr: string): string {
   });
 }
 
+function categoryIcon(category: string): {name: string; color: string; bg: string} {
+  switch (category) {
+    case 'order': return {name: 'shopping-bag', color: '#7C3AED', bg: '#EDE9FE'};
+    case 'appointment': return {name: 'calendar', color: '#0284C7', bg: '#E0F2FE'};
+    case 'vendor': return {name: 'store', color: '#B45309', bg: '#FEF3C7'};
+    default: return {name: 'bell', color: '#0D9488', bg: '#CCFBF1'};
+  }
+}
+
 export function NotificationsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<NotificationFilterTab>('all');
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const {refresh: refreshBadge} = useNotificationBadge();
+  const filterScrollRef = useRef<ScrollView>(null);
+  const [filterScrollX, setFilterScrollX] = useState(0);
+  const [filterContentWidth, setFilterContentWidth] = useState(0);
+  const [filterViewportWidth, setFilterViewportWidth] = useState(0);
+  const tabOffsetsRef = useRef<Record<NotificationFilterTab, number>>({
+    all: 0,
+    order: 0,
+    appointment: 0,
+    medication: 0,
+    vendor: 0,
+  });
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -69,7 +104,8 @@ export function NotificationsScreen({navigation}: Props) {
   useFocusEffect(
     useCallback(() => {
       loadNotifications();
-    }, [loadNotifications]),
+      refreshBadge();
+    }, [loadNotifications, refreshBadge]),
   );
 
   const filteredSections = useMemo(() => {
@@ -113,10 +149,50 @@ export function NotificationsScreen({navigation}: Props) {
     try {
       await notificationsApi.markRead(id);
       loadNotifications();
-    } catch {
-      // ignore
-    }
+      refreshBadge();
+    } catch {}
   };
+
+  const markAllRead = async () => {
+    try {
+      await notificationsApi.markAllRead();
+      loadNotifications();
+      refreshBadge();
+    } catch {}
+  };
+
+  const filterTabsOverflow = filterContentWidth > filterViewportWidth + 4;
+  const canScrollFiltersLeft = filterScrollX > 4;
+  const canScrollFiltersRight =
+    filterTabsOverflow &&
+    filterScrollX + filterViewportWidth < filterContentWidth - 4;
+
+  const scrollFilterTabs = (direction: 'left' | 'right') => {
+    const maxOffset = Math.max(0, filterContentWidth - filterViewportWidth);
+    const nextOffset =
+      direction === 'left'
+        ? Math.max(0, filterScrollX - FILTER_TAB_SCROLL_STEP)
+        : Math.min(maxOffset, filterScrollX + FILTER_TAB_SCROLL_STEP);
+    filterScrollRef.current?.scrollTo({x: nextOffset, animated: true});
+    setFilterScrollX(nextOffset);
+  };
+
+  const scrollToFilterTab = useCallback(
+    (tab: NotificationFilterTab) => {
+      const tabX = tabOffsetsRef.current[tab] ?? 0;
+      const maxOffset = Math.max(0, filterContentWidth - filterViewportWidth);
+      const target = Math.min(Math.max(0, tabX - 12), maxOffset);
+      filterScrollRef.current?.scrollTo({x: target, animated: true});
+      setFilterScrollX(target);
+    },
+    [filterContentWidth, filterViewportWidth],
+  );
+
+  useEffect(() => {
+    if (filterViewportWidth > 0) {
+      scrollToFilterTab(activeTab);
+    }
+  }, [activeTab, filterViewportWidth, scrollToFilterTab]);
 
   return (
     <View style={styles.container}>
@@ -128,35 +204,88 @@ export function NotificationsScreen({navigation}: Props) {
           <Feather name="chevron-left" size={24} color="#1E293B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
-        <TouchableOpacity
-          style={styles.markAllButton}
-          onPress={() => notificationsApi.markAllRead().then(loadNotifications)}>
+        <TouchableOpacity style={styles.markAllButton} onPress={markAllRead}>
           <Text style={styles.markAllText}>Read all</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterScroll}
-        contentContainerStyle={styles.filterContent}>
-        {(['all', 'medication', 'order', 'appointment'] as NotificationFilterTab[]).map(
-          tab => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.filterChip, activeTab === tab && styles.filterChipActive]}
-              onPress={() => setActiveTab(tab)}>
-              <Text
-                style={[
-                  styles.filterChipText,
-                  activeTab === tab && styles.filterChipTextActive,
-                ]}>
-                {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ),
-        )}
-      </ScrollView>
+      <View style={styles.filterTabsRow}>
+        <View style={styles.filterScrollWrap}>
+          <ScrollView
+            ref={filterScrollRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled
+            bounces={false}
+            scrollEventThrottle={16}
+            style={styles.filterScroll}
+            contentContainerStyle={[
+              styles.filterContent,
+              filterTabsOverflow && styles.filterContentWithArrows,
+            ]}
+            onLayout={event => setFilterViewportWidth(event.nativeEvent.layout.width)}
+            onContentSizeChange={width => setFilterContentWidth(width)}
+            onScroll={event => setFilterScrollX(event.nativeEvent.contentOffset.x)}
+            onMomentumScrollEnd={event =>
+              setFilterScrollX(event.nativeEvent.contentOffset.x)
+            }>
+            {FILTER_TABS.map(tab => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.filterChip, activeTab === tab && styles.filterChipActive]}
+                onLayout={event => {
+                  tabOffsetsRef.current[tab] = event.nativeEvent.layout.x;
+                }}
+                onPress={() => setActiveTab(tab)}>
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    activeTab === tab && styles.filterChipTextActive,
+                  ]}>
+                  {filterTabLabel(tab)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {filterTabsOverflow ? (
+            <>
+              <View style={styles.filterArrowLeftSlot} pointerEvents="box-none">
+                <TouchableOpacity
+                  style={[
+                    styles.filterArrowButton,
+                    !canScrollFiltersLeft && styles.filterArrowButtonDisabled,
+                  ]}
+                  activeOpacity={0.75}
+                  disabled={!canScrollFiltersLeft}
+                  onPress={() => scrollFilterTabs('left')}>
+                  <Feather
+                    name="chevron-left"
+                    size={18}
+                    color={canScrollFiltersLeft ? '#475569' : '#CBD5E1'}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.filterArrowRightSlot} pointerEvents="box-none">
+                <TouchableOpacity
+                  style={[
+                    styles.filterArrowButton,
+                    !canScrollFiltersRight && styles.filterArrowButtonDisabled,
+                  ]}
+                  activeOpacity={0.75}
+                  disabled={!canScrollFiltersRight}
+                  onPress={() => scrollFilterTabs('right')}>
+                  <Feather
+                    name="chevron-right"
+                    size={18}
+                    color={canScrollFiltersRight ? '#475569' : '#CBD5E1'}
+                  />
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : null}
+        </View>
+      </View>
 
       {loading ? (
         <ActivityIndicator size="large" color="#0D9488" style={styles.loader} />
@@ -179,8 +308,8 @@ export function NotificationsScreen({navigation}: Props) {
                     style={[styles.notificationCard, !item.isRead && styles.unreadCard]}
                     activeOpacity={0.85}
                     onPress={() => markRead(item.id)}>
-                    <View style={styles.iconCircle}>
-                      <FontAwesome name="bell" size={16} color="#0D9488" />
+                    <View style={[styles.iconCircle, {backgroundColor: categoryIcon(item.category).bg}]}>
+                      <Feather name={categoryIcon(item.category).name as any} size={16} color={categoryIcon(item.category).color} />
                     </View>
                     <View style={styles.notificationBody}>
                       <Text style={styles.notificationTitle}>{item.title}</Text>
@@ -227,14 +356,69 @@ const styles = StyleSheet.create({
   },
   markAllButton: {padding: 4},
   markAllText: {fontSize: 13, color: '#0D9488', fontWeight: '600'},
-  filterScroll: {maxHeight: 44, marginBottom: 8},
-  filterContent: {paddingHorizontal: 16, gap: 8},
+  filterTabsRow: {
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    minHeight: 44,
+  },
+  filterScrollWrap: {
+    position: 'relative',
+    minHeight: 40,
+    justifyContent: 'center',
+  },
+  filterScroll: {
+    flexGrow: 0,
+  },
+  filterContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+  },
+  filterContentWithArrows: {
+    paddingHorizontal: 34,
+  },
+  filterArrowLeftSlot: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  filterArrowRightSlot: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  filterArrowButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  filterArrowButtonDisabled: {
+    opacity: 0.45,
+  },
   filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
     borderRadius: 20,
     backgroundColor: '#E2E8F0',
     marginRight: 8,
+    flexShrink: 0,
   },
   filterChipActive: {backgroundColor: '#0D9488'},
   filterChipText: {fontSize: 13, color: '#64748B', fontWeight: '600'},

@@ -22,6 +22,7 @@ import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {VendorBottomNav} from './VendorBottomNav';
+import {NotificationBell} from '../../components/NotificationBell';
 import {
   PAYMENT_DATE_FILTERS,
   PAYMENT_STATUS_FILTERS,
@@ -280,12 +281,10 @@ export function VendorPaymentsScreen({navigation}: Props) {
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Payments</Text>
-        <TouchableOpacity
+        <NotificationBell
           style={styles.headerButton}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#1A1C1E" />
-        </TouchableOpacity>
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       <ScrollView

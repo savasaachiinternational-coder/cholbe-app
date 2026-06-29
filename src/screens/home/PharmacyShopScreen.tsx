@@ -21,6 +21,7 @@ import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
 import {cartApi} from '../../api/cart';
 import {ApiError} from '../../api/client';
 import {ProductImage} from '../../components/ProductImage';
+import {NotificationBell} from '../../components/NotificationBell';
 import {
   discountPercent,
   formatBdt,
@@ -194,12 +195,10 @@ export function PharmacyShopScreen({navigation}: Props) {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('Notifications')}>
-            <Feather name="bell" size={22} color="#1A1C1E" />
-          </TouchableOpacity>
+          <NotificationBell
+          style={styles.headerButton}
+          onPress={() => navigation.navigate('Notifications')}
+        />
         </View>
       </View>
 

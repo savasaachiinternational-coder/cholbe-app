@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,32 +22,11 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {ADMIN_MEDICINE_FILTERS, type AdminMedicineFilter} from './adminNav';
+import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AMedicines'>;
 
-type MedicineRecord = {
-  id: string;
-  name: string;
-  type: string;
-  stock: string;
-  price: string;
-  imageUrl: string | null;
-  status: string;
-};
-
-function mapMedicine(m: Medicine): MedicineRecord {
-  return {
-    id: m.id,
-    name: m.name,
-    type: m.category ?? m.brand ?? '—',
-    stock: m.status === 'OUT_OF_STOCK' ? '0' : '—',
-    price: '—',
-    imageUrl: m.imageUrl,
-    status: m.status,
-  };
-}
-
-function filterMedicines(items: MedicineRecord[], filter: AdminMedicineFilter) {
+function filterMedicines(items: Medicine[], filter: AdminMedicineFilter) {
   if (filter === 'All') return items;
   if (filter === 'Active') return items.filter(m => m.status === 'ACTIVE');
   if (filter === 'Inactive') return items.filter(m => m.status === 'INACTIVE');
@@ -54,42 +34,153 @@ function filterMedicines(items: MedicineRecord[], filter: AdminMedicineFilter) {
   return items;
 }
 
-function MedicineCard({item}: {item: MedicineRecord}) {
+function statusColor(status: string) {
+  if (status === 'ACTIVE') return '#00A884';
+  if (status === 'INACTIVE') return '#9AA6B2';
+  return '#E26D6D';
+}
+
+function statusLabel(status: string) {
+  if (status === 'ACTIVE') return 'Active';
+  if (status === 'INACTIVE') return 'Inactive';
+  return 'Out of Stock';
+}
+
+function MedicineCard({
+  item,
+  onPress,
+  onDelete,
+  onToggleStatus,
+  updating,
+}: {
+  item: Medicine;
+  onPress: () => void;
+  onDelete: () => void;
+  onToggleStatus: () => void;
+  updating: boolean;
+}) {
   return (
-    <View style={styles.medicineCard}>
+    <TouchableOpacity style={styles.medicineCard} onPress={onPress} activeOpacity={0.85}>
       <Image
         source={{
-          uri:
-            item.imageUrl ??
-            'https://via.placeholder.com/80x60/ECEFF3/000000?text=Medicine',
+          uri: item.imageUrl ?? 'https://via.placeholder.com/80x60/ECEFF3/000000?text=Medicine',
         }}
         style={styles.medicineImage}
       />
       <View style={styles.metaInfoColumn}>
         <Text style={styles.medicineNameText}>{item.name}</Text>
-        <Text style={styles.medicineTypeText}>{item.type}</Text>
-        <Text style={styles.stockText}>Stock:{item.stock}</Text>
+        <Text style={styles.medicineTypeText}>{item.category ?? item.brand ?? '—'}</Text>
+        {item.genericName ? (
+          <Text style={styles.genericText}>{item.genericName}</Text>
+        ) : null}
+        <View style={[styles.statusBadge, {backgroundColor: statusColor(item.status) + '20'}]}>
+          <Text style={[styles.statusBadgeText, {color: statusColor(item.status)}]}>
+            {statusLabel(item.status)}
+          </Text>
+        </View>
       </View>
-      <View style={styles.priceContainer}>
-        <Text style={styles.priceText}>tk {item.price}</Text>
+      <View style={styles.actionColumn}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={onToggleStatus}
+          disabled={updating}
+          activeOpacity={0.7}>
+          <Feather
+            name={item.status === 'ACTIVE' ? 'toggle-right' : 'toggle-left'}
+            size={20}
+            color={item.status === 'ACTIVE' ? '#00A884' : '#9AA6B2'}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.deleteBtn]}
+          onPress={onDelete}
+          disabled={updating}
+          activeOpacity={0.7}>
+          <Feather name="trash-2" size={16} color="#E26D6D" />
+        </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
+  );
+}
+
+function MedicineDetailModal({
+  medicine,
+  onClose,
+}: {
+  medicine: Medicine | null;
+  onClose: () => void;
+}) {
+  if (!medicine) return null;
+  return (
+    <Modal visible={!!medicine} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.detailModal}>
+          <View style={styles.detailModalHeader}>
+            <Text style={styles.detailModalTitle}>Medicine Details</Text>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+              <Feather name="x" size={22} color="#1A1C1E" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Image
+              source={{
+                uri:
+                  medicine.imageUrl ??
+                  'https://via.placeholder.com/200x120/ECEFF3/000000?text=Medicine',
+              }}
+              style={styles.detailImage}
+              resizeMode="contain"
+            />
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Name</Text>
+              <Text style={styles.detailValue}>{medicine.name}</Text>
+            </View>
+            {medicine.genericName ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Generic Name</Text>
+                <Text style={styles.detailValue}>{medicine.genericName}</Text>
+              </View>
+            ) : null}
+            {medicine.category ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Category</Text>
+                <Text style={styles.detailValue}>{medicine.category}</Text>
+              </View>
+            ) : null}
+            {medicine.brand ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Brand</Text>
+                <Text style={styles.detailValue}>{medicine.brand}</Text>
+              </View>
+            ) : null}
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Status</Text>
+              <Text style={[styles.detailValue, {color: statusColor(medicine.status)}]}>
+                {statusLabel(medicine.status)}
+              </Text>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
 export function AdminMedicinesScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [activeFilter, setActiveFilter] = useState<AdminMedicineFilter>('Active');
-  const [medicines, setMedicines] = useState<MedicineRecord[]>([]);
+  const [activeFilter, setActiveFilter] = useState<AdminMedicineFilter>('All');
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
 
   const loadMedicines = useCallback(async () => {
     setLoading(true);
     try {
       const data = await medicinesApi.list();
-      setMedicines(data.map(mapMedicine));
+      setMedicines(data);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not load medicines';
       Alert.alert('Medicines', message);
@@ -104,12 +195,58 @@ export function AdminMedicinesScreen({navigation}: Props) {
     }, [loadMedicines]),
   );
 
+  const handleDelete = useCallback(
+    (id: string, name: string) => {
+      Alert.alert('Delete Medicine', `Delete "${name}"? This cannot be undone.`, [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setUpdatingId(id);
+            try {
+              await medicinesApi.delete(id);
+              await loadMedicines();
+            } catch (err) {
+              const message = err instanceof ApiError ? err.message : 'Could not delete medicine';
+              Alert.alert('Error', message);
+            } finally {
+              setUpdatingId(null);
+            }
+          },
+        },
+      ]);
+    },
+    [loadMedicines],
+  );
+
+  const handleToggleStatus = useCallback(
+    async (medicine: Medicine) => {
+      const nextStatus =
+        medicine.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      setUpdatingId(medicine.id);
+      try {
+        await medicinesApi.updateStatus(medicine.id, nextStatus);
+        await loadMedicines();
+      } catch (err) {
+        const message = err instanceof ApiError ? err.message : 'Could not update status';
+        Alert.alert('Error', message);
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [loadMedicines],
+  );
+
   const filteredMedicines = useMemo(() => {
     const byFilter = filterMedicines(medicines, activeFilter);
     const q = search.trim().toLowerCase();
     if (!q) return byFilter;
     return byFilter.filter(
-      m => m.name.toLowerCase().includes(q) || m.type.toLowerCase().includes(q),
+      m =>
+        m.name.toLowerCase().includes(q) ||
+        (m.category?.toLowerCase().includes(q) ?? false) ||
+        (m.genericName?.toLowerCase().includes(q) ?? false),
     );
   }, [medicines, activeFilter, search]);
 
@@ -123,12 +260,10 @@ export function AdminMedicinesScreen({navigation}: Props) {
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Medicines</Text>
-        <TouchableOpacity
+        <NotificationBell
           style={styles.headerButton}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#1A1C1E" />
-        </TouchableOpacity>
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       <ScrollView
@@ -178,13 +313,25 @@ export function AdminMedicinesScreen({navigation}: Props) {
             <Text style={styles.emptyText}>No medicines found.</Text>
           ) : (
             filteredMedicines.map(medicine => (
-              <MedicineCard key={medicine.id} item={medicine} />
+              <MedicineCard
+                key={medicine.id}
+                item={medicine}
+                updating={updatingId === medicine.id}
+                onPress={() => setSelectedMedicine(medicine)}
+                onDelete={() => handleDelete(medicine.id, medicine.name)}
+                onToggleStatus={() => handleToggleStatus(medicine)}
+              />
             ))
           )}
         </View>
       </ScrollView>
 
       <AdminBottomNav activeTab="medicine" bottomInset={insets.bottom} navigation={navigation} />
+
+      <MedicineDetailModal
+        medicine={selectedMedicine}
+        onClose={() => setSelectedMedicine(null)}
+      />
     </View>
   );
 }
@@ -281,11 +428,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   medicineImage: {
-    width: 75,
-    height: 60,
+    width: 70,
+    height: 56,
     borderRadius: 8,
     resizeMode: 'contain',
-    marginRight: 14,
+    marginRight: 12,
   },
   metaInfoColumn: {
     flex: 1,
@@ -293,29 +440,86 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   medicineNameText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1A1C1E',
   },
   medicineTypeText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#7E8B97',
     fontWeight: '500',
   },
-  stockText: {
-    fontSize: 12,
-    color: '#7E8B97',
-    fontWeight: '500',
-    marginTop: 2,
+  genericText: {
+    fontSize: 11,
+    color: '#9AA6B2',
   },
-  priceContainer: {
-    justifyContent: 'center',
-    alignItems: 'flex-end',
+  statusBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginTop: 4,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  actionColumn: {
+    alignItems: 'center',
+    gap: 8,
     paddingLeft: 8,
   },
-  priceText: {
-    fontSize: 14,
+  actionBtn: {
+    padding: 6,
+  },
+  deleteBtn: {},
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  detailModal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  detailModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  detailModalTitle: {
+    fontSize: 16,
     fontWeight: '700',
     color: '#1A1C1E',
+  },
+  detailImage: {
+    width: '100%',
+    height: 140,
+    borderRadius: 12,
+    marginBottom: 16,
+    backgroundColor: '#F6F8FB',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F3F6',
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: '#7E8B97',
+    fontWeight: '500',
+  },
+  detailValue: {
+    fontSize: 13,
+    color: '#1A1C1E',
+    fontWeight: '600',
+    maxWidth: '60%',
+    textAlign: 'right',
   },
 });

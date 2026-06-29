@@ -22,6 +22,7 @@ import {ADMIN_USER_FILTERS, type AdminUserFilter} from './adminNav';
 import {adminApi} from '../../api/admin';
 import {type PublicUser} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AUsers'>;
 
@@ -65,14 +66,30 @@ function formatJoinDate(iso: string) {
   });
 }
 
-function UserCard({item, isLast}: {item: PublicUser; isLast: boolean}) {
+function statusBadgeColor(status: string) {
+  if (status === 'ACTIVE') return '#00A884';
+  if (status === 'BLOCKED') return '#E26D6D';
+  return '#FFA500';
+}
+
+function UserCard({
+  item,
+  isLast,
+  onToggleBlock,
+  onDelete,
+  updating,
+}: {
+  item: PublicUser;
+  isLast: boolean;
+  onToggleBlock: () => void;
+  onDelete: () => void;
+  updating: boolean;
+}) {
   return (
     <View style={[styles.userCardRow, isLast && styles.userCardRowLast]}>
       <Image
         source={{
-          uri:
-            item.avatarUrl ??
-            'https://via.placeholder.com/52/E2E8F0/000000?text=User',
+          uri: item.avatarUrl ?? 'https://via.placeholder.com/52/E2E8F0/000000?text=User',
         }}
         style={styles.userAvatar}
       />
@@ -82,6 +99,26 @@ function UserCard({item, isLast}: {item: PublicUser; isLast: boolean}) {
         <View style={styles.phoneInlineRow}>
           <Feather name="phone" size={12} color="#7E8B97" />
           <Text style={styles.userPhoneText}>{item.phone ?? '—'}</Text>
+        </View>
+        <View style={styles.userActionsRow}>
+          <View style={[styles.statusDot, {backgroundColor: statusBadgeColor(item.status)}]} />
+          <Text style={[styles.statusDotText, {color: statusBadgeColor(item.status)}]}>
+            {item.status}
+          </Text>
+          <TouchableOpacity
+            style={styles.actionChip}
+            disabled={updating}
+            onPress={onToggleBlock}>
+            <Text style={styles.actionChipText}>
+              {item.status === 'BLOCKED' ? 'Unblock' : 'Block'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionChip, styles.dangerChip]}
+            disabled={updating}
+            onPress={onDelete}>
+            <Feather name="trash-2" size={12} color="#DC2626" />
+          </TouchableOpacity>
         </View>
       </View>
       <Text style={styles.joinDateText}>{formatJoinDate(item.createdAt)}</Text>
@@ -103,6 +140,7 @@ export function AdminUsersScreen({navigation, route}: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showAddDoctor, setShowAddDoctor] = useState(false);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -208,6 +246,46 @@ export function AdminUsersScreen({navigation, route}: Props) {
     );
   }, [specialties, search]);
 
+  const handleToggleBlock = useCallback(
+    async (user: PublicUser) => {
+      const nextStatus = user.status === 'BLOCKED' ? 'ACTIVE' : 'BLOCKED';
+      setUpdatingUserId(user.id);
+      try {
+        await adminApi.updateUserStatus(user.id, nextStatus);
+        await loadUsers();
+      } catch (err) {
+        Alert.alert('Error', err instanceof ApiError ? err.message : 'Could not update user status');
+      } finally {
+        setUpdatingUserId(null);
+      }
+    },
+    [loadUsers],
+  );
+
+  const handleDeleteUser = useCallback(
+    (user: PublicUser) => {
+      Alert.alert('Delete User', `Remove "${user.fullName}" permanently?`, [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setUpdatingUserId(user.id);
+            try {
+              await adminApi.deleteUser(user.id);
+              await loadUsers();
+            } catch (err) {
+              Alert.alert('Error', err instanceof ApiError ? err.message : 'Could not delete user');
+            } finally {
+              setUpdatingUserId(null);
+            }
+          },
+        },
+      ]);
+    },
+    [loadUsers],
+  );
+
   const createDoctor = async () => {
     if (!fullName.trim() || !email.trim()) {
       Alert.alert('Doctors', 'Name and email are required.');
@@ -306,12 +384,10 @@ export function AdminUsersScreen({navigation, route}: Props) {
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{screenTitle(activeFilter)}</Text>
-        <TouchableOpacity
+        <NotificationBell
           style={styles.headerButton}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#1A1C1E" />
-        </TouchableOpacity>
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       <ScrollView
@@ -543,6 +619,9 @@ export function AdminUsersScreen({navigation, route}: Props) {
                   key={user.id}
                   item={user}
                   isLast={index === filteredUsers.length - 1}
+                  updating={updatingUserId === user.id}
+                  onToggleBlock={() => handleToggleBlock(user)}
+                  onDelete={() => handleDeleteUser(user)}
                 />
               ))
             )}
@@ -797,5 +876,22 @@ const styles = StyleSheet.create({
   },
   dangerChip: {
     borderColor: '#FECACA',
+  },
+  userActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  statusDotText: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginRight: 4,
   },
 });

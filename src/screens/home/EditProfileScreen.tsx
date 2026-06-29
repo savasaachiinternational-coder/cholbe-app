@@ -25,6 +25,7 @@ import {imageUri} from '../../utils/fileAsset';
 import {API_ORIGIN} from '../../config/api';
 import {ApiError} from '../../api/client';
 import {useFocusEffect} from '@react-navigation/native';
+import {AddEmergencyContactModal} from '../../components/AddEmergencyContactModal';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditProfile'>;
 
@@ -46,6 +47,10 @@ export function EditProfileScreen({navigation}: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
+  const [bloodPressure, setBloodPressure] = useState('');
+  const [oxygen, setOxygen] = useState('');
+  const [emergencyModalVisible, setEmergencyModalVisible] = useState(false);
+  const [savingEmergency, setSavingEmergency] = useState(false);
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -62,6 +67,8 @@ export function EditProfileScreen({navigation}: Props) {
       setEmail(user.email ?? '');
       setAvatarUrl(user.avatarUrl ?? null);
       setEmergencyContacts(patient?.emergencyContacts ?? []);
+      setBloodPressure(overview.healthVitals?.bloodPressure?.value ?? '');
+      setOxygen(overview.healthVitals?.oxygen?.value?.replace(/%$/, '') ?? '');
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not load profile';
       Alert.alert('Edit profile', message);
@@ -112,6 +119,49 @@ export function EditProfileScreen({navigation}: Props) {
     }
   };
 
+  const saveEmergencyContact = async (payload: {
+    name: string;
+    relation: string;
+    phone: string;
+  }) => {
+    setSavingEmergency(true);
+    try {
+      await profileApi.addEmergencyContact(payload);
+      setEmergencyModalVisible(false);
+      await loadProfile();
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not add emergency contact';
+      Alert.alert('Emergency contact', message);
+    } finally {
+      setSavingEmergency(false);
+    }
+  };
+
+  const removeEmergencyContact = (contact: EmergencyContact) => {
+    Alert.alert(
+      'Remove contact',
+      `Remove ${contact.name} from emergency contacts?`,
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await profileApi.removeEmergencyContact(contact.id);
+              await loadProfile();
+            } catch (err) {
+              const message =
+                err instanceof ApiError ? err.message : 'Could not remove contact';
+              Alert.alert('Emergency contact', message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const saveProfile = async () => {
     setSaving(true);
     try {
@@ -125,6 +175,14 @@ export function EditProfileScreen({navigation}: Props) {
         gender: gender.trim() || undefined,
         bloodGroup: bloodGroup.trim() || undefined,
       });
+      const bp = bloodPressure.trim();
+      const o2 = oxygen.trim();
+      if (bp || o2) {
+        await profileApi.updateVitals({
+          bloodPressure: bp || undefined,
+          oxygen: o2 || undefined,
+        });
+      }
       navigation.goBack();
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not save profile';
@@ -216,6 +274,29 @@ export function EditProfileScreen({navigation}: Props) {
           />
         </View>
 
+        <Text style={styles.blockSectionHeading}>Health Vitals</Text>
+        <View style={styles.formSection}>
+          <FormField
+            label="Blood Pressure"
+            value={bloodPressure}
+            onChangeText={setBloodPressure}
+            keyboardType="numbers-and-punctuation"
+            placeholder="e.g. 120/80"
+          />
+          <View>
+            <Text style={styles.inputFieldLabel}>Oxygen Level (%)</Text>
+            <TextInput
+              style={styles.textInputBox}
+              value={oxygen}
+              onChangeText={setOxygen}
+              placeholder="e.g. 98"
+              placeholderTextColor="#94A3B8"
+              keyboardType="numeric"
+              maxLength={3}
+            />
+          </View>
+        </View>
+
         <Text style={styles.blockSectionHeading}>Emergency Contact</Text>
 
         <View style={styles.emergencyCardListBlock}>
@@ -241,13 +322,17 @@ export function EditProfileScreen({navigation}: Props) {
               </View>
               <TouchableOpacity
                 style={styles.removeContactIconButton}
-                activeOpacity={0.8}>
+                activeOpacity={0.8}
+                onPress={() => removeEmergencyContact(contact)}>
                 <Feather name="trash-2" size={16} color="#EF4444" />
               </TouchableOpacity>
             </View>
           ))}
 
-          <TouchableOpacity style={styles.addNewContactLinkRow} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.addNewContactLinkRow}
+            activeOpacity={0.8}
+            onPress={() => setEmergencyModalVisible(true)}>
             <Feather
               name="plus"
               size={16}
@@ -255,7 +340,7 @@ export function EditProfileScreen({navigation}: Props) {
               style={styles.plusIconMargin}
             />
             <Text style={styles.addNewContactLinkText}>
-              Add New Emergency Contract
+              Add New Emergency Contact
             </Text>
           </TouchableOpacity>
         </View>
@@ -286,6 +371,13 @@ export function EditProfileScreen({navigation}: Props) {
           onTabPress={handleTabPress}
         />
       </View>
+
+      <AddEmergencyContactModal
+        visible={emergencyModalVisible}
+        saving={savingEmergency}
+        onClose={() => setEmergencyModalVisible(false)}
+        onSave={saveEmergencyContact}
+      />
     </View>
   );
 }
@@ -296,12 +388,14 @@ function FormField({
   onChangeText,
   keyboardType,
   autoCapitalize,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
-  keyboardType?: 'default' | 'numeric' | 'phone-pad' | 'email-address';
+  keyboardType?: 'default' | 'numeric' | 'phone-pad' | 'email-address' | 'numbers-and-punctuation';
   autoCapitalize?: 'none' | 'sentences';
+  placeholder?: string;
 }) {
   return (
     <View>
@@ -310,7 +404,7 @@ function FormField({
         style={styles.textInputBox}
         value={value}
         onChangeText={onChangeText}
-        placeholder={`Enter ${label.toLowerCase()}`}
+        placeholder={placeholder ?? `Enter ${label.toLowerCase()}`}
         placeholderTextColor="#94A3B8"
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}

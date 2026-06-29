@@ -18,6 +18,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {HomeBottomNav} from './HomeBottomNav';
+import {NotificationBell} from '../../components/NotificationBell';
 import {navigateCustomerTab} from './customerTabNavigation';
 import {
   SCHEDULE_TABS,
@@ -26,8 +27,10 @@ import {
   type ScheduleTab,
 } from './homeData';
 import {ProductImage} from '../../components/ProductImage';
+import {UpdateHealthVitalsModal} from '../../components/UpdateHealthVitalsModal';
 import {formatBdt, productUnitPrice} from '../../utils/pharmacyHelpers';
 import {homeApi, type PatientHomeDashboard} from '../../api/home';
+import {profileApi} from '../../api/profile';
 import {medicationSchedulesApi} from '../../api/medications';
 import {cartApi} from '../../api/cart';
 import {ApiError} from '../../api/client';
@@ -63,6 +66,8 @@ export function HomeScreen() {
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>('upcoming');
   const [dashboard, setDashboard] = useState<PatientHomeDashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [vitalsModalOpen, setVitalsModalOpen] = useState(false);
+  const [savingVitals, setSavingVitals] = useState(false);
 
   const loadHome = useCallback(async () => {
     setLoading(true);
@@ -184,6 +189,20 @@ export function HomeScreen() {
 
   const openReportsList = () => navigation.navigate('ReportsList');
 
+  const saveVitals = async (payload: {bloodPressure?: string; oxygen?: string}) => {
+    setSavingVitals(true);
+    try {
+      await profileApi.updateVitals(payload);
+      setVitalsModalOpen(false);
+      await loadHome();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not save vitals';
+      Alert.alert('Health Status', message);
+    } finally {
+      setSavingVitals(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
@@ -194,13 +213,11 @@ export function HomeScreen() {
           <Text style={styles.logoTextPrimary}>Cholbe</Text>
           <Text style={styles.logoTextSecondary}>PHARMACY</Text>
         </View>
-        <TouchableOpacity
+        <NotificationBell
           style={styles.iconButton}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
-          <Feather name="bell" size={24} color="#1E293B" />
-        </TouchableOpacity>
+          color="#1E293B"
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       {loading && !dashboard ? (
@@ -329,46 +346,58 @@ export function HomeScreen() {
           <View style={styles.statusHeader}>
             <Feather name="bell" size={16} color="#475569" />
             <Text style={styles.statusTitle}>Health Status</Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setVitalsModalOpen(true)}>
+              <Text style={styles.updateVitalsLink}>Update</Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.metricsRow}>
-            <View style={styles.metricItem}>
-              <Feather
-                name="activity"
-                size={20}
-                color="#2DD4BF"
-                style={styles.metricIcon}
-              />
-              <View>
-                <Text style={styles.metricLabel}>
-                  Bp{' '}
-                  <Text style={styles.metricValue}>
-                    {vitals?.bloodPressure?.value ?? '—'}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setVitalsModalOpen(true)}>
+            <View style={styles.metricsRow}>
+              <View style={styles.metricItem}>
+                <Feather
+                  name="activity"
+                  size={20}
+                  color="#2DD4BF"
+                  style={styles.metricIcon}
+                />
+                <View>
+                  <Text style={styles.metricLabel}>
+                    Bp{' '}
+                    <Text style={styles.metricValue}>
+                      {vitals?.bloodPressure?.value ?? '—'}
+                    </Text>
                   </Text>
-                </Text>
-                <Text style={styles.metricTimestamp}>
-                  Last checked: {vitals?.bloodPressure?.checkedAgo ?? '—'}
-                </Text>
+                  <Text style={styles.metricTimestamp}>
+                    Last checked: {vitals?.bloodPressure?.checkedAgo ?? '—'}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <View style={[styles.metricItem, styles.metricBorderLeft]}>
-              <Feather
-                name="heart"
-                size={20}
-                color="#2DD4BF"
-                style={styles.metricIcon}
-              />
-              <View>
-                <Text style={styles.metricLabel}>
-                  Oxygen:{' '}
-                  <Text style={styles.metricValue}>
-                    {vitals?.oxygen?.value ?? '—'}
+              <View style={[styles.metricItem, styles.metricBorderLeft]}>
+                <Feather
+                  name="heart"
+                  size={20}
+                  color="#2DD4BF"
+                  style={styles.metricIcon}
+                />
+                <View>
+                  <Text style={styles.metricLabel}>
+                    Oxygen:{' '}
+                    <Text style={styles.metricValue}>
+                      {vitals?.oxygen?.value ?? '—'}
+                    </Text>
                   </Text>
-                </Text>
+                  <Text style={styles.metricTimestamp}>
+                    Last checked: {vitals?.oxygen?.checkedAgo ?? '—'}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.viewReportsButton}
@@ -377,6 +406,15 @@ export function HomeScreen() {
             <Text style={styles.viewReportsText}>View Reports</Text>
           </TouchableOpacity>
         </View>
+
+        <UpdateHealthVitalsModal
+          visible={vitalsModalOpen}
+          initialBloodPressure={vitals?.bloodPressure?.value ?? ''}
+          initialOxygen={vitals?.oxygen?.value ?? ''}
+          saving={savingVitals}
+          onClose={() => setVitalsModalOpen(false)}
+          onSave={saveVitals}
+        />
 
         <View style={styles.alertCard}>
           <View style={styles.alertLeftContent}>
@@ -914,10 +952,16 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   statusTitle: {
+    flex: 1,
     fontSize: 14,
     fontWeight: '600',
     color: '#475569',
     marginLeft: 6,
+  },
+  updateVitalsLink: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0D9488',
   },
   metricsRow: {
     flexDirection: 'row',

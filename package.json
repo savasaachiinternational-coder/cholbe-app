@@ -4,10 +4,18 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "android:release": "react-native run-android --mode release",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "gradle:stop": "cd android && ./gradlew --stop",
+    "clean:android": "bash scripts/android-clean.sh",
+    "free:disk": "bash scripts/android-free-disk.sh",
+    "build:apk": "bash scripts/android-free-disk.sh && cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a",
+    "build:apk:all": "bash scripts/android-free-disk.sh && cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a",
+    "build:apk:debug": "cd android && ./gradlew assembleDebug --no-daemon",
+    "build:bundle": "bash scripts/android-free-disk.sh && cd android && ./gradlew bundleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^3.1.1",

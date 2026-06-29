@@ -21,6 +21,13 @@ export type ConsultationContext = {
     timeSlot: string;
     scheduledDate: string;
     status: string;
+    patient?: {
+      id: string;
+      fullName: string;
+      avatarUrl: string | null;
+      phone?: string | null;
+      email?: string | null;
+    } | null;
     doctor: {
       id: string;
       specialty: string;
@@ -74,5 +81,12 @@ export const consultationsApi = {
       auth: true,
       body: payload,
     });
+  },
+
+  getFeedback(appointmentId: string) {
+    return apiRequest<{id: string; rating: number; comment: string | null} | null>(
+      `/consultations/appointments/${appointmentId}/feedback`,
+      {auth: true},
+    );
   },
 };

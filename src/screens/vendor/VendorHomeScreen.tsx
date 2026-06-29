@@ -1,7 +1,8 @@
-import {useCallback, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   Image,
   ScrollView,
   StyleSheet,
@@ -24,6 +25,49 @@ import {ProductImage} from '../../components/ProductImage';
 import {formatBdt} from '../../utils/pharmacyHelpers';
 import {VendorBottomNav} from './VendorBottomNav';
 import type {VendorOrderStatus} from './vendorNav';
+import {NotificationBell} from '../../components/NotificationBell';
+
+const CHART_WIDTH = Dimensions.get('window').width - 64;
+const CHART_PLOT_HEIGHT = 120;
+
+function buildRevenueChartPoints(data: {revenue: number}[]): {x: number; y: number}[] {
+  if (data.length === 0) return [];
+  const max = Math.max(...data.map(d => d.revenue), 1);
+  const n = data.length;
+  return data.map((d, i) => ({
+    x: n === 1 ? 0.5 : i / (n - 1),
+    y: 1 - d.revenue / max,
+  }));
+}
+
+function VChartLineSegment({
+  start,
+  end,
+  plotWidth,
+  plotHeight,
+}: {
+  start: {x: number; y: number};
+  end: {x: number; y: number};
+  plotWidth: number;
+  plotHeight: number;
+}) {
+  const x1 = start.x * plotWidth;
+  const y1 = start.y * plotHeight;
+  const x2 = end.x * plotWidth;
+  const y2 = end.y * plotHeight;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  return (
+    <View
+      style={[
+        styles.vChartLineSegment,
+        {left: x1, top: y1, width: length, transform: [{rotate: `${angle}deg`}]},
+      ]}
+    />
+  );
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VHome'>;
 
@@ -98,14 +142,19 @@ export function VendorHomeScreen({navigation}: Props) {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<{month: string; revenue: number}[]>([]);
   const [search, setSearch] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await vendorApi.dashboard();
+      const [data, monthly] = await Promise.all([
+        vendorApi.dashboard(),
+        vendorApi.revenueMonthly().catch(() => []),
+      ]);
       setDashboard(data as DashboardData);
+      setMonthlyRevenue(monthly);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not load dashboard';
       Alert.alert('Dashboard', message);
@@ -149,6 +198,16 @@ export function VendorHomeScreen({navigation}: Props) {
     p => p.stockQuantity > 0 && p.stockQuantity <= p.minAlertLevel,
   ).length;
   const outOfStockCount = products.filter(p => p.stockQuantity === 0).length;
+
+  const revenueChartPoints = useMemo(
+    () => buildRevenueChartPoints(monthlyRevenue),
+    [monthlyRevenue],
+  );
+  const revenueChartLabels = useMemo(() => monthlyRevenue.map(d => d.month), [monthlyRevenue]);
+  const revenueMax = useMemo(
+    () => Math.max(...monthlyRevenue.map(d => d.revenue), 0),
+    [monthlyRevenue],
+  );
 
   const renderInventoryItem = (product: VendorProduct) => {
     const discount = discountLabel(product);
@@ -273,11 +332,9 @@ export function VendorHomeScreen({navigation}: Props) {
           <Text style={styles.logoTextMain}>+ Cholbe</Text>
           <Text style={styles.logoTextSub}>PHARMACY</Text>
         </View>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#1A1C1E" />
-        </TouchableOpacity>
+        <NotificationBell
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       {loading && !dashboard ? (
@@ -333,6 +390,72 @@ export function VendorHomeScreen({navigation}: Props) {
               <Text style={[styles.metricLabel, styles.metricLabelOutStock]}>Out of Stock Items</Text>
               <Text style={styles.metricValue}>{outOfStockCount}</Text>
               <Text style={styles.metricSub}> </Text>
+            </View>
+          </View>
+
+          <View style={styles.revenueChartCard}>
+            <Text style={styles.revenueChartTitle}>Revenue Overview (Last 6 Months)</Text>
+
+            <View style={styles.revenueGraphBody}>
+              <View style={styles.revenueYAxis}>
+                {[revenueMax, Math.round(revenueMax / 2), 0].map((val, i) => (
+                  <Text key={i} style={styles.revenueYAxisLabel}>
+                    {val > 0 ? `${Math.round(val / 1000)}k` : '0'}
+                  </Text>
+                ))}
+              </View>
+
+              <View style={styles.revenueChartCanvas}>
+                <View style={styles.revenueGridLine} />
+                <View style={[styles.revenueGridLine, styles.revenueGridLineMid]} />
+                <View style={[styles.revenueGridLine, styles.revenueGridLineBottom]} />
+
+                {revenueChartPoints.length < 2 ? (
+                  <View
+                    style={[
+                      styles.revenueChartPlot,
+                      {width: CHART_WIDTH - 40, height: CHART_PLOT_HEIGHT, justifyContent: 'center', alignItems: 'center'},
+                    ]}>
+                    <Text style={styles.revenueChartEmpty}>No data yet</Text>
+                  </View>
+                ) : (
+                  <View
+                    style={[
+                      styles.revenueChartPlot,
+                      {width: CHART_WIDTH - 40, height: CHART_PLOT_HEIGHT},
+                    ]}>
+                    {revenueChartPoints.slice(0, -1).map((point, index) => (
+                      <VChartLineSegment
+                        key={`seg-${index}`}
+                        start={point}
+                        end={revenueChartPoints[index + 1]}
+                        plotWidth={CHART_WIDTH - 40}
+                        plotHeight={CHART_PLOT_HEIGHT}
+                      />
+                    ))}
+                    {revenueChartPoints.map((point, index) => (
+                      <View
+                        key={`dot-${index}`}
+                        style={[
+                          styles.revenueChartDot,
+                          {
+                            left: point.x * (CHART_WIDTH - 40) - 3.5,
+                            top: point.y * CHART_PLOT_HEIGHT - 3.5,
+                          },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.revenueXAxisRow}>
+              {revenueChartLabels.map(month => (
+                <Text key={month} style={styles.revenueXAxisLabel}>
+                  {month}
+                </Text>
+              ))}
             </View>
           </View>
 
@@ -754,5 +877,95 @@ const styles = StyleSheet.create({
     color: '#4E929D',
     fontSize: 12,
     fontWeight: '600',
+  },
+  revenueChartCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#ECEFF3',
+  },
+  revenueChartTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1A1C1E',
+    marginBottom: 16,
+  },
+  revenueGraphBody: {
+    flexDirection: 'row',
+    height: CHART_PLOT_HEIGHT,
+  },
+  revenueYAxis: {
+    justifyContent: 'space-between',
+    height: '100%',
+    paddingRight: 8,
+    alignItems: 'flex-end',
+    width: 36,
+  },
+  revenueYAxisLabel: {
+    fontSize: 10,
+    color: '#9AA6B2',
+    fontWeight: '500',
+  },
+  revenueChartCanvas: {
+    flex: 1,
+    position: 'relative',
+    height: '100%',
+  },
+  revenueGridLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: '#ECEFF3',
+    top: 0,
+  },
+  revenueGridLineMid: {
+    top: '50%',
+  },
+  revenueGridLineBottom: {
+    top: '100%',
+  },
+  revenueChartPlot: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    zIndex: 5,
+  },
+  revenueChartEmpty: {
+    color: '#9AA6B2',
+    fontSize: 12,
+  },
+  vChartLineSegment: {
+    position: 'absolute',
+    height: 2.5,
+    backgroundColor: '#4E929D',
+    transformOrigin: 'left center',
+  },
+  revenueChartDot: {
+    position: 'absolute',
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#4E929D',
+    zIndex: 6,
+  },
+  revenueXAxisRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingLeft: 36,
+    paddingRight: 4,
+    marginTop: 10,
+  },
+  revenueXAxisLabel: {
+    fontSize: 10,
+    color: '#9AA6B2',
+    fontWeight: '500',
+    minWidth: 20,
+    textAlign: 'center',
   },
 });

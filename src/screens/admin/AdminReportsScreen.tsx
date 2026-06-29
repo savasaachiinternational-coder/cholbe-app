@@ -19,6 +19,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {formatBdt} from '../../utils/pharmacyHelpers';
+import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AReports'>;
 
@@ -136,12 +137,10 @@ export function AdminReportsScreen({navigation}: Props) {
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Reports</Text>
-        <TouchableOpacity
+        <NotificationBell
           style={styles.headerButton}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#1A1C1E" />
-        </TouchableOpacity>
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       <ScrollView
@@ -184,11 +183,12 @@ export function AdminReportsScreen({navigation}: Props) {
 
               <View style={styles.graphBodyWrapperRow}>
                 <View style={styles.yAxisGuides}>
-                  <Text style={styles.axisText}>80k</Text>
-                  <Text style={styles.axisText}>60k</Text>
-                  <Text style={styles.axisText}>40k</Text>
-                  <Text style={styles.axisText}>20k</Text>
-                  <Text style={styles.axisText}>0</Text>
+                  {(() => {
+                    const maxQty = Math.max(...(report?.topSellingMedicines ?? []).map(m => m.quantitySold ?? 0), 0);
+                    return [maxQty, Math.round(maxQty * 0.75), Math.round(maxQty * 0.5), Math.round(maxQty * 0.25), 0].map((label, i) => (
+                      <Text key={i} style={styles.axisText}>{label}</Text>
+                    ));
+                  })()}
                 </View>
 
                 <View style={styles.chartCanvasArea}>

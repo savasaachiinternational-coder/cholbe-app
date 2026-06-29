@@ -22,6 +22,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {AdminMenuModal} from './AdminMenuModal';
 import {formatBdt} from '../../utils/pharmacyHelpers';
+import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AHome'>;
 
@@ -29,16 +30,7 @@ const {width} = Dimensions.get('window');
 const CHART_WIDTH = width - 64;
 const CHART_PLOT_HEIGHT = 150;
 
-const CHART_POINTS = [
-  {x: 20 / 300, y: 111 / 150},
-  {x: 63 / 300, y: 94 / 150},
-  {x: 106 / 300, y: 72 / 150},
-  {x: 148 / 300, y: 85 / 150},
-  {x: 190 / 300, y: 62 / 150},
-  {x: 232 / 300, y: 50 / 150},
-  {x: 270 / 300, y: 74 / 150},
-  {x: 295 / 300, y: 36 / 150},
-];
+type MonthlyPoint = {month: string; count: number};
 
 type DashboardData = {
   totalOrders: number;
@@ -47,6 +39,16 @@ type DashboardData = {
   totalRevenue: string | number;
   growthPercent: number;
 };
+
+function buildChartPoints(data: MonthlyPoint[]): {x: number; y: number}[] {
+  if (data.length === 0) return [];
+  const max = Math.max(...data.map(d => d.count), 1);
+  const n = data.length;
+  return data.map((d, i) => ({
+    x: n === 1 ? 0.5 : i / (n - 1),
+    y: 1 - d.count / max,
+  }));
+}
 
 function formatRevenue(value: string | number) {
   const n = typeof value === 'string' ? parseFloat(value) : value;
@@ -88,7 +90,15 @@ function ChartLineSegment({
   );
 }
 
-function OrderOverviewChart({plotWidth}: {plotWidth: number}) {
+function OrderOverviewChart({plotWidth, points}: {plotWidth: number; points: {x: number; y: number}[]}) {
+  if (points.length < 2) {
+    return (
+      <View style={[styles.chartPlot, {width: plotWidth, height: CHART_PLOT_HEIGHT, justifyContent: 'center', alignItems: 'center'}]}>
+        <Text style={{color: '#9AA6B2', fontSize: 12}}>No chart data yet</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.chartPlot, {width: plotWidth, height: CHART_PLOT_HEIGHT}]}>
       <LinearGradient
@@ -96,17 +106,17 @@ function OrderOverviewChart({plotWidth}: {plotWidth: number}) {
         style={styles.chartGradientFill}
       />
 
-      {CHART_POINTS.slice(0, -1).map((point, index) => (
+      {points.slice(0, -1).map((point, index) => (
         <ChartLineSegment
           key={`line-${index}`}
           start={point}
-          end={CHART_POINTS[index + 1]}
+          end={points[index + 1]}
           plotWidth={plotWidth}
           plotHeight={CHART_PLOT_HEIGHT}
         />
       ))}
 
-      {CHART_POINTS.map((point, index) => (
+      {points.map((point, index) => (
         <View
           key={`point-${index}`}
           style={[
@@ -144,14 +154,19 @@ export function AdminHomeScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [monthlyData, setMonthlyData] = useState<MonthlyPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await adminApi.dashboard();
+      const [data, monthly] = await Promise.all([
+        adminApi.dashboard(),
+        adminApi.ordersMonthly(),
+      ]);
       setDashboard(data);
+      setMonthlyData(monthly);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not load dashboard';
       Alert.alert('Dashboard', message);
@@ -165,6 +180,10 @@ export function AdminHomeScreen({navigation}: Props) {
       loadDashboard();
     }, [loadDashboard]),
   );
+
+  const chartPoints = useMemo(() => buildChartPoints(monthlyData), [monthlyData]);
+  const chartMonthLabels = useMemo(() => monthlyData.map(d => d.month), [monthlyData]);
+  const chartMaxCount = useMemo(() => Math.max(...monthlyData.map(d => d.count), 0), [monthlyData]);
 
   const metrics = useMemo(() => {
     const pct = dashboard ? `(${dashboard.growthPercent}%)` : '';
@@ -193,12 +212,10 @@ export function AdminHomeScreen({navigation}: Props) {
           <Text style={styles.logoTextMain}>+ Cholbe</Text>
           <Text style={styles.logoTextSub}>PHARMACY</Text>
         </View>
-        <TouchableOpacity
+        <NotificationBell
           style={styles.headerButton}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#1A1C1E" />
-        </TouchableOpacity>
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       <ScrollView
@@ -213,14 +230,23 @@ export function AdminHomeScreen({navigation}: Props) {
             style={styles.adminAvatar}
           />
           <View style={styles.welcomeTextColumn}>
-            <Text style={styles.welcomeTitle}>Good Morning, Admin</Text>
+            <Text style={styles.welcomeTitle}>
+              {(() => {
+                const h = new Date().getHours();
+                if (h < 12) return 'Good Morning, Admin';
+                if (h < 17) return 'Good Afternoon, Admin';
+                return 'Good Evening, Admin';
+              })()}
+            </Text>
             <Text style={styles.welcomeSubtitle}>Here's what's happening today.</Text>
           </View>
         </View>
 
         <TouchableOpacity style={styles.dateSelectorDropdown} activeOpacity={0.8}>
           <Feather name="calendar" size={16} color="#4F5E6D" />
-          <Text style={styles.dateSelectorText}>25-10-2025</Text>
+          <Text style={styles.dateSelectorText}>
+            {new Date().toLocaleDateString('en-GB', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-')}
+          </Text>
           <Feather name="chevron-down" size={16} color="#4F5E6D" />
         </TouchableOpacity>
 
@@ -275,8 +301,8 @@ export function AdminHomeScreen({navigation}: Props) {
 
           <View style={styles.graphBodyContainer}>
             <View style={styles.yAxisContainer}>
-              {['2k', '1.5k', '1k', '500', '0'].map(label => (
-                <Text key={label} style={styles.axisLabelText}>
+              {[chartMaxCount, Math.round(chartMaxCount * 0.75), Math.round(chartMaxCount * 0.5), Math.round(chartMaxCount * 0.25), 0].map((label, i) => (
+                <Text key={i} style={styles.axisLabelText}>
                   {label}
                 </Text>
               ))}
@@ -289,12 +315,12 @@ export function AdminHomeScreen({navigation}: Props) {
               <View style={[styles.gridLineGuide, styles.gridLine75]} />
               <View style={[styles.gridLineGuide, styles.gridLine100]} />
 
-              <OrderOverviewChart plotWidth={CHART_WIDTH - 40} />
+              <OrderOverviewChart plotWidth={CHART_WIDTH - 40} points={chartPoints} />
             </View>
           </View>
 
           <View style={styles.xAxisRowLabelsContainer}>
-            {['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(month => (
+            {chartMonthLabels.map(month => (
               <Text key={month} style={styles.xAxisLabelText}>
                 {month}
               </Text>

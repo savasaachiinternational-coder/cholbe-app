@@ -3,10 +3,14 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -16,12 +20,16 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {vendorApi} from '../../api/vendor';
+import {launchImageLibrary} from 'react-native-image-picker';
+import {vendorApi, type VendorDocument, type VendorPayoutMethod} from '../../api/vendor';
+import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import {uploadFile} from '../../api/uploads';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
-import {productImageUrl} from '../../utils/pharmacyHelpers';
+import {formatBdt, productImageUrl} from '../../utils/pharmacyHelpers';
 import {VendorBottomNav} from './VendorBottomNav';
+import {performLogout} from '../../auth/sessionControl';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VProfile'>;
 type ExpandedSection = 'store' | 'wallet' | 'vault' | null;
@@ -33,10 +41,9 @@ type VendorProfile = {
   address?: string | null;
   isStoreOpen: boolean;
   bannerUrl?: string | null;
+  approvalStatus?: string;
   user?: {fullName: string; phone?: string | null};
 };
-
-const VAULT_DOCUMENTS = ['Drug License_2024.pdf', 'Trade License_Uttara.png', 'NID-Card'];
 
 function SectionHeader({title}: {title: string}) {
   return <Text style={styles.groupSectionTitle}>{title}</Text>;
@@ -74,6 +81,206 @@ function SettingRow({icon, title, subtitle, expanded, onPress}: SettingRowProps)
   );
 }
 
+type VendorEditProfileModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  pharmacyName: string;
+  onPharmacyNameChange: (v: string) => void;
+  phone: string;
+  onPhoneChange: (v: string) => void;
+  address: string;
+  onAddressChange: (v: string) => void;
+  bannerUrl: string;
+  onBannerUrlChange: (v: string) => void;
+  saving: boolean;
+  onSave: () => void;
+};
+
+function VendorEditProfileModal({
+  visible,
+  onClose,
+  pharmacyName,
+  onPharmacyNameChange,
+  phone,
+  onPhoneChange,
+  address,
+  onAddressChange,
+  bannerUrl,
+  onBannerUrlChange,
+  saving,
+  onSave,
+}: VendorEditProfileModalProps) {
+  const handlePickBanner = () => {
+    launchImageLibrary({mediaType: 'photo', quality: 0.8}, async response => {
+      if (response.didCancel || !response.assets?.length) return;
+      const asset = response.assets[0];
+      if (!asset.uri || !asset.fileName || !asset.type) return;
+      try {
+        const result = await uploadFile(
+          '/uploads/product-image',
+          asset.uri,
+          asset.fileName,
+          asset.type,
+        );
+        onBannerUrlChange(result.fileUrl);
+      } catch {
+        Alert.alert('Error', 'Could not upload banner image');
+      }
+    });
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={styles.epOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.epModal}>
+          <View style={styles.epHeader}>
+            <Text style={styles.epTitle}>Edit Profile</Text>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+              <Feather name="x" size={22} color="#1A1C1E" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.epField}>
+            <Text style={styles.epLabel}>Pharmacy Name</Text>
+            <TextInput
+              style={styles.epInput}
+              placeholder="Enter pharmacy name"
+              placeholderTextColor="#9AA6B2"
+              value={pharmacyName}
+              onChangeText={onPharmacyNameChange}
+            />
+          </View>
+
+          <View style={styles.epField}>
+            <Text style={styles.epLabel}>Phone</Text>
+            <TextInput
+              style={styles.epInput}
+              placeholder="Enter phone number"
+              placeholderTextColor="#9AA6B2"
+              keyboardType="phone-pad"
+              value={phone}
+              onChangeText={onPhoneChange}
+            />
+          </View>
+
+          <View style={styles.epField}>
+            <Text style={styles.epLabel}>Address</Text>
+            <TextInput
+              style={[styles.epInput, styles.epInputMultiline]}
+              placeholder="Enter address"
+              placeholderTextColor="#9AA6B2"
+              multiline
+              numberOfLines={3}
+              value={address}
+              onChangeText={onAddressChange}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.epBannerBtn}
+            onPress={handlePickBanner}
+            activeOpacity={0.8}>
+            <Feather name="image" size={16} color="#4E929D" />
+            <Text style={styles.epBannerBtnText}>
+              {bannerUrl ? 'Change Banner Image' : 'Add Banner Image'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.epSaveBtn, saving && styles.epSaveBtnDisabled]}
+            onPress={onSave}
+            disabled={saving}
+            activeOpacity={0.85}>
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.epSaveBtnText}>Save Profile</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function VendorChangePasswordModal({visible, onClose}: {visible: boolean; onClose: () => void}) {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!current || !next || !confirm) {
+      Alert.alert('Password', 'All fields are required.');
+      return;
+    }
+    if (next.length < 8) {
+      Alert.alert('Password', 'New password must be at least 8 characters.');
+      return;
+    }
+    if (next !== confirm) {
+      Alert.alert('Password', 'Passwords do not match.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await authApi.changePassword(current, next);
+      Alert.alert('Success', 'Password changed successfully.');
+      setCurrent('');
+      setNext('');
+      setConfirm('');
+      onClose();
+    } catch (err) {
+      Alert.alert('Error', err instanceof ApiError ? err.message : 'Could not change password');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={styles.cpOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.cpModal}>
+          <View style={styles.cpHeader}>
+            <Text style={styles.cpTitle}>Change Password</Text>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+              <Feather name="x" size={22} color="#1A1C1E" />
+            </TouchableOpacity>
+          </View>
+          {['Current Password', 'New Password', 'Confirm Password'].map((label, idx) => (
+            <View key={label} style={styles.cpField}>
+              <Text style={styles.cpLabel}>{label}</Text>
+              <TextInput
+                style={styles.cpInput}
+                placeholder="••••••••"
+                placeholderTextColor="#9AA6B2"
+                secureTextEntry
+                value={idx === 0 ? current : idx === 1 ? next : confirm}
+                onChangeText={idx === 0 ? setCurrent : idx === 1 ? setNext : setConfirm}
+              />
+            </View>
+          ))}
+          <TouchableOpacity
+            style={[styles.cpSaveBtn, saving && styles.cpSaveBtnDisabled]}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.85}>
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.cpSaveBtnText}>Save Password</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 export function VendorPharmacyProfileScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
@@ -82,21 +289,57 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
   const [saving, setSaving] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(true);
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
+  const [changePwVisible, setChangePwVisible] = useState(false);
+  const [editVisible, setEditVisible] = useState(false);
+  const [editPharmacyName, setEditPharmacyName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editBannerUrl, setEditBannerUrl] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [storeEditMode, setStoreEditMode] = useState(false);
+  const [opPharmacyName, setOpPharmacyName] = useState('');
+  const [opPhone, setOpPhone] = useState('');
+  const [opAddress, setOpAddress] = useState('');
+  const [documents, setDocuments] = useState<VendorDocument[]>([]);
+  const [payoutMethods, setPayoutMethods] = useState<VendorPayoutMethod[]>([]);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [nextPayoutLabel, setNextPayoutLabel] = useState('');
+  const [rating, setRating] = useState(4.8);
+  const [acceptanceRate, setAcceptanceRate] = useState(98);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [payoutModalVisible, setPayoutModalVisible] = useState(false);
+  const [payoutEdit, setPayoutEdit] = useState<VendorPayoutMethod | null>(null);
+  const [payoutLabel, setPayoutLabel] = useState('');
+  const [payoutAccount, setPayoutAccount] = useState('');
+  const [payoutType, setPayoutType] = useState<'BANK' | 'BKASH' | 'NAGAD'>('BANK');
+  const [payoutSaving, setPayoutSaving] = useState(false);
+
+  const syncOperationalFields = useCallback((profile: VendorProfile) => {
+    setOpPharmacyName(profile.pharmacyName ?? '');
+    setOpPhone(profile.phone ?? profile.user?.phone ?? '');
+    setOpAddress(profile.address ?? '');
+  }, []);
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
     try {
       const data = await vendorApi.dashboard();
-      const profile = (data as {vendor: VendorProfile}).vendor;
-      setVendor(profile);
-      setIsStoreOpen(profile.isStoreOpen);
+      setVendor(data.vendor);
+      setIsStoreOpen(data.vendor.isStoreOpen);
+      syncOperationalFields(data.vendor);
+      setDocuments(data.documents ?? []);
+      setPayoutMethods(data.payoutMethods ?? []);
+      setWalletBalance(Number(data.wallet?.availableBalance ?? 0));
+      setNextPayoutLabel(data.wallet?.nextPayoutLabel ?? '');
+      setRating(Number(data.metrics?.rating ?? 4.8));
+      setAcceptanceRate(Number(data.metrics?.acceptanceRate ?? 98));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not load profile';
       Alert.alert('Profile', message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [syncOperationalFields]);
 
   useFocusEffect(
     useCallback(() => {
@@ -107,8 +350,15 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
   const saveProfile = useCallback(async () => {
     setSaving(true);
     try {
-      const updated = await vendorApi.updateProfile({isStoreOpen});
+      const updated = await vendorApi.updateProfile({
+        isStoreOpen,
+        pharmacyName: opPharmacyName.trim() || undefined,
+        phone: opPhone.trim() || undefined,
+        address: opAddress.trim() || undefined,
+      });
       setVendor(updated as VendorProfile);
+      syncOperationalFields(updated as VendorProfile);
+      setStoreEditMode(false);
       Alert.alert('Profile', 'Changes saved successfully.');
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not save profile';
@@ -116,7 +366,109 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
     } finally {
       setSaving(false);
     }
-  }, [isStoreOpen]);
+  }, [isStoreOpen, opPharmacyName, opPhone, opAddress, syncOperationalFields]);
+
+  const handleUploadDocument = () => {
+    launchImageLibrary({mediaType: 'photo', selectionLimit: 1}, async response => {
+      if (response.didCancel || !response.assets?.length) return;
+      const asset = response.assets[0];
+      if (!asset.uri || !asset.fileName || !asset.type) return;
+      setUploadingDoc(true);
+      try {
+        const uploaded = await uploadFile(
+          '/uploads/vendor-document',
+          asset.uri,
+          asset.fileName,
+          asset.type,
+        );
+        await vendorApi.addDocument({
+          fileName: uploaded.fileName,
+          fileUrl: uploaded.fileUrl,
+          mimeType: uploaded.mimeType,
+        });
+        await loadProfile();
+        Alert.alert('Document', 'Document uploaded successfully.');
+      } catch (err) {
+        Alert.alert(
+          'Upload failed',
+          err instanceof ApiError ? err.message : 'Could not upload document',
+        );
+      } finally {
+        setUploadingDoc(false);
+      }
+    });
+  };
+
+  const handleRemoveDocument = (doc: VendorDocument) => {
+    Alert.alert('Remove document', `Remove ${doc.fileName}?`, [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await vendorApi.removeDocument(doc.id);
+            await loadProfile();
+          } catch (err) {
+            Alert.alert(
+              'Error',
+              err instanceof ApiError ? err.message : 'Could not remove document',
+            );
+          }
+        },
+      },
+    ]);
+  };
+
+  const openPayoutEditor = (method?: VendorPayoutMethod) => {
+    setPayoutEdit(method ?? null);
+    setPayoutLabel(method?.label ?? '');
+    setPayoutAccount(method?.accountMasked ?? '');
+    setPayoutType(method?.methodType ?? 'BANK');
+    setPayoutModalVisible(true);
+  };
+
+  const savePayoutMethod = async () => {
+    if (!payoutLabel.trim() || !payoutAccount.trim()) {
+      Alert.alert('Payout', 'Label and account are required.');
+      return;
+    }
+    setPayoutSaving(true);
+    try {
+      await vendorApi.upsertPayoutMethod({
+        id: payoutEdit?.id,
+        label: payoutLabel.trim(),
+        methodType: payoutType,
+        accountMasked: payoutAccount.trim(),
+        isPrimary: payoutEdit?.isPrimary ?? payoutMethods.length === 0,
+      });
+      setPayoutModalVisible(false);
+      await loadProfile();
+    } catch (err) {
+      Alert.alert('Payout', err instanceof ApiError ? err.message : 'Could not save payout method');
+    } finally {
+      setPayoutSaving(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setEditSaving(true);
+    try {
+      await vendorApi.updateProfile({
+        pharmacyName: editPharmacyName.trim() || undefined,
+        phone: editPhone.trim() || undefined,
+        address: editAddress.trim() || undefined,
+        bannerUrl: editBannerUrl || undefined,
+      });
+      Alert.alert('Profile', 'Profile updated successfully.');
+      setEditVisible(false);
+      loadProfile();
+    } catch (err) {
+      Alert.alert('Error', err instanceof ApiError ? err.message : 'Could not update profile');
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   const toggleSection = (section: Exclude<ExpandedSection, null>) => {
     setExpandedSection(current => (current === section ? null : section));
@@ -136,7 +488,16 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pharmacy Profile</Text>
-        <TouchableOpacity style={styles.headerButton} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          activeOpacity={0.7}
+          onPress={() => {
+            setEditPharmacyName(vendor?.pharmacyName ?? '');
+            setEditPhone(vendor?.phone ?? '');
+            setEditAddress(vendor?.address ?? '');
+            setEditBannerUrl(vendor?.bannerUrl ?? '');
+            setEditVisible(true);
+          }}>
           <Feather name="edit-3" size={22} color="#1A1C1E" />
         </TouchableOpacity>
       </View>
@@ -155,10 +516,12 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
             <View style={styles.storeTextInfoBlock}>
               <View style={styles.storeTitleRow}>
                 <Text style={styles.storeNameText}>{vendor?.pharmacyName ?? '—'}</Text>
-                <View style={styles.verifiedBadge}>
-                  <MaterialIcons name="verified" size={12} color="#47B39D" />
-                  <Text style={styles.verifiedBadgeText}>Verified</Text>
-                </View>
+                {vendor?.approvalStatus === 'APPROVED' ? (
+                  <View style={styles.verifiedBadge}>
+                    <MaterialIcons name="verified" size={12} color="#47B39D" />
+                    <Text style={styles.verifiedBadgeText}>Verified</Text>
+                  </View>
+                ) : null}
               </View>
               <View style={styles.locationRow}>
                 <Feather name="map-pin" size={12} color="#7E8B97" />
@@ -193,11 +556,11 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
 
           <View style={styles.metricsRowGroup}>
             <View style={styles.metricScoreBox}>
-              <Text style={styles.metricScoreValue}>4.8</Text>
+              <Text style={styles.metricScoreValue}>{rating.toFixed(1)}</Text>
               <Text style={styles.metricScoreLabel}>Rating</Text>
             </View>
             <View style={styles.metricScoreBox}>
-              <Text style={styles.metricScoreValue}>98%</Text>
+              <Text style={styles.metricScoreValue}>{acceptanceRate}%</Text>
               <Text style={styles.metricScoreLabel}>Acceptance</Text>
             </View>
           </View>
@@ -235,24 +598,56 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
                 <View style={styles.operationalSubContainer}>
                   <View style={styles.operationalHeaderInline}>
                     <Text style={styles.operationalTitleMain}>Operational Controls</Text>
-                    <TouchableOpacity activeOpacity={0.7}>
-                      <Feather name="edit-2" size={14} color="#1A1C1E" />
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        if (storeEditMode) {
+                          syncOperationalFields(vendor!);
+                        }
+                        setStoreEditMode(current => !current);
+                      }}>
+                      <Feather name={storeEditMode ? 'x' : 'edit-2'} size={14} color="#1A1C1E" />
                     </TouchableOpacity>
                   </View>
 
                   <View style={styles.controlItemLineRow}>
                     <Text style={styles.controlLabelText}>Pharmacy Name</Text>
-                    <Text style={styles.controlValueText}>{vendor?.pharmacyName ?? '—'}</Text>
+                    {storeEditMode ? (
+                      <TextInput
+                        style={styles.controlInput}
+                        value={opPharmacyName}
+                        onChangeText={setOpPharmacyName}
+                      />
+                    ) : (
+                      <Text style={styles.controlValueText}>{vendor?.pharmacyName ?? '—'}</Text>
+                    )}
                   </View>
                   <View style={styles.controlItemLineRow}>
                     <Text style={styles.controlLabelText}>Address</Text>
-                    <Text style={styles.controlValueText}>{vendor?.address ?? '—'}</Text>
+                    {storeEditMode ? (
+                      <TextInput
+                        style={styles.controlInput}
+                        value={opAddress}
+                        onChangeText={setOpAddress}
+                      />
+                    ) : (
+                      <Text style={styles.controlValueText}>{vendor?.address ?? '—'}</Text>
+                    )}
                   </View>
                   <View style={styles.controlItemLineRow}>
                     <Text style={styles.controlLabelText}>Contact Phone</Text>
-                    <Text style={styles.controlValueText}>
-                      {vendor?.phone ?? vendor?.user?.phone ?? '—'}
-                    </Text>
+                    {storeEditMode ? (
+                      <TextInput
+                        style={styles.controlInput}
+                        value={opPhone}
+                        onChangeText={setOpPhone}
+                        keyboardType="phone-pad"
+                      />
+                    ) : (
+                      <Text style={styles.controlValueText}>
+                        {vendor?.phone ?? vendor?.user?.phone ?? '—'}
+                      </Text>
+                    )}
                   </View>
 
                   <TouchableOpacity
@@ -285,34 +680,53 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
               <>
                 <View style={styles.revenueBannerCyanCard}>
                   <Text style={styles.revenueBannerLabel}>Total Earnings Available</Text>
-                  <Text style={styles.revenueBannerValue}>Tk 24,500</Text>
+                  <Text style={styles.revenueBannerValue}>{formatBdt(walletBalance)}</Text>
                   <View style={styles.payoutNoticeBadge}>
-                    <Text style={styles.payoutNoticeText}>Next Auto-Payout: Sunday, 10 May</Text>
+                    <Text style={styles.payoutNoticeText}>
+                      Next Auto-Payout: {nextPayoutLabel}
+                    </Text>
                   </View>
                 </View>
 
                 <Text style={styles.payoutListHeaderLabel}>Wallet & Payout</Text>
 
-                <View style={styles.paymentMethodItemRow}>
-                  <MaterialCommunityIcons name="bank-outline" size={22} color="#4E929D" />
-                  <View style={styles.paymentMethodMeta}>
-                    <Text style={styles.paymentMethodTitleName}>Dutch Bangla Bank</Text>
-                    <Text style={styles.paymentMethodMaskedId}>xxx-xxx-5678</Text>
-                  </View>
-                  <View style={styles.primaryPaymentMethodBadge}>
-                    <Text style={styles.primaryPaymentMethodBadgeText}>Primary</Text>
-                  </View>
-                </View>
+                {payoutMethods.length === 0 ? (
+                  <Text style={styles.emptyListText}>No payout methods yet.</Text>
+                ) : (
+                  payoutMethods.map(method => (
+                    <TouchableOpacity
+                      key={method.id}
+                      style={styles.paymentMethodItemRow}
+                      activeOpacity={0.7}
+                      onPress={() => openPayoutEditor(method)}>
+                      {method.methodType === 'BKASH' ? (
+                        <View style={styles.miniBKashIconMock}>
+                          <Text style={styles.miniBrandLetter}>b</Text>
+                        </View>
+                      ) : (
+                        <MaterialCommunityIcons name="bank-outline" size={22} color="#4E929D" />
+                      )}
+                      <View style={styles.paymentMethodMeta}>
+                        <Text style={styles.paymentMethodTitleName}>{method.label}</Text>
+                        <Text style={styles.paymentMethodMaskedId}>{method.accountMasked}</Text>
+                      </View>
+                      {method.isPrimary ? (
+                        <View style={styles.primaryPaymentMethodBadge}>
+                          <Text style={styles.primaryPaymentMethodBadgeText}>Primary</Text>
+                        </View>
+                      ) : (
+                        <Feather name="chevron-right" size={16} color="#7E8B97" />
+                      )}
+                    </TouchableOpacity>
+                  ))
+                )}
 
-                <TouchableOpacity style={styles.paymentMethodItemRow} activeOpacity={0.7}>
-                  <View style={styles.miniBKashIconMock}>
-                    <Text style={styles.miniBrandLetter}>b</Text>
-                  </View>
-                  <View style={styles.paymentMethodMeta}>
-                    <Text style={styles.paymentMethodTitleName}>bkash Merchant</Text>
-                    <Text style={styles.paymentMethodMaskedId}>017xx-xxx678</Text>
-                  </View>
-                  <Feather name="chevron-right" size={16} color="#7E8B97" />
+                <TouchableOpacity
+                  style={styles.addPayoutLink}
+                  activeOpacity={0.8}
+                  onPress={() => openPayoutEditor()}>
+                  <Feather name="plus" size={16} color="#4E929D" />
+                  <Text style={styles.addPayoutLinkText}>Add Payout Method</Text>
                 </TouchableOpacity>
               </>
             ) : null}
@@ -330,21 +744,49 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
 
             {expandedSection === 'vault' ? (
               <>
-                {VAULT_DOCUMENTS.map(docName => (
-                  <View key={docName} style={styles.vaultDocumentLineItemRow}>
-                    <View style={styles.vaultDocumentLeftMetaGroup}>
-                      <Feather name="file-text" size={18} color="#1A1C1E" />
-                      <Text style={styles.vaultDocumentTitleFileName}>{docName}</Text>
-                    </View>
-                    <View style={styles.vaultDocumentVerifiedBadge}>
-                      <Text style={styles.vaultDocumentVerifiedBadgeText}>Verified</Text>
-                    </View>
-                  </View>
-                ))}
+                {documents.length === 0 ? (
+                  <Text style={styles.emptyListText}>No documents uploaded yet.</Text>
+                ) : (
+                  documents.map(doc => (
+                    <TouchableOpacity
+                      key={doc.id}
+                      style={styles.vaultDocumentLineItemRow}
+                      activeOpacity={0.8}
+                      onLongPress={() => handleRemoveDocument(doc)}>
+                      <View style={styles.vaultDocumentLeftMetaGroup}>
+                        <Feather name="file-text" size={18} color="#1A1C1E" />
+                        <Text style={styles.vaultDocumentTitleFileName}>{doc.fileName}</Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.vaultDocumentVerifiedBadge,
+                          doc.status !== 'VERIFIED' && styles.vaultDocumentPendingBadge,
+                        ]}>
+                        <Text
+                          style={[
+                            styles.vaultDocumentVerifiedBadgeText,
+                            doc.status !== 'VERIFIED' && styles.vaultDocumentPendingBadgeText,
+                          ]}>
+                          {doc.status === 'VERIFIED' ? 'Verified' : 'Pending'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))
+                )}
 
-                <TouchableOpacity style={styles.uploadVaultDocumentButton} activeOpacity={0.8}>
-                  <Feather name="plus" size={18} color="#1A1C1E" />
-                  <Text style={styles.uploadVaultDocumentButtonText}>Upload New Document</Text>
+                <TouchableOpacity
+                  style={styles.uploadVaultDocumentButton}
+                  activeOpacity={0.8}
+                  disabled={uploadingDoc}
+                  onPress={handleUploadDocument}>
+                  {uploadingDoc ? (
+                    <ActivityIndicator color="#1A1C1E" size="small" />
+                  ) : (
+                    <>
+                      <Feather name="plus" size={18} color="#1A1C1E" />
+                      <Text style={styles.uploadVaultDocumentButtonText}>Upload New Document</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               </>
             ) : null}
@@ -367,6 +809,20 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={styles.appSettingsLinkRow}
+              activeOpacity={0.7}
+              onPress={() => setChangePwVisible(true)}>
+              <View style={styles.appSettingsLinkLeftGroup}>
+                <Feather name="lock" size={18} color="#4E929D" />
+                <View>
+                  <Text style={styles.appSettingsMainLabel}>Change Password</Text>
+                  <Text style={styles.appSettingsSubLabel}>Update your account password</Text>
+                </View>
+              </View>
+              <Feather name="chevron-right" size={16} color="#7E8B97" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.appSettingsLinkRow, styles.appSettingsLinkRowLast]}
               activeOpacity={0.7}>
               <View style={styles.appSettingsLinkLeftGroup}>
@@ -379,10 +835,109 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
               <Feather name="chevron-right" size={16} color="#7E8B97" />
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            activeOpacity={0.85}
+            onPress={() =>
+              Alert.alert('Logout', 'Are you sure?', [
+                {text: 'Cancel', style: 'cancel'},
+                {text: 'Logout', style: 'destructive', onPress: () => void performLogout()},
+              ])
+            }>
+            <Feather name="log-out" size={18} color="#E26D6D" />
+            <Text style={styles.logoutBtnText}>Logout</Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
 
       <VendorBottomNav activeTab="profile" bottomInset={insets.bottom} navigation={navigation} />
+      <VendorChangePasswordModal visible={changePwVisible} onClose={() => setChangePwVisible(false)} />
+      <VendorEditProfileModal
+        visible={editVisible}
+        onClose={() => setEditVisible(false)}
+        pharmacyName={editPharmacyName}
+        onPharmacyNameChange={setEditPharmacyName}
+        phone={editPhone}
+        onPhoneChange={setEditPhone}
+        address={editAddress}
+        onAddressChange={setEditAddress}
+        bannerUrl={editBannerUrl}
+        onBannerUrlChange={setEditBannerUrl}
+        saving={editSaving}
+        onSave={handleSaveProfile}
+      />
+
+      <Modal
+        visible={payoutModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setPayoutModalVisible(false)}>
+        <KeyboardAvoidingView
+          style={styles.epOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.epModal}>
+            <View style={styles.epHeader}>
+              <Text style={styles.epTitle}>
+                {payoutEdit ? 'Edit Payout Method' : 'Add Payout Method'}
+              </Text>
+              <TouchableOpacity onPress={() => setPayoutModalVisible(false)} activeOpacity={0.7}>
+                <Feather name="x" size={22} color="#1A1C1E" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.epField}>
+              <Text style={styles.epLabel}>Label</Text>
+              <TextInput
+                style={styles.epInput}
+                placeholder="e.g. Dutch Bangla Bank"
+                placeholderTextColor="#9AA6B2"
+                value={payoutLabel}
+                onChangeText={setPayoutLabel}
+              />
+            </View>
+            <View style={styles.epField}>
+              <Text style={styles.epLabel}>Account / Number</Text>
+              <TextInput
+                style={styles.epInput}
+                placeholder="Masked account display"
+                placeholderTextColor="#9AA6B2"
+                value={payoutAccount}
+                onChangeText={setPayoutAccount}
+              />
+            </View>
+            <View style={styles.payoutTypeRow}>
+              {(['BANK', 'BKASH', 'NAGAD'] as const).map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.payoutTypeChip,
+                    payoutType === type && styles.payoutTypeChipActive,
+                  ]}
+                  onPress={() => setPayoutType(type)}>
+                  <Text
+                    style={[
+                      styles.payoutTypeChipText,
+                      payoutType === type && styles.payoutTypeChipTextActive,
+                    ]}>
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[styles.epSaveBtn, payoutSaving && styles.epSaveBtnDisabled]}
+              onPress={savePayoutMethod}
+              disabled={payoutSaving}
+              activeOpacity={0.85}>
+              {payoutSaving ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.epSaveBtnText}>Save Method</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -677,6 +1232,67 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginLeft: 8,
   },
+  controlInput: {
+    flex: 1,
+    marginLeft: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    height: 34,
+    fontSize: 12,
+    color: '#1A1C1E',
+    textAlign: 'right',
+  },
+  emptyListText: {
+    fontSize: 12,
+    color: '#7E8B97',
+    paddingVertical: 8,
+  },
+  addPayoutLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+  },
+  addPayoutLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4E929D',
+  },
+  payoutTypeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  payoutTypeChip: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  payoutTypeChipActive: {
+    backgroundColor: '#E8F4F6',
+    borderColor: '#4E929D',
+  },
+  payoutTypeChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  payoutTypeChipTextActive: {
+    color: '#3F8694',
+  },
+  vaultDocumentPendingBadge: {
+    backgroundColor: '#FEF3C7',
+  },
+  vaultDocumentPendingBadgeText: {
+    color: '#D97706',
+  },
   saveOperationsButton: {
     backgroundColor: '#E26D6D',
     borderRadius: 20,
@@ -861,4 +1477,114 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 1,
   },
+  logoutBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#FCECEC',
+    borderWidth: 1,
+    borderColor: '#F9D5D5',
+    borderRadius: 12,
+    height: 48,
+    marginHorizontal: 16,
+    marginTop: 18,
+    marginBottom: 8,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  logoutBtnText: {color: '#E26D6D', fontSize: 13, fontWeight: '700'},
+  cpOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
+  cpModal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 36,
+  },
+  cpHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  cpTitle: {fontSize: 16, fontWeight: '700', color: '#1A1C1E'},
+  cpField: {marginBottom: 14},
+  cpLabel: {fontSize: 12, fontWeight: '600', color: '#4F5E6D', marginBottom: 6},
+  cpInput: {
+    backgroundColor: '#F6F8FB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ECEFF3',
+    paddingHorizontal: 14,
+    height: 46,
+    fontSize: 14,
+    color: '#1A1C1E',
+  },
+  cpSaveBtn: {
+    backgroundColor: '#4E929D',
+    borderRadius: 12,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  cpSaveBtnDisabled: {opacity: 0.6},
+  cpSaveBtnText: {color: '#FFFFFF', fontSize: 15, fontWeight: '700'},
+  epOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
+  epModal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 36,
+  },
+  epHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  epTitle: {fontSize: 16, fontWeight: '700', color: '#1A1C1E'},
+  epField: {marginBottom: 14},
+  epLabel: {fontSize: 12, fontWeight: '600', color: '#4F5E6D', marginBottom: 6},
+  epInput: {
+    backgroundColor: '#F6F8FB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ECEFF3',
+    paddingHorizontal: 14,
+    height: 46,
+    fontSize: 14,
+    color: '#1A1C1E',
+  },
+  epInputMultiline: {
+    height: 80,
+    paddingTop: 12,
+    textAlignVertical: 'top',
+  },
+  epBannerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4E929D',
+    borderRadius: 20,
+    height: 40,
+    paddingHorizontal: 16,
+    gap: 8,
+    marginBottom: 16,
+  },
+  epBannerBtnText: {
+    color: '#4E929D',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  epSaveBtn: {
+    backgroundColor: '#4E929D',
+    borderRadius: 12,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  epSaveBtnDisabled: {opacity: 0.6},
+  epSaveBtnText: {color: '#FFFFFF', fontSize: 15, fontWeight: '700'},
 });

@@ -1,5 +1,6 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -17,9 +18,11 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
-import {CONSULTATION_SUMMARY} from './consultationSummaryData';
 import {consultationsApi} from '../../api/consultations';
+import {appointmentsApi} from '../../api/appointments';
+import {toAppointmentDetail} from '../../api/utils/appointmentHelpers';
 import {ApiError} from '../../api/client';
+import {getStoredUser} from '../../api/tokenStorage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ConsultationSummary'>;
 
@@ -32,11 +35,65 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
   const [comment, setComment] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isDoctorViewer, setIsDoctorViewer] = useState(false);
 
   const appointmentId = route.params?.appointmentId;
-  const doctorName = route.params?.doctorName ?? CONSULTATION_SUMMARY.doctorName;
-  const specialty = route.params?.specialty ?? CONSULTATION_SUMMARY.specialty;
+  const [doctorName, setDoctorName] = useState(route.params?.doctorName ?? 'Doctor');
+  const [specialty, setSpecialty] = useState(route.params?.specialty ?? 'Specialist');
+  const [dateLabel, setDateLabel] = useState('—');
+  const [durationLabel, setDurationLabel] = useState('—');
+  const [statusLabel, setStatusLabel] = useState('Completed');
+  const [consultationType, setConsultationType] = useState('Video consultation');
+
   const successMessage = `Your consultation with ${doctorName} is complete`;
+
+  useEffect(() => {
+    void getStoredUser().then(user => {
+      if (user?.role === 'DOCTOR') setIsDoctorViewer(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!appointmentId) {
+      setLoading(false);
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      try {
+        const [appt, feedback] = await Promise.all([
+          appointmentsApi.getById(appointmentId),
+          consultationsApi.getFeedback(appointmentId).catch(() => null),
+        ]);
+        if (!mounted) return;
+        const detail = toAppointmentDetail(appt);
+        setDoctorName(detail.doctorName);
+        setSpecialty(detail.specialty);
+        setDateLabel(`${detail.dateLabel} · ${detail.timeRange}`);
+        setDurationLabel(`${appt.durationMin} minutes`);
+        setStatusLabel(
+          appt.status.toLowerCase() === 'completed' ? 'Completed' : appt.status,
+        );
+        setConsultationType(detail.consultationType);
+        if (feedback) {
+          setSubmitted(true);
+          setRating(feedback.rating);
+          setComment(feedback.comment ?? '');
+        }
+      } catch (err) {
+        Alert.alert(
+          'Summary',
+          err instanceof ApiError ? err.message : 'Could not load consultation summary',
+        );
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [appointmentId]);
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') { navigation.navigate('Home'); return; }
@@ -62,6 +119,14 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#0D9488" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -96,97 +161,118 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
           <View style={styles.metricsListBlock}>
             <Text style={styles.metricItemText}>
               Status:{' '}
-              <Text style={styles.metricValueComplete}>{CONSULTATION_SUMMARY.status}</Text>
+              <Text style={styles.metricValueComplete}>{statusLabel}</Text>
+            </Text>
+            <Text style={styles.metricItemText}>
+              Type:{' '}
+              <Text style={styles.metricValueText}>{consultationType}</Text>
             </Text>
             <Text style={styles.metricItemText}>
               Date:{' '}
-              <Text style={styles.metricValueText}>{CONSULTATION_SUMMARY.date}</Text>
+              <Text style={styles.metricValueText}>{dateLabel}</Text>
             </Text>
             <Text style={styles.metricItemText}>
               Duration:{' '}
-              <Text style={styles.metricValueText}>{CONSULTATION_SUMMARY.duration}</Text>
+              <Text style={styles.metricValueText}>{durationLabel}</Text>
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.chatDoctorButton}
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate('ConsultationChat', {doctorName, specialty})}>
-            <Feather name="message-circle" size={18} color="#FFFFFF" style={styles.chatIconMargin} />
-            <Text style={styles.chatDoctorButtonText}>Chat With Doctor</Text>
-          </TouchableOpacity>
+          {appointmentId ? (
+            <TouchableOpacity
+              style={styles.chatDoctorButton}
+              activeOpacity={0.9}
+              onPress={() =>
+                navigation.navigate('ConsultationChat', {
+                  doctorName,
+                  specialty,
+                  appointmentId,
+                  viewerRole: isDoctorViewer ? 'DOCTOR' : 'CUSTOMER',
+                })
+              }>
+              <Feather name="message-circle" size={18} color="#FFFFFF" style={styles.chatIconMargin} />
+              <Text style={styles.chatDoctorButtonText}>View Chat History</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
-        {submitted ? (
-          <View style={styles.feedbackCard}>
-            <View style={styles.submittedRow}>
-              <Feather name="check-circle" size={20} color="#0D9488" />
-              <Text style={styles.submittedText}>Review submitted! Thank you.</Text>
+        {!isDoctorViewer && (
+          submitted ? (
+            <View style={styles.feedbackCard}>
+              <View style={styles.submittedRow}>
+                <Feather name="check-circle" size={20} color="#0D9488" />
+                <Text style={styles.submittedText}>Review submitted! Thank you.</Text>
+              </View>
+              {comment ? (
+                <Text style={styles.submittedComment}>"{comment}"</Text>
+              ) : null}
             </View>
-          </View>
-        ) : (
-          <View style={styles.feedbackCard}>
-            <Text style={styles.feedbackSectionHeading}>How was your consultation?</Text>
+          ) : (
+            <View style={styles.feedbackCard}>
+              <Text style={styles.feedbackSectionHeading}>How was your consultation?</Text>
 
-            <View style={styles.ratingStarsRow}>
-              {[1, 2, 3, 4, 5].map(starIndex => (
-                <TouchableOpacity
-                  key={starIndex}
-                  activeOpacity={0.8}
-                  onPress={() => setRating(starIndex)}
-                  style={styles.starTouch}>
-                  <FontAwesome
-                    name="star"
-                    size={26}
-                    color={starIndex <= rating ? '#FBBF24' : '#CBD5E1'}
-                  />
-                </TouchableOpacity>
-              ))}
+              <View style={styles.ratingStarsRow}>
+                {[1, 2, 3, 4, 5].map(starIndex => (
+                  <TouchableOpacity
+                    key={starIndex}
+                    activeOpacity={0.8}
+                    onPress={() => setRating(starIndex)}
+                    style={styles.starTouch}>
+                    <FontAwesome
+                      name="star"
+                      size={26}
+                      color={starIndex <= rating ? '#FBBF24' : '#CBD5E1'}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TextInput
+                placeholder="Share your experience (optional)..."
+                placeholderTextColor="#94A3B8"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                value={comment}
+                onChangeText={setComment}
+                style={styles.feedbackTextInput}
+              />
+
+              <TouchableOpacity
+                style={[styles.submitFeedbackButton, submitting && {opacity: 0.6}]}
+                activeOpacity={0.9}
+                onPress={submitFeedback}
+                disabled={submitting || !appointmentId}>
+                <Text style={styles.submitFeedbackButtonText}>
+                  {submitting ? 'Submitting...' : 'Submit Review'}
+                </Text>
+              </TouchableOpacity>
+
+              {!appointmentId ? (
+                <Text style={styles.noApptNote}>Open a completed appointment from My Appointment to leave a review.</Text>
+              ) : null}
             </View>
-
-            <TextInput
-              placeholder="Share your experience (optional)..."
-              placeholderTextColor="#94A3B8"
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              value={comment}
-              onChangeText={setComment}
-              style={styles.feedbackTextInput}
-            />
-
-            <TouchableOpacity
-              style={[styles.submitFeedbackButton, submitting && {opacity: 0.6}]}
-              activeOpacity={0.9}
-              onPress={submitFeedback}
-              disabled={submitting}>
-              <Text style={styles.submitFeedbackButtonText}>
-                {submitting ? 'Submitting...' : 'Submit Review'}
-              </Text>
-            </TouchableOpacity>
-
-            {!appointmentId ? (
-              <Text style={styles.noApptNote}>No appointment linked — review cannot be saved</Text>
-            ) : null}
-          </View>
+          )
         )}
 
         <Text style={styles.footerPolicyNoticeText}>Terms and Cancellation Policy</Text>
       </ScrollView>
 
-      <View style={styles.bottomNavWrap}>
-        <HomeBottomNav
-          activeTab="profile"
-          bottomInset={insets.bottom}
-          onTabPress={handleTabPress}
-        />
-      </View>
+      {!isDoctorViewer ? (
+        <View style={styles.bottomNavWrap}>
+          <HomeBottomNav
+            activeTab="profile"
+            bottomInset={insets.bottom}
+            onTabPress={handleTabPress}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#F5F6FA'},
+  centered: {justifyContent: 'center', alignItems: 'center'},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -265,6 +351,7 @@ const styles = StyleSheet.create({
   },
   submittedRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8},
   submittedText: {fontSize: 14, color: '#0D9488', fontWeight: '600'},
+  submittedComment: {fontSize: 13, color: '#64748B', fontStyle: 'italic', marginTop: 4},
   feedbackSectionHeading: {fontSize: 15, fontWeight: '600', color: '#475569', marginTop: 4},
   ratingStarsRow: {flexDirection: 'row', marginTop: 12, marginBottom: 16},
   starTouch: {marginRight: 6},

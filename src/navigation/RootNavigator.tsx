@@ -20,6 +20,14 @@ import {VendorAddProductScreen} from '../screens/vendor/VendorAddProductScreen';
 import {VendorOrdersScreen} from '../screens/vendor/VendorOrdersScreen';
 import {VendorPaymentsScreen} from '../screens/vendor/VendorPaymentsScreen';
 import {VendorPharmacyProfileScreen} from '../screens/vendor/VendorPharmacyProfileScreen';
+import {DoctorHomeScreen} from '../screens/doctor/DoctorHomeScreen';
+import {DoctorAppointmentsScreen} from '../screens/doctor/DoctorAppointmentsScreen';
+import {DoctorPatientsScreen} from '../screens/doctor/DoctorPatientsScreen';
+import {DoctorConsultationsScreen} from '../screens/doctor/DoctorConsultationsScreen';
+import {DoctorProfileScreen} from '../screens/doctor/DoctorProfileScreen';
+import {DoctorEditProfileScreen} from '../screens/doctor/DoctorEditProfileScreen';
+import {DoctorEarningsScreen} from '../screens/doctor/DoctorEarningsScreen';
+import {DoctorWithdrawScreen} from '../screens/doctor/DoctorWithdrawScreen';
 import {MedicineListScreen} from '../screens/home/MedicineListScreen';
 import {BookVideoCallScreen} from '../screens/home/BookVideoCallScreen';
 import {ConsultationChatScreen} from '../screens/home/ConsultationChatScreen';
@@ -33,6 +41,7 @@ import {RemindersScreen} from '../screens/home/RemindersScreen';
 import {AlertsScreen} from '../screens/home/AlertsScreen';
 import {EditProfileScreen} from '../screens/home/EditProfileScreen';
 import {AddFamilyMemberScreen} from '../screens/home/AddFamilyMemberScreen';
+import {FamilyMemberDetailScreen} from '../screens/home/FamilyMemberDetailScreen';
 import {DeliveriesScreen} from '../screens/home/DeliveriesScreen';
 import {AddMedicationScreen} from '../screens/home/AddMedicationScreen';
 import {AddMedicationFormScreen} from '../screens/home/AddMedicationFormScreen';
@@ -178,6 +187,46 @@ export function RootNavigator({initialRouteName = 'Home'}: RootNavigatorProps) {
         options={{animation: 'slide_from_right'}}
       />
       <Stack.Screen
+        name="DHome"
+        component={DoctorHomeScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="DAppointments"
+        component={DoctorAppointmentsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="DPatients"
+        component={DoctorPatientsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="DConsultations"
+        component={DoctorConsultationsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="DProfile"
+        component={DoctorProfileScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="DEditProfile"
+        component={DoctorEditProfileScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="DEarnings"
+        component={DoctorEarningsScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="DWithdraw"
+        component={DoctorWithdrawScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
         name="MedicineList"
         component={MedicineListScreen}
         options={{animation: 'slide_from_right'}}
@@ -250,6 +299,11 @@ export function RootNavigator({initialRouteName = 'Home'}: RootNavigatorProps) {
       <Stack.Screen
         name="AddFamilyMember"
         component={AddFamilyMemberScreen}
+        options={{animation: 'slide_from_right'}}
+      />
+      <Stack.Screen
+        name="FamilyMemberDetail"
+        component={FamilyMemberDetailScreen}
         options={{animation: 'slide_from_right'}}
       />
       <Stack.Screen

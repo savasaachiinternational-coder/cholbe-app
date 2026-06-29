@@ -104,6 +104,14 @@ export const authApi = {
     return res;
   },
 
+  async changePassword(currentPassword: string, newPassword: string) {
+    return apiRequest<{message: string}>('/users/me/password', {
+      method: 'PATCH',
+      auth: true,
+      body: {currentPassword, newPassword},
+    });
+  },
+
   async getAllUsers(params?: {role?: string; status?: string}) {
     const qs = new URLSearchParams();
     if (params?.role) qs.set('role', params.role);

@@ -1,3 +1,4 @@
+import {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -7,14 +8,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {RtcSurfaceView} from 'react-native-agora';
+import {RenderModeType, RtcSurfaceView, RtcTextureView} from 'react-native-agora';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
+import {LocalVideoPreview} from '../../components/LocalVideoPreview';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {useAgoraRtc} from '../../hooks/useAgoraRtc';
 import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {appointmentsApi} from '../../api/appointments';
+import {getStoredUser} from '../../api/tokenStorage';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_HEIGHT * 0.58;
@@ -30,8 +33,19 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
   const appointmentId = route.params.appointmentId;
   const doctorName = route.params?.doctorName ?? 'Dr. Ahmed';
   const specialty = route.params?.specialty ?? 'Cardiologist';
+  const [isDoctorViewer, setIsDoctorViewer] = useState(route.params?.viewerRole === 'DOCTOR');
 
-  const {engine, state, leave, toggleMute, toggleVideo, formatTimer} =
+  useEffect(() => {
+    void getStoredUser().then(user => {
+      if (user?.role === 'DOCTOR') setIsDoctorViewer(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    appointmentsApi.updateStatus(appointmentId, 'in_progress').catch(() => undefined);
+  }, [appointmentId]);
+
+  const {engine, state, leave, toggleMute, toggleVideo, switchCamera, formatTimer, isAndroid} =
     useAgoraRtc(appointmentId);
 
   const openChat = () => {
@@ -39,13 +53,22 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
       doctorName,
       specialty,
       appointmentId,
+      viewerRole: isDoctorViewer ? 'DOCTOR' : 'CUSTOMER',
     });
   };
 
   const endCall = async () => {
     await appointmentsApi.updateStatus(appointmentId, 'completed').catch(() => undefined);
     await leave();
-    navigation.goBack();
+    if (isDoctorViewer) {
+      navigation.goBack();
+      return;
+    }
+    navigation.replace('ConsultationSummary', {
+      appointmentId,
+      doctorName,
+      specialty,
+    });
   };
 
   return (
@@ -61,14 +84,33 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
             <Text style={styles.errorText}>{state.error}</Text>
           </View>
         ) : state.remoteUid ? (
-          <RtcSurfaceView
-            style={styles.doctorFullVideoStream}
-            canvas={{uid: state.remoteUid}}
-          />
+          <View style={styles.doctorFullVideoStream}>
+            {isAndroid ? (
+              <RtcTextureView
+                style={styles.agoraVideoFill}
+                canvas={{
+                  uid: state.remoteUid,
+                  renderMode: RenderModeType.RenderModeHidden,
+                }}
+              />
+            ) : (
+              <RtcSurfaceView
+                style={styles.agoraVideoFill}
+                canvas={{
+                  uid: state.remoteUid,
+                  renderMode: RenderModeType.RenderModeHidden,
+                }}
+              />
+            )}
+          </View>
         ) : (
           <View style={styles.waitingRemote}>
             <Image source={DOCTOR_AVATAR} style={styles.waitingAvatar} />
-            <Text style={styles.waitingText}>Waiting for {doctorName} to join…</Text>
+            <Text style={styles.waitingText}>
+              {isDoctorViewer
+                ? `Waiting for ${doctorName} to join…`
+                : `Waiting for ${doctorName} to join…`}
+            </Text>
           </View>
         )}
 
@@ -88,12 +130,22 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
           <Text style={styles.callTimer}>{formatTimer()}</Text>
         </View>
 
-        {engine && state.videoEnabled ? (
-          <View style={styles.userPipContainer}>
-            <RtcSurfaceView style={styles.userPipImage} canvas={{uid: 0}} />
+        {engine && (state.previewReady || state.joined) ? (
+          <TouchableOpacity
+            style={styles.userPipContainer}
+            activeOpacity={0.95}
+            onPress={switchCamera}>
+            <LocalVideoPreview
+              style={styles.userPipImage}
+              videoEnabled={state.videoEnabled}
+              zOrderMediaOverlay
+            />
             <View style={styles.pipHardwareControls}>
               <TouchableOpacity
-                style={styles.pipBadgeIconButton}
+                style={[
+                  styles.pipBadgeIconButton,
+                  state.muted && styles.pipBadgeActive,
+                ]}
                 activeOpacity={0.8}
                 onPress={toggleMute}>
                 <Feather
@@ -103,7 +155,10 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
                 />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.pipBadgeIconButton, styles.pipVideoOffBadge]}
+                style={[
+                  styles.pipBadgeIconButton,
+                  !state.videoEnabled && styles.pipBadgeActive,
+                ]}
                 activeOpacity={0.8}
                 onPress={toggleVideo}>
                 <Feather
@@ -113,7 +168,7 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
                 />
               </TouchableOpacity>
             </View>
-          </View>
+          </TouchableOpacity>
         ) : null}
       </View>
 
@@ -124,17 +179,20 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
             icon="camera"
             label="Camera"
             status={state.videoEnabled ? 'On' : 'Off'}
+            ok={state.videoEnabled}
           />
           <DiagnosticItem
             icon="mic"
             label="Mic"
             status={state.muted ? 'Muted' : 'On'}
+            ok={!state.muted}
             withDivider
           />
           <DiagnosticItem
             icon="wifi"
             label="Network"
             status={state.joined ? 'Connected' : 'Connecting'}
+            ok={state.joined}
             withDivider
           />
         </View>
@@ -147,13 +205,16 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
         <View style={styles.callControlsRowContainer}>
           <View style={styles.actionControlNode}>
             <TouchableOpacity
-              style={styles.secondaryCallButton}
+              style={[
+                styles.secondaryCallButton,
+                state.muted && styles.secondaryCallButtonActive,
+              ]}
               activeOpacity={0.85}
               onPress={toggleMute}>
               <Feather
                 name={state.muted ? 'mic-off' : 'mic'}
-                size={24}
-                color="#1E293B"
+                size={22}
+                color={state.muted ? '#FFFFFF' : '#1E293B'}
               />
             </TouchableOpacity>
             <Text style={styles.controlActionLabel}>
@@ -163,10 +224,29 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
 
           <View style={styles.actionControlNode}>
             <TouchableOpacity
+              style={[
+                styles.secondaryCallButton,
+                !state.videoEnabled && styles.secondaryCallButtonActive,
+              ]}
+              activeOpacity={0.85}
+              onPress={toggleVideo}>
+              <Feather
+                name={state.videoEnabled ? 'video' : 'video-off'}
+                size={22}
+                color={!state.videoEnabled ? '#FFFFFF' : '#1E293B'}
+              />
+            </TouchableOpacity>
+            <Text style={styles.controlActionLabel}>
+              {state.videoEnabled ? 'Camera Off' : 'Camera On'}
+            </Text>
+          </View>
+
+          <View style={styles.actionControlNode}>
+            <TouchableOpacity
               style={styles.primaryDisconnectCallButton}
               activeOpacity={0.9}
               onPress={endCall}>
-              <Feather name="phone-off" size={26} color="#FFFFFF" />
+              <Feather name="phone-off" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             <Text style={styles.controlActionLabel}>End Call</Text>
           </View>
@@ -176,9 +256,9 @@ export function ActiveVideoCallScreen({navigation, route}: Props) {
               style={styles.secondaryCallButton}
               activeOpacity={0.85}
               onPress={openChat}>
-              <Feather name="message-square" size={24} color="#1E293B" />
+              <Feather name="message-square" size={22} color="#1E293B" />
             </TouchableOpacity>
-            <Text style={styles.controlActionLabel}>Chat with Doctor</Text>
+            <Text style={styles.controlActionLabel}>Chat</Text>
           </View>
         </View>
       </View>
@@ -190,11 +270,13 @@ function DiagnosticItem({
   icon,
   label,
   status,
+  ok = true,
   withDivider,
 }: {
   icon: 'camera' | 'mic' | 'wifi';
   label: string;
   status: string;
+  ok?: boolean;
   withDivider?: boolean;
 }) {
   return (
@@ -204,8 +286,14 @@ function DiagnosticItem({
         <Text style={styles.diagnosticLabel}>{label}</Text>
       </View>
       <View style={styles.statusCheckRow}>
-        <Feather name="check" size={12} color="#0D9488" />
-        <Text style={styles.statusCheckText}>{status}</Text>
+        <Feather
+          name={ok ? 'check' : 'x'}
+          size={12}
+          color={ok ? '#0D9488' : '#EF4444'}
+        />
+        <Text style={[styles.statusCheckText, !ok && styles.statusCheckTextWarn]}>
+          {status}
+        </Text>
       </View>
     </View>
   );
@@ -222,6 +310,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#0F172A',
   },
   doctorFullVideoStream: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#0F172A',
+  },
+  agoraVideoFill: {
     width: '100%',
     height: '100%',
   },
@@ -337,15 +430,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   pipBadgeIconButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pipVideoOffBadge: {
-    backgroundColor: '#14B8A6',
+  pipBadgeActive: {
+    backgroundColor: '#E11D48',
   },
   controlPanelArea: {
     flex: 1,
@@ -390,6 +483,9 @@ const styles = StyleSheet.create({
     color: '#0D9488',
     fontWeight: '600',
   },
+  statusCheckTextWarn: {
+    color: '#EF4444',
+  },
   callDisclaimerNotice: {
     fontSize: 12,
     color: '#64748B',
@@ -406,12 +502,12 @@ const styles = StyleSheet.create({
   },
   actionControlNode: {
     alignItems: 'center',
-    width: SCREEN_WIDTH * 0.25,
+    width: SCREEN_WIDTH * 0.2,
   },
   secondaryCallButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -424,10 +520,14 @@ const styles = StyleSheet.create({
     elevation: 1,
     marginBottom: 8,
   },
+  secondaryCallButtonActive: {
+    backgroundColor: '#475569',
+    borderColor: '#475569',
+  },
   primaryDisconnectCallButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#E11D48',
     alignItems: 'center',
     justifyContent: 'center',

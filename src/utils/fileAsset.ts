@@ -1,4 +1,5 @@
 import type {Asset} from 'react-native-image-picker';
+import {Platform} from 'react-native';
 
 export type PickedFile = {
   uri: string;
@@ -36,7 +37,15 @@ export function pickedFileFromAsset(
 }
 
 export function imageUri(fileUrl: string, apiOrigin: string) {
-  return fileUrl.startsWith('http') ? fileUrl : `${apiOrigin}${fileUrl}`;
+  let uri = fileUrl.startsWith('http') ? fileUrl : `${apiOrigin}${fileUrl}`;
+  if (Platform.OS === 'android') {
+    uri = uri
+      .replace('http://localhost:', 'http://10.0.2.2:')
+      .replace('https://localhost:', 'https://10.0.2.2:')
+      .replace('http://127.0.0.1:', 'http://10.0.2.2:')
+      .replace('https://127.0.0.1:', 'https://10.0.2.2:');
+  }
+  return uri;
 }
 
 export function isPdfFile(
@@ -70,7 +79,7 @@ export function isAudioFile(
 ) {
   if ((mimeType ?? '').toLowerCase() === 'audio') return true;
   const hint = `${mimeType ?? ''} ${fileUrl ?? ''} ${fileName ?? ''}`.toLowerCase();
-  return hint.includes('audio/') || /\.(mp3|m4a|wav|ogg|webm|aac)(\?|$)/i.test(hint);
+  return hint.includes('audio/') || /\.(mp3|m4a|mp4|wav|ogg|webm|aac|3gp)(\?|$)/i.test(hint);
 }
 
 export type AttachmentKind = 'image' | 'pdf' | 'audio' | 'file';

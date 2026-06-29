@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +22,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {ADMIN_VENDOR_FILTERS, type AdminVendorFilter} from './adminNav';
+import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AVendors'>;
 
@@ -28,18 +30,10 @@ type ApiVendor = {
   id: string;
   pharmacyName: string;
   phone: string | null;
+  address: string | null;
   approvalStatus: string;
   createdAt: string;
-  user: {fullName: string; email: string | null; phone: string | null};
-};
-
-type VendorRecord = {
-  id: string;
-  name: string;
-  pharmacy: string;
-  phone: string;
-  timeAgo: string;
-  approvalStatus: string;
+  user: {id: string; fullName: string; email: string | null; phone: string | null; avatarUrl: string | null};
 };
 
 function filterToApiStatus(filter: AdminVendorFilter): string | undefined {
@@ -61,24 +55,125 @@ function formatTimeAgo(iso: string) {
   return `${days} day ago`;
 }
 
-function mapVendor(record: ApiVendor): VendorRecord {
-  return {
-    id: record.id,
-    name: record.user.fullName,
-    pharmacy: record.pharmacyName,
-    phone: record.user.phone ?? record.phone ?? '—',
-    timeAgo: formatTimeAgo(record.createdAt),
-    approvalStatus: record.approvalStatus,
-  };
+function approvalColor(status: string) {
+  if (status === 'APPROVED') return '#00A884';
+  if (status === 'REJECTED') return '#E26D6D';
+  return '#F5A623';
+}
+
+function VendorDetailModal({
+  vendor,
+  onClose,
+  onApprove,
+  onReject,
+  onDelete,
+  updating,
+}: {
+  vendor: ApiVendor | null;
+  onClose: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  onDelete: () => void;
+  updating: boolean;
+}) {
+  if (!vendor) return null;
+  const showActions = vendor.approvalStatus === 'PENDING';
+  return (
+    <Modal visible={!!vendor} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.detailModal}>
+          <View style={styles.detailHeader}>
+            <Text style={styles.detailTitle}>Vendor Details</Text>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+              <Feather name="x" size={22} color="#1A1C1E" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.detailAvatarRow}>
+              <Image
+                source={{uri: vendor.user.avatarUrl ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(vendor.user.fullName)}&background=4E929D&color=fff`}}
+                style={styles.detailAvatar}
+              />
+              <View style={styles.detailAvatarMeta}>
+                <Text style={styles.detailName}>{vendor.user.fullName}</Text>
+                <View style={[styles.statusChip, {backgroundColor: approvalColor(vendor.approvalStatus) + '20'}]}>
+                  <Text style={[styles.statusChipText, {color: approvalColor(vendor.approvalStatus)}]}>
+                    {vendor.approvalStatus}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {[
+              {label: 'Pharmacy', value: vendor.pharmacyName},
+              {label: 'Email', value: vendor.user.email ?? '—'},
+              {label: 'Phone', value: vendor.user.phone ?? vendor.phone ?? '—'},
+              {label: 'Address', value: vendor.address ?? '—'},
+              {label: 'Joined', value: new Date(vendor.createdAt).toLocaleDateString()},
+            ].map(row => (
+              <View key={row.label} style={styles.detailRow}>
+                <Text style={styles.detailLabel}>{row.label}</Text>
+                <Text style={styles.detailValue}>{row.value}</Text>
+              </View>
+            ))}
+
+            {showActions && (
+              <View style={styles.detailActionsRow}>
+                <TouchableOpacity
+                  style={[styles.detailActionBtn, styles.btnApprove]}
+                  onPress={onApprove}
+                  disabled={updating}
+                  activeOpacity={0.85}>
+                  {updating ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <>
+                      <Feather name="check-circle" size={14} color="#FFFFFF" />
+                      <Text style={styles.detailActionBtnText}>Approve</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.detailActionBtn, styles.btnReject]}
+                  onPress={onReject}
+                  disabled={updating}
+                  activeOpacity={0.85}>
+                  {updating ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <>
+                      <Feather name="x-circle" size={14} color="#FFFFFF" />
+                      <Text style={styles.detailActionBtnText}>Reject</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={onDelete}
+              disabled={updating}
+              activeOpacity={0.85}>
+              <Feather name="trash-2" size={15} color="#E26D6D" />
+              <Text style={styles.deleteBtnText}>Delete Vendor Account</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
 function VendorCard({
   item,
+  onPress,
   onApprove,
   onReject,
   updating,
 }: {
-  item: VendorRecord;
+  item: ApiVendor;
+  onPress: () => void;
   onApprove: () => void;
   onReject: () => void;
   updating: boolean;
@@ -86,24 +181,31 @@ function VendorCard({
   const showActions = item.approvalStatus === 'PENDING';
 
   return (
-    <View style={styles.vendorCard}>
-      <Text style={styles.timeAgoText}>{item.timeAgo}</Text>
+    <TouchableOpacity style={styles.vendorCard} onPress={onPress} activeOpacity={0.85}>
+      <Text style={styles.timeAgoText}>{formatTimeAgo(item.createdAt)}</Text>
 
       <View style={styles.cardBodyRow}>
         <Image
-          source={{uri: 'https://via.placeholder.com/54/E2E8F0/000000?text=Vendor'}}
+          source={{uri: item.user.avatarUrl ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.fullName)}&background=4E929D&color=fff`}}
           style={styles.vendorAvatar}
         />
         <View style={styles.metaInfoColumn}>
-          <Text style={styles.vendorNameText}>{item.name}</Text>
+          <Text style={styles.vendorNameText}>{item.user.fullName}</Text>
           <View style={styles.subRowItem}>
             <MaterialCommunityIcons name="hospital-box" size={13} color="#7E8B97" />
-            <Text style={styles.subRowText}>{item.pharmacy}</Text>
+            <Text style={styles.subRowText}>{item.pharmacyName}</Text>
           </View>
           <View style={styles.subRowItem}>
             <Feather name="phone" size={12} color="#7E8B97" />
-            <Text style={styles.subRowText}>{item.phone}</Text>
+            <Text style={styles.subRowText}>{item.user.phone ?? item.phone ?? '—'}</Text>
           </View>
+          {item.approvalStatus !== 'PENDING' && (
+            <View style={[styles.statusChip, {backgroundColor: approvalColor(item.approvalStatus) + '20', marginTop: 4}]}>
+              <Text style={[styles.statusChipText, {color: approvalColor(item.approvalStatus)}]}>
+                {item.approvalStatus}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -113,7 +215,7 @@ function VendorCard({
             style={[styles.actionBtn, styles.btnApprove]}
             activeOpacity={0.85}
             disabled={updating}
-            onPress={onApprove}>
+            onPress={e => {e.stopPropagation?.(); onApprove();}}>
             <Feather name="check-circle" size={14} color="#FFFFFF" />
             <Text style={styles.actionBtnText}>Approve</Text>
           </TouchableOpacity>
@@ -121,13 +223,13 @@ function VendorCard({
             style={[styles.actionBtn, styles.btnReject]}
             activeOpacity={0.85}
             disabled={updating}
-            onPress={onReject}>
+            onPress={e => {e.stopPropagation?.(); onReject();}}>
             <Feather name="x-circle" size={14} color="#FFFFFF" />
             <Text style={styles.actionBtnText}>Reject</Text>
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -135,16 +237,17 @@ export function AdminVendorsScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<AdminVendorFilter>('Pending');
-  const [vendors, setVendors] = useState<VendorRecord[]>([]);
+  const [vendors, setVendors] = useState<ApiVendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [selectedVendor, setSelectedVendor] = useState<ApiVendor | null>(null);
 
   const loadVendors = useCallback(async () => {
     setLoading(true);
     try {
       const data = await adminApi.vendors(filterToApiStatus(activeFilter));
-      setVendors((data as ApiVendor[]).map(mapVendor));
+      setVendors(data as ApiVendor[]);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not load vendors';
       Alert.alert('Vendors', message);
@@ -164,6 +267,7 @@ export function AdminVendorsScreen({navigation}: Props) {
       setUpdatingId(vendorId);
       try {
         await adminApi.updateVendorStatus(vendorId, approvalStatus);
+        setSelectedVendor(null);
         await loadVendors();
       } catch (err) {
         const message = err instanceof ApiError ? err.message : 'Could not update vendor';
@@ -175,14 +279,40 @@ export function AdminVendorsScreen({navigation}: Props) {
     [loadVendors],
   );
 
+  const handleDelete = useCallback(
+    (vendor: ApiVendor) => {
+      Alert.alert('Delete Vendor', `Delete account for "${vendor.user.fullName}"? This cannot be undone.`, [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setUpdatingId(vendor.id);
+            try {
+              await adminApi.deleteUser(vendor.user.id);
+              setSelectedVendor(null);
+              await loadVendors();
+            } catch (err) {
+              const message = err instanceof ApiError ? err.message : 'Could not delete vendor';
+              Alert.alert('Error', message);
+            } finally {
+              setUpdatingId(null);
+            }
+          },
+        },
+      ]);
+    },
+    [loadVendors],
+  );
+
   const filteredVendors = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return vendors;
     return vendors.filter(
       v =>
-        v.name.toLowerCase().includes(q) ||
-        v.pharmacy.toLowerCase().includes(q) ||
-        v.phone.includes(q),
+        v.user.fullName.toLowerCase().includes(q) ||
+        v.pharmacyName.toLowerCase().includes(q) ||
+        (v.user.phone ?? '').includes(q),
     );
   }, [vendors, search]);
 
@@ -196,12 +326,10 @@ export function AdminVendorsScreen({navigation}: Props) {
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Vendors</Text>
-        <TouchableOpacity
+        <NotificationBell
           style={styles.headerButton}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#1A1C1E" />
-        </TouchableOpacity>
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       <ScrollView
@@ -255,6 +383,7 @@ export function AdminVendorsScreen({navigation}: Props) {
                 key={record.id}
                 item={record}
                 updating={updatingId === record.id}
+                onPress={() => setSelectedVendor(record)}
                 onApprove={() => updateStatus(record.id, 'APPROVED')}
                 onReject={() => updateStatus(record.id, 'REJECTED')}
               />
@@ -264,6 +393,15 @@ export function AdminVendorsScreen({navigation}: Props) {
       </ScrollView>
 
       <AdminBottomNav activeTab="vendors" bottomInset={insets.bottom} navigation={navigation} />
+
+      <VendorDetailModal
+        vendor={selectedVendor}
+        onClose={() => setSelectedVendor(null)}
+        onApprove={() => selectedVendor && updateStatus(selectedVendor.id, 'APPROVED')}
+        onReject={() => selectedVendor && updateStatus(selectedVendor.id, 'REJECTED')}
+        onDelete={() => selectedVendor && handleDelete(selectedVendor)}
+        updating={updatingId === selectedVendor?.id}
+      />
     </View>
   );
 }
@@ -396,6 +534,16 @@ const styles = StyleSheet.create({
     color: '#7E8B97',
     fontWeight: '500',
   },
+  statusChip: {
+    alignSelf: 'flex-start',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  statusChipText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   actionButtonsRow: {
     flexDirection: 'row',
     gap: 12,
@@ -419,6 +567,104 @@ const styles = StyleSheet.create({
   actionBtnText: {
     color: '#FFFFFF',
     fontSize: 12,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  detailModal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  detailTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1C1E',
+  },
+  detailAvatarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 14,
+  },
+  detailAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  detailAvatarMeta: {
+    flex: 1,
+    gap: 4,
+  },
+  detailName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1C1E',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F3F6',
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: '#7E8B97',
+    fontWeight: '500',
+  },
+  detailValue: {
+    fontSize: 13,
+    color: '#1A1C1E',
+    fontWeight: '600',
+    maxWidth: '60%',
+    textAlign: 'right',
+  },
+  detailActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  detailActionBtn: {
+    flex: 1,
+    height: 42,
+    borderRadius: 21,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  detailActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#FCECEC',
+    borderWidth: 1,
+    borderColor: '#F9D5D5',
+  },
+  deleteBtnText: {
+    color: '#E26D6D',
+    fontSize: 13,
     fontWeight: '600',
   },
 });

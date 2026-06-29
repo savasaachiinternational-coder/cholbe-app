@@ -35,8 +35,10 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Cholbe uses your location to help you select a delivery address on the map.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Cholbe uses the camera for video consultations with your doctor.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Cholbe uses the microphone to record voice messages during doctor consultations.</string>
+	<string>Cholbe uses the microphone for video calls and voice messages during doctor consultations.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Cholbe needs photo library access to share images and files in consultation chat.</string>
 	<key>GMSApiKey</key>

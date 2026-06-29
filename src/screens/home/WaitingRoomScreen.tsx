@@ -18,6 +18,9 @@ import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {appointmentsApi} from '../../api/appointments';
 import {ApiError} from '../../api/client';
+import {getStoredUser} from '../../api/tokenStorage';
+import {getAppointmentDateTime} from '../../api/utils/appointmentHelpers';
+import {requestCallPermissions} from '../../utils/callPermissions';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WaitingRoom'>;
 
@@ -41,19 +44,31 @@ export function WaitingRoomScreen({navigation, route}: Props) {
 
   const [doctorName, setDoctorName] = useState(route.params?.doctorName ?? 'Doctor');
   const [specialty, setSpecialty] = useState(route.params?.specialty ?? 'Specialist');
+  const [isDoctorViewer, setIsDoctorViewer] = useState(route.params?.viewerRole === 'DOCTOR');
   const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
+  const [consultationType, setConsultationType] = useState<'VIDEO' | 'CHAT' | 'AUDIO'>('VIDEO');
   const [countdown, setCountdown] = useState('--:--');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
+      const stored = await getStoredUser();
+      if (mounted && stored?.role === 'DOCTOR') {
+        setIsDoctorViewer(true);
+      }
       try {
         const appt = await appointmentsApi.getById(appointmentId);
         if (!mounted) return;
-        setDoctorName(appt.doctor.user.fullName);
-        setSpecialty(appt.doctor.specialty);
-        setScheduledAt(new Date(appt.scheduledDate));
+        if (stored?.role === 'DOCTOR' || route.params?.viewerRole === 'DOCTOR') {
+          setDoctorName(appt.patient?.fullName ?? route.params?.doctorName ?? 'Patient');
+          setSpecialty('Patient consultation');
+        } else {
+          setDoctorName(appt.doctor.user.fullName);
+          setSpecialty(appt.doctor.specialty);
+        }
+        setScheduledAt(getAppointmentDateTime(appt));
+        setConsultationType((appt.consultationType ?? 'VIDEO') as 'VIDEO' | 'CHAT' | 'AUDIO');
       } catch (err) {
         const message = err instanceof ApiError ? err.message : 'Could not load appointment';
         Alert.alert('Waiting room', message);
@@ -64,7 +79,7 @@ export function WaitingRoomScreen({navigation, route}: Props) {
     return () => {
       mounted = false;
     };
-  }, [appointmentId]);
+  }, [appointmentId, route.params?.doctorName, route.params?.viewerRole]);
 
   useEffect(() => {
     if (!scheduledAt) return;
@@ -84,6 +99,7 @@ export function WaitingRoomScreen({navigation, route}: Props) {
       doctorName,
       specialty,
       appointmentId,
+      viewerRole: isDoctorViewer ? 'DOCTOR' : 'CUSTOMER',
     });
   };
 
@@ -107,6 +123,35 @@ export function WaitingRoomScreen({navigation, route}: Props) {
     navigation.navigate('Home');
   };
 
+  const joinConsultation = async () => {
+    if (consultationType !== 'CHAT') {
+      const allowed = await requestCallPermissions();
+      if (!allowed) {
+        Alert.alert(
+          'Permissions required',
+          'Please allow camera and microphone access to join the video call.',
+        );
+        return;
+      }
+    }
+    await appointmentsApi.updateStatus(appointmentId, 'in_progress').catch(() => undefined);
+    if (consultationType === 'CHAT') {
+      navigation.navigate('ConsultationChat', {
+        doctorName,
+        specialty,
+        appointmentId,
+        viewerRole: isDoctorViewer ? 'DOCTOR' : 'CUSTOMER',
+      });
+      return;
+    }
+    navigation.navigate('ActiveVideoCall', {
+      appointmentId,
+      doctorName,
+      specialty,
+      viewerRole: isDoctorViewer ? 'DOCTOR' : 'CUSTOMER',
+    });
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -124,7 +169,9 @@ export function WaitingRoomScreen({navigation, route}: Props) {
           onPress={() => navigation.goBack()}>
           <Feather name="chevron-left" size={24} color="#1E293B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Your Waiting Room</Text>
+        <Text style={styles.headerTitle}>
+          {isDoctorViewer ? 'Consultation Room' : 'Your Waiting Room'}
+        </Text>
         <TouchableOpacity
           style={styles.iconButton}
           activeOpacity={0.7}
@@ -140,7 +187,9 @@ export function WaitingRoomScreen({navigation, route}: Props) {
           {paddingBottom: insets.bottom + 120},
         ]}>
         <View style={styles.countdownContainer}>
-          <Text style={styles.countdownTitle}>Your consultation is scheduled</Text>
+          <Text style={styles.countdownTitle}>
+            {isDoctorViewer ? 'Patient consultation scheduled' : 'Your consultation is scheduled'}
+          </Text>
           <Text style={styles.countdownSubtitle}>
             Call starts in <Text style={styles.countdownTimer}>{countdown} minutes</Text>
           </Text>
@@ -149,7 +198,9 @@ export function WaitingRoomScreen({navigation, route}: Props) {
         <View style={styles.roomCard}>
           <View style={styles.doctorProfileBlock}>
             <Image source={DOCTOR_AVATAR} style={styles.doctorAvatar} />
-            <Text style={styles.doctorName}>{doctorName}</Text>
+            <Text style={styles.doctorName}>
+              {isDoctorViewer ? doctorName : doctorName}
+            </Text>
             <View style={styles.specialtyRow}>
               <View style={styles.greenDot} />
               <Text style={styles.specialtyText}>{specialty}</Text>
@@ -160,15 +211,13 @@ export function WaitingRoomScreen({navigation, route}: Props) {
             style={[styles.joinCallButton, !canJoin && styles.joinCallDisabled]}
             activeOpacity={0.9}
             disabled={!canJoin}
-            onPress={() =>
-              navigation.navigate('ActiveVideoCall', {
-                appointmentId,
-                doctorName,
-                specialty,
-              })
-            }>
+            onPress={() => void joinConsultation()}>
             <Text style={styles.joinCallButtonText}>
-              {canJoin ? 'Join Video Call' : 'Available 1 hour before start'}
+              {canJoin
+                ? consultationType === 'CHAT'
+                  ? 'Open Chat Consultation'
+                  : 'Join Video Call'
+                : 'Available 1 hour before start'}
             </Text>
           </TouchableOpacity>
 
@@ -180,13 +229,15 @@ export function WaitingRoomScreen({navigation, route}: Props) {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomNavWrap}>
-        <HomeBottomNav
-          activeTab="home"
-          bottomInset={insets.bottom}
-          onTabPress={handleTabPress}
-        />
-      </View>
+      {!isDoctorViewer ? (
+        <View style={styles.bottomNavWrap}>
+          <HomeBottomNav
+            activeTab="home"
+            bottomInset={insets.bottom}
+            onTabPress={handleTabPress}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }

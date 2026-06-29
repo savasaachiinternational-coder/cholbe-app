@@ -35,39 +35,58 @@ export function useVoiceRecorder() {
   }, []);
 
   const start = useCallback(async () => {
+    if (recording) return true;
+
     const allowed = await requestMicPermission();
     if (!allowed) return false;
 
-    const fileName = `voice-${Date.now()}.m4a`;
-    const path = Platform.select({
-      ios: fileName,
-      android: undefined,
-      default: fileName,
-    });
+    try {
+      const fileName = `voice-${Date.now()}.m4a`;
+      const path = Platform.select({
+        ios: fileName,
+        android: undefined,
+        default: fileName,
+      });
 
-    await Sound.startRecorder(path);
-    Sound.addRecordBackListener(e => {
-      setRecordMs(e.currentPosition);
-    });
-    setRecording(true);
-    setRecordMs(0);
-    return true;
-  }, []);
+      await Sound.startRecorder(path);
+      Sound.addRecordBackListener(e => {
+        setRecordMs(e.currentPosition);
+      });
+      setRecording(true);
+      setRecordMs(0);
+      return true;
+    } catch {
+      Sound.removeRecordBackListener();
+      setRecording(false);
+      setRecordMs(0);
+      return false;
+    }
+  }, [recording]);
 
   const stop = useCallback(async () => {
-    const uri = await Sound.stopRecorder();
-    Sound.removeRecordBackListener();
-    setRecording(false);
-    setRecordMs(0);
-    if (!uri) return null;
-    return uri.startsWith('file://') ? uri : `file://${uri}`;
+    try {
+      const uri = await Sound.stopRecorder();
+      if (!uri) return null;
+      return uri.startsWith('file://') ? uri : `file://${uri}`;
+    } catch {
+      return null;
+    } finally {
+      Sound.removeRecordBackListener();
+      setRecording(false);
+      setRecordMs(0);
+    }
   }, []);
 
   const cancel = useCallback(async () => {
-    await Sound.stopRecorder().catch(() => undefined);
-    Sound.removeRecordBackListener();
-    setRecording(false);
-    setRecordMs(0);
+    try {
+      await Sound.stopRecorder();
+    } catch {
+      // Ignore stop errors when discarding a recording.
+    } finally {
+      Sound.removeRecordBackListener();
+      setRecording(false);
+      setRecordMs(0);
+    }
   }, []);
 
   return {

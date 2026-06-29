@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
+import {useFocusEffect} from '@react-navigation/native';
 import {profileApi} from '../../api/profile';
 import {uploadAvatarAsset} from '../../api/uploads';
 import {imageUri} from '../../utils/fileAsset';
@@ -38,10 +39,27 @@ export function AddFamilyMemberScreen({navigation}: Props) {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState<GenderOption>('Male');
   const [relationship, setRelationship] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      profileApi.overview().then(data => {
+        if (data.isFamilyDependent) {
+          Alert.alert(
+            'Not available',
+            'Family accounts cannot add other members. Ask your parent account holder.',
+            [{text: 'OK', onPress: () => navigation.goBack()}],
+          );
+        }
+      }).catch(() => {});
+    }, [navigation]),
+  );
 
   const pickPhoto = async () => {
     const result = await launchImageLibrary({mediaType: 'photo', selectionLimit: 1});
@@ -84,6 +102,18 @@ export function AddFamilyMemberScreen({navigation}: Props) {
       Alert.alert('Family member', 'Name and relationship are required.');
       return;
     }
+    if (!email.trim() && !phone.trim()) {
+      Alert.alert('Family member', 'Email or phone is required for login.');
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert('Family member', 'Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Family member', 'Passwords do not match.');
+      return;
+    }
     setSaving(true);
     try {
       await profileApi.addFamilyMember({
@@ -92,8 +122,14 @@ export function AddFamilyMemberScreen({navigation}: Props) {
         gender,
         age: age ? Number(age) : undefined,
         phone: phone.trim() || undefined,
+        email: email.trim() || undefined,
+        password,
         avatarUrl: avatarUrl ?? undefined,
       });
+      Alert.alert(
+        'Family member added',
+        'They can now sign in with their email or phone and password.',
+      );
       navigation.goBack();
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not save member';
@@ -201,13 +237,40 @@ export function AddFamilyMemberScreen({navigation}: Props) {
             placeholder="e.g. Son, Daughter, Mother"
           />
           <FormField
-            label="Phone Number (Optional)"
+            label="Email (for login)"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="member@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <FormField
+            label="Phone Number"
             value={phone}
             onChangeText={setPhone}
-            placeholder="Enter phone number"
+            placeholder="Login with phone if no email"
             keyboardType="phone-pad"
           />
+          <FormField
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Min. 8 characters"
+            secureTextEntry
+          />
+          <FormField
+            label="Confirm Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="Re-enter password"
+            secureTextEntry
+          />
         </View>
+
+        <Text style={styles.loginHintText}>
+          This creates a separate customer account. The family member can sign in and use their
+          own profile. You will still see their details here.
+        </Text>
 
         <TouchableOpacity
           style={styles.saveMemberPrimaryButton}
@@ -240,12 +303,16 @@ function FormField({
   onChangeText,
   placeholder,
   keyboardType,
+  secureTextEntry,
+  autoCapitalize,
 }: {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   placeholder: string;
-  keyboardType?: 'default' | 'numeric' | 'phone-pad';
+  keyboardType?: 'default' | 'numeric' | 'phone-pad' | 'email-address';
+  secureTextEntry?: boolean;
+  autoCapitalize?: 'none' | 'sentences';
 }) {
   return (
     <View>
@@ -257,6 +324,8 @@ function FormField({
         placeholder={placeholder}
         placeholderTextColor="#94A3B8"
         keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={autoCapitalize}
       />
     </View>
   );
@@ -423,6 +492,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  loginHintText: {
+    fontSize: 12,
+    color: '#64748B',
+    lineHeight: 18,
+    marginTop: 12,
+    textAlign: 'center',
+    paddingHorizontal: 8,
   },
   floatingScanButton: {
     position: 'absolute',

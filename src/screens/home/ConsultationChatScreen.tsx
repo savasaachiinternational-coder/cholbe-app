@@ -21,6 +21,8 @@ import Feather from 'react-native-vector-icons/Feather';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {useVoiceRecorder} from '../../hooks/useVoiceRecorder';
+import {stopActiveVoicePlayback} from '../../hooks/useVoicePlayer';
+import {VoiceMessagePlayer} from '../../components/VoiceMessagePlayer';
 import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
@@ -29,6 +31,7 @@ import {consultationsApi, type ConsultationMessage} from '../../api/consultation
 import {appointmentsApi} from '../../api/appointments';
 import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
+import {getStoredUser} from '../../api/tokenStorage';
 import {API_ORIGIN} from '../../config/api';
 import {
   imageUri,
@@ -46,6 +49,21 @@ const QUICK_EMOJIS = [
   '😀', '😊', '🙂', '😂', '😍', '🥰', '😢', '😮',
   '👍', '👎', '🙏', '💪', '❤️', '💊', '🏥', '✅',
 ];
+
+function voiceMimeType(uri: string) {
+  const lower = uri.toLowerCase();
+  if (lower.endsWith('.mp4')) return 'audio/mp4';
+  if (lower.endsWith('.m4a')) return 'audio/m4a';
+  if (lower.endsWith('.aac')) return 'audio/aac';
+  if (lower.endsWith('.3gp')) return 'audio/3gpp';
+  return 'audio/mp4';
+}
+
+function voiceFileName(uri: string) {
+  const name = uri.split('/').pop();
+  if (name) return name;
+  return `voice-${Date.now()}.mp4`;
+}
 
 function attachmentTypeFromMime(mimeType: string) {
   if (mimeType.startsWith('audio/')) return 'audio';
@@ -69,16 +87,41 @@ export function ConsultationChatScreen({navigation, route}: Props) {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [doctorOnline, setDoctorOnline] = useState(false);
   const [doctorAvatarUrl, setDoctorAvatarUrl] = useState<string | null>(null);
+  const [headerName, setHeaderName] = useState(route.params?.doctorName ?? 'Book a doctor');
+  const [headerSpecialty, setHeaderSpecialty] = useState(route.params?.specialty ?? 'Video consultation');
+  const [isDoctorViewer, setIsDoctorViewer] = useState(route.params?.viewerRole === 'DOCTOR');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [appointmentStatus, setAppointmentStatus] = useState<string | null>(null);
   const [sharedReport, setSharedReport] = useState<{
     title: string;
     provider: string | null;
     reportDate: string;
   } | null>(null);
-  const {recording, recordLabel, start: startRecording, stop: stopRecording} =
-    useVoiceRecorder();
+  const {
+    recording,
+    recordLabel,
+    start: startRecording,
+    stop: stopRecording,
+    cancel: cancelRecording,
+  } = useVoiceRecorder();
 
-  const doctorName = route.params?.doctorName ?? 'Book a doctor';
-  const specialty = route.params?.specialty ?? 'Video consultation';
+  const doctorName = headerName;
+  const specialty = headerSpecialty;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const stored = await getStoredUser();
+      if (cancelled) return;
+      if (stored) {
+        setCurrentUserId(stored.id);
+        if (stored.role === 'DOCTOR') setIsDoctorViewer(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,15 +167,25 @@ export function ConsultationChatScreen({navigation, route}: Props) {
       ]);
       setSharedReport(context.sharedReport);
       setMessages(list);
-      setDoctorOnline(context.appointment.doctor.isOnline);
-      setDoctorAvatarUrl(context.appointment.doctor.user.avatarUrl);
+      setAppointmentStatus(context.appointment.status);
+      if (isDoctorViewer || route.params?.viewerRole === 'DOCTOR') {
+        setHeaderName(context.appointment.patient?.fullName ?? route.params?.doctorName ?? 'Patient');
+        setHeaderSpecialty('Patient chat');
+        setDoctorAvatarUrl(context.appointment.patient?.avatarUrl ?? null);
+        setDoctorOnline(true);
+      } else {
+        setDoctorOnline(context.appointment.doctor.isOnline);
+        setDoctorAvatarUrl(context.appointment.doctor.user.avatarUrl);
+        setHeaderName(context.appointment.doctor.user.fullName);
+        setHeaderSpecialty(context.appointment.doctor.specialty);
+      }
     } catch (err) {
       const text = err instanceof ApiError ? err.message : 'Could not load chat';
       Alert.alert('Chat', text);
     } finally {
       setLoading(false);
     }
-  }, [appointmentId]);
+  }, [appointmentId, isDoctorViewer, route.params?.doctorName, route.params?.viewerRole]);
 
   useFocusEffect(
     useCallback(() => {
@@ -152,10 +205,15 @@ export function ConsultationChatScreen({navigation, route}: Props) {
             consultationsApi.listMessages(appointmentId),
           ]);
           if (cancelled) return;
-          setDoctorOnline(context.appointment.doctor.isOnline);
-          setDoctorAvatarUrl(context.appointment.doctor.user.avatarUrl);
+          if (isDoctorViewer || route.params?.viewerRole === 'DOCTOR') {
+            setDoctorAvatarUrl(context.appointment.patient?.avatarUrl ?? null);
+          } else {
+            setDoctorOnline(context.appointment.doctor.isOnline);
+            setDoctorAvatarUrl(context.appointment.doctor.user.avatarUrl);
+          }
           setSharedReport(context.sharedReport);
           setMessages(list);
+          setAppointmentStatus(context.appointment.status);
         } catch {
           // Ignore transient poll errors.
         }
@@ -166,7 +224,16 @@ export function ConsultationChatScreen({navigation, route}: Props) {
         cancelled = true;
         clearInterval(timer);
       };
-    }, [appointmentId]),
+    }, [appointmentId, isDoctorViewer, route.params?.viewerRole]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        void cancelRecording();
+        void stopActiveVoicePlayback();
+      };
+    }, [cancelRecording]),
   );
 
   useEffect(() => {
@@ -214,6 +281,7 @@ export function ConsultationChatScreen({navigation, route}: Props) {
     uri: string,
     fileName: string,
     mimeType: string,
+    defaultContent?: string,
   ) => {
     if (!appointmentId) {
       requireAppointment();
@@ -229,7 +297,7 @@ export function ConsultationChatScreen({navigation, route}: Props) {
       );
       const caption = message.trim();
       const created = await consultationsApi.sendMessage(appointmentId, {
-        content: caption || uploaded.fileName || 'Shared file',
+        content: caption || defaultContent || uploaded.fileName || 'Shared file',
         attachmentUrl: uploaded.fileUrl,
         attachmentType: attachmentTypeFromMime(uploaded.mimeType),
       });
@@ -258,6 +326,26 @@ export function ConsultationChatScreen({navigation, route}: Props) {
     await uploadAndSendAttachment(file.uri, file.fileName, file.mimeType);
   };
 
+  const sendVoiceRecording = async () => {
+    if (!recording || uploading || sending) return;
+    const uri = await stopRecording();
+    if (!uri) {
+      Alert.alert('Voice note', 'Could not save recording. Please try again.');
+      return;
+    }
+    await uploadAndSendAttachment(
+      uri,
+      voiceFileName(uri),
+      voiceMimeType(uri),
+      'Voice message',
+    );
+  };
+
+  const cancelVoiceRecording = async () => {
+    if (!recording || uploading || sending) return;
+    await cancelRecording();
+  };
+
   const toggleVoiceRecording = async () => {
     if (uploading || sending) return;
     if (!recording) {
@@ -267,9 +355,7 @@ export function ConsultationChatScreen({navigation, route}: Props) {
       }
       return;
     }
-    const uri = await stopRecording();
-    if (!uri) return;
-    await uploadAndSendAttachment(uri, `voice-${Date.now()}.m4a`, 'audio/m4a');
+    await sendVoiceRecording();
   };
 
   const appendEmoji = (emoji: string) => {
@@ -284,6 +370,57 @@ export function ConsultationChatScreen({navigation, route}: Props) {
   const doctorAvatarSource = doctorAvatarUrl
     ? {uri: imageUri(doctorAvatarUrl, API_ORIGIN)}
     : DOCTOR_AVATAR;
+
+  useEffect(() => {
+    if (!appointmentId) return;
+    appointmentsApi.updateStatus(appointmentId, 'in_progress').catch(() => undefined);
+  }, [appointmentId]);
+
+  const endConsultation = () => {
+    if (!appointmentId) return;
+    Alert.alert(
+      'End consultation',
+      isDoctorViewer
+        ? 'Mark this consultation as complete for the patient?'
+        : 'End this consultation now?',
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'End',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await appointmentsApi.updateStatus(appointmentId, 'completed');
+              if (isDoctorViewer) {
+                navigation.goBack();
+                return;
+              }
+              navigation.replace('ConsultationSummary', {
+                appointmentId,
+                doctorName,
+                specialty,
+              });
+            } catch (err) {
+              Alert.alert(
+                'Consultation',
+                err instanceof ApiError ? err.message : 'Could not end consultation',
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const openSummary = () => {
+    if (!appointmentId) return;
+    navigation.navigate('ConsultationSummary', {
+      appointmentId,
+      doctorName,
+      specialty,
+      viewerRole: isDoctorViewer ? 'DOCTOR' : 'CUSTOMER',
+    });
+  };
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -311,7 +448,13 @@ export function ConsultationChatScreen({navigation, route}: Props) {
         <TouchableOpacity
           style={styles.backButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
+          onPress={() => {
+            if (recording) {
+              void cancelRecording().finally(() => navigation.goBack());
+              return;
+            }
+            navigation.goBack();
+          }}>
           <Feather name="chevron-left" size={24} color="#1E293B" />
         </TouchableOpacity>
 
@@ -334,8 +477,29 @@ export function ConsultationChatScreen({navigation, route}: Props) {
           </View>
         </View>
 
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerSpacer}>
+          {appointmentId && (isDoctorViewer || appointmentStatus?.toLowerCase() !== 'completed') ? (
+            <TouchableOpacity
+              style={styles.endConsultationButton}
+              activeOpacity={0.8}
+              onPress={endConsultation}>
+              <Text style={styles.endConsultationText}>
+                {isDoctorViewer ? 'End' : 'Leave'}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
+
+      {!isDoctorViewer && appointmentStatus?.toLowerCase() === 'completed' ? (
+        <TouchableOpacity style={styles.completedBanner} activeOpacity={0.9} onPress={openSummary}>
+          <Feather name="check-circle" size={16} color="#0D9488" />
+          <Text style={styles.completedBannerText}>
+            Consultation complete — tap to leave a review
+          </Text>
+          <Feather name="chevron-right" size={16} color="#0D9488" />
+        </TouchableOpacity>
+      ) : null}
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -386,12 +550,14 @@ export function ConsultationChatScreen({navigation, route}: Props) {
               {messages.length === 0 ? (
                 <Text style={styles.emptyChatText}>
                   {appointmentId
-                    ? 'No messages yet. Say hello to your doctor.'
+                    ? isDoctorViewer
+                      ? 'No messages yet. Start the consultation with your patient.'
+                      : 'No messages yet. Say hello to your doctor.'
                     : 'Book a consultation to start chatting.'}
                 </Text>
               ) : null}
               {messages.map(msg => (
-                <ChatBubble key={msg.id} message={msg} />
+                <ChatBubble key={msg.id} message={msg} currentUserId={currentUserId} />
               ))}
             </View>
           )}
@@ -401,7 +567,23 @@ export function ConsultationChatScreen({navigation, route}: Props) {
           <View style={[styles.recordingBanner, {bottom: composerBottom + 64}]}>
             <View style={styles.recordingDot} />
             <Text style={styles.recordingText}>Recording {recordLabel}</Text>
-            <Text style={styles.recordingHint}>Tap mic to send</Text>
+            <TouchableOpacity
+              style={styles.recordingActionCancel}
+              activeOpacity={0.8}
+              onPress={cancelVoiceRecording}>
+              <Text style={styles.recordingActionCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.recordingActionSend}
+              activeOpacity={0.85}
+              onPress={sendVoiceRecording}
+              disabled={uploading || sending}>
+              {uploading ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.recordingActionSendText}>Send</Text>
+              )}
+            </TouchableOpacity>
           </View>
         ) : null}
 
@@ -486,25 +668,35 @@ export function ConsultationChatScreen({navigation, route}: Props) {
         </Pressable>
       </Modal>
 
-      <TouchableOpacity
-        style={[styles.floatingScanButton, {bottom: composerBottom + 72}]}
-        activeOpacity={0.85}>
-        <Feather name="maximize" size={24} color="#1E293B" />
-      </TouchableOpacity>
+      {!recording ? (
+        <TouchableOpacity
+          style={[styles.floatingScanButton, {bottom: composerBottom + 72}]}
+          activeOpacity={0.85}>
+          <Feather name="maximize" size={24} color="#1E293B" />
+        </TouchableOpacity>
+      ) : null}
 
-      <View style={styles.bottomNavWrap}>
-        <HomeBottomNav
-          activeTab="home"
-          bottomInset={insets.bottom}
-          onTabPress={handleTabPress}
-        />
-      </View>
+      {!isDoctorViewer ? (
+        <View style={styles.bottomNavWrap}>
+          <HomeBottomNav
+            activeTab="home"
+            bottomInset={insets.bottom}
+            onTabPress={handleTabPress}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
 
-function ChatBubble({message}: {message: ConsultationMessage}) {
-  const incoming = message.sender.role === 'DOCTOR';
+function ChatBubble({
+  message,
+  currentUserId,
+}: {
+  message: ConsultationMessage;
+  currentUserId: string | null;
+}) {
+  const incoming = currentUserId ? message.sender.id !== currentUserId : message.sender.role !== 'CUSTOMER';
   const [imageFailed, setImageFailed] = useState(false);
   const timestamp = new Date(message.createdAt).toLocaleString('en-GB', {
     day: '2-digit',
@@ -523,10 +715,15 @@ function ChatBubble({message}: {message: ConsultationMessage}) {
   const showPdf = attachmentKind === 'pdf' && attachmentUrl;
   const showAudio = attachmentKind === 'audio' && attachmentUrl;
   const showGenericFile = attachmentKind === 'file' && attachmentUrl;
+  const isVoiceFileName = /\.(mp4|m4a|aac|3gp|wav|ogg|webm)(\?|$)/i.test(
+    message.content ?? '',
+  );
   const hasVisibleText =
     Boolean(message.content?.trim()) &&
     message.content.trim() !== 'Attachment' &&
-    message.content.trim() !== 'Shared file';
+    message.content.trim() !== 'Shared file' &&
+    message.content.trim() !== 'Voice message' &&
+    !(showAudio && isVoiceFileName);
 
   const openAttachment = () => {
     if (attachmentUrl) void Linking.openURL(attachmentUrl);
@@ -566,10 +763,11 @@ function ChatBubble({message}: {message: ConsultationMessage}) {
         </TouchableOpacity>
       ) : null}
       {showAudio ? (
-        <TouchableOpacity style={styles.chatFileRow} onPress={openAttachment}>
-          <Feather name="volume-2" size={18} color="#0D9488" />
-          <Text style={styles.chatFileLabel}>Voice message</Text>
-        </TouchableOpacity>
+        <VoiceMessagePlayer
+          messageId={message.id}
+          uri={attachmentUrl!}
+          incoming={incoming}
+        />
       ) : null}
       {showGenericFile ? (
         <TouchableOpacity style={styles.chatFileRow} onPress={openAttachment}>
@@ -672,7 +870,39 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   headerSpacer: {
-    width: 24,
+    width: 56,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  endConsultationButton: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  endConsultationText: {
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  completedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#E6F4F1',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
+  },
+  completedBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#0F766E',
+    fontWeight: '600',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -896,10 +1126,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#B91C1C',
   },
-  recordingHint: {
-    fontSize: 11,
-    color: '#DC2626',
-    fontWeight: '500',
+  recordingActionCancel: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  recordingActionCancelText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#B91C1C',
+  },
+  recordingActionSend: {
+    minWidth: 56,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordingActionSendText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   emojiBackdrop: {
     flex: 1,

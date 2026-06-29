@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -23,6 +24,8 @@ import {VendorBottomNav} from './VendorBottomNav';
 import {vendorProductsApi} from '../../api/vendorProducts';
 import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
+import {NotificationBell} from '../../components/NotificationBell';
+import {DatePickerField} from '../../components/MedicationPickers';
 import {
   PRODUCT_CATEGORIES,
   TEMPERATURE_OPTIONS,
@@ -142,12 +145,10 @@ export function VendorAddProductScreen({navigation}: Props) {
           <Text style={styles.logoTextMain}>+ Cholbe</Text>
           <Text style={styles.logoTextSub}>PHARMACY</Text>
         </View>
-        <TouchableOpacity
+        <NotificationBell
           style={styles.headerButton}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#1A1C1E" />
-        </TouchableOpacity>
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       <ScrollView
@@ -273,16 +274,13 @@ export function VendorAddProductScreen({navigation}: Props) {
           <View style={styles.rowFields}>
             <View style={styles.flexField}>
               <Text style={styles.inputLabel}>Expiry Date</Text>
-              <View style={styles.inputBoxWithIcon}>
-                <TextInput
-                  style={styles.textInput}
-                  value={expiryDate}
-                  onChangeText={setExpiryDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#1A1C1E"
-                />
-                <Feather name="calendar" size={16} color="#1A1C1E" />
-              </View>
+              <DatePickerField
+                value={expiryDate}
+                onChange={setExpiryDate}
+                compact
+                placeholder="Select date"
+                style={styles.expiryDateField}
+              />
             </View>
             <View style={styles.flexField}>
               <Text style={styles.inputLabel}>Batch Number</Text>
@@ -349,10 +347,14 @@ export function VendorAddProductScreen({navigation}: Props) {
               <Text style={styles.mediaTitle}>Product Media</Text>
             </View>
             <TouchableOpacity style={styles.uploadDashedZone} activeOpacity={0.8} onPress={handlePickImage}>
-              <MaterialCommunityIcons name="crop-free" size={28} color="#47B39D" />
-              <Text style={styles.uploadZoneText}>
-                {imageAsset?.fileName ?? 'Upload Image'}
-              </Text>
+              {imageAsset?.uri ? (
+                <Image source={{uri: imageAsset.uri}} style={{width: '100%', height: '100%', borderRadius: 10}} resizeMode="cover" />
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="crop-free" size={28} color="#47B39D" />
+                  <Text style={styles.uploadZoneText}>Tap to upload image</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -558,6 +560,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
+  expiryDateField: {
+    backgroundColor: '#F4F5F6',
+    borderRadius: 10,
+    height: 44,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    justifyContent: 'space-between',
+  },
   textInput: {
     flex: 1,
     fontSize: 13,
@@ -721,6 +731,26 @@ const styles = StyleSheet.create({
   },
   pickerOptionTextSelected: {
     color: '#3F8694',
+    fontWeight: '600',
+  },
+  datePickerColumns: {
+    flexDirection: 'row',
+    height: 200,
+  },
+  datePickerColumn: {
+    flex: 1,
+  },
+  datePickerConfirmBtn: {
+    backgroundColor: '#3F8694',
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  datePickerConfirmText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
 });

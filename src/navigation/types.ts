@@ -20,6 +20,24 @@ export type RootStackParamList = {
   VOrders: undefined;
   VPayments: undefined;
   VProfile: undefined;
+  DHome: undefined;
+  DAppointments: undefined;
+  DPatients: undefined;
+  DConsultations: undefined;
+  DEditProfile:
+    | {
+        initialTab?:
+          | 'profile'
+          | 'qualifications'
+          | 'experience'
+          | 'instructions'
+          | 'availability'
+          | 'payment';
+      }
+    | undefined;
+  DEarnings: undefined;
+  DWithdraw: undefined;
+  DProfile: undefined;
   MedicineList: undefined;
   ReportsList: undefined;
   DoctorList: undefined;
@@ -34,16 +52,19 @@ export type RootStackParamList = {
     specialty?: string;
     appointmentId?: string;
     doctorId?: string;
+    viewerRole?: 'DOCTOR' | 'CUSTOMER';
   };
   WaitingRoom: {
     appointmentId: string;
     doctorName?: string;
     specialty?: string;
+    viewerRole?: 'DOCTOR' | 'CUSTOMER';
   };
   ActiveVideoCall: {
     appointmentId: string;
     doctorName?: string;
     specialty?: string;
+    viewerRole?: 'DOCTOR' | 'CUSTOMER';
   };
   MyProfile: undefined;
   ConsultationSummary:
@@ -59,6 +80,7 @@ export type RootStackParamList = {
   Alerts: undefined;
   EditProfile: undefined;
   AddFamilyMember: undefined;
+  FamilyMemberDetail: {memberId: string; memberName?: string};
   Deliveries: undefined;
   AddMedication: undefined;
   AddMedicationForm: undefined;

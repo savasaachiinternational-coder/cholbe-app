@@ -2,17 +2,19 @@ export type ProfileSubTabKey =
   | 'overview'
   | 'nextDelivery'
   | 'addFamilyMember'
-  | 'editProfile';
+  | 'consultationSummary'
+  | 'myAppointment';
 
 export const PROFILE_SUB_TABS: {
   key: ProfileSubTabKey;
   label: string;
-  route?: 'Deliveries' | 'AddFamilyMember' | 'EditProfile';
+  route?: 'Deliveries' | 'AddFamilyMember' | 'ConsultationSummary' | 'MyAppointment';
 }[] = [
   {key: 'overview', label: 'Overview'},
   {key: 'nextDelivery', label: 'Next Delivery', route: 'Deliveries'},
   {key: 'addFamilyMember', label: 'Add Family Member', route: 'AddFamilyMember'},
-  {key: 'editProfile', label: 'Edit Profile', route: 'EditProfile'},
+  {key: 'consultationSummary', label: 'Consultation Summary', route: 'ConsultationSummary'},
+  {key: 'myAppointment', label: 'My Appointment', route: 'MyAppointment'},
 ];
 
 export const PROFILE_USER = {
@@ -140,13 +142,13 @@ export const QUICK_ACTIONS: QuickAction[] = [
   {
     id: 'passport',
     title: 'Health Passport',
-    subtitle: 'View, Track & Refill',
+    subtitle: 'Reports, BP & oxygen',
     icon: 'passport',
   },
   {
     id: 'emergency',
     title: 'Emergency',
-    subtitle: 'Lab Tests, Prescriptions',
+    subtitle: 'Add emergency contacts',
     icon: 'emergency',
   },
 ];

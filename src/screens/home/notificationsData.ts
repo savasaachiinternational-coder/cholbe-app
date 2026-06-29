@@ -1,4 +1,4 @@
-export type NotificationFilterTab = 'all' | 'reminders' | 'alerts';
+export type NotificationFilterTab = 'all' | 'medication' | 'order' | 'appointment' | 'vendor';
 
 export type NotificationCategory =
   | 'medication'
@@ -128,14 +128,9 @@ export const NOTIFICATION_SECTIONS: NotificationSection[] = [
 ];
 
 export function matchesNotificationTab(
-  category: NotificationCategory,
+  category: string,
   tab: NotificationFilterTab,
 ): boolean {
-  if (tab === 'all') {
-    return true;
-  }
-  if (tab === 'reminders') {
-    return category === 'medication' || category === 'followup';
-  }
-  return category === 'missed_dose';
+  if (tab === 'all') return true;
+  return category === tab;
 }

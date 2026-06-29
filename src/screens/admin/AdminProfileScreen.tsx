@@ -3,9 +3,13 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -19,6 +23,8 @@ import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
+import {performLogout} from '../../auth/sessionControl';
+import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AProfile'>;
 
@@ -59,11 +65,122 @@ function SettingRow({item, isLast}: {item: SettingItem; isLast: boolean}) {
   );
 }
 
+function ChangePasswordModal({visible, onClose}: {visible: boolean; onClose: () => void}) {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNext, setShowNext] = useState(false);
+
+  const handleSave = async () => {
+    if (!current || !next || !confirm) {
+      Alert.alert('Password', 'All fields are required.');
+      return;
+    }
+    if (next.length < 8) {
+      Alert.alert('Password', 'New password must be at least 8 characters.');
+      return;
+    }
+    if (next !== confirm) {
+      Alert.alert('Password', 'Passwords do not match.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await authApi.changePassword(current, next);
+      Alert.alert('Success', 'Password changed successfully.');
+      setCurrent('');
+      setNext('');
+      setConfirm('');
+      onClose();
+    } catch (err) {
+      Alert.alert('Error', err instanceof ApiError ? err.message : 'Could not change password');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={styles.cpOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.cpModal}>
+          <View style={styles.cpHeader}>
+            <Text style={styles.cpTitle}>Change Password</Text>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+              <Feather name="x" size={22} color="#1A1C1E" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.cpField}>
+            <Text style={styles.cpLabel}>Current Password</Text>
+            <View style={styles.cpInputRow}>
+              <TextInput
+                style={styles.cpInput}
+                placeholder="••••••••"
+                placeholderTextColor="#9AA6B2"
+                secureTextEntry={!showCurrent}
+                value={current}
+                onChangeText={setCurrent}
+              />
+              <TouchableOpacity onPress={() => setShowCurrent(v => !v)} activeOpacity={0.7}>
+                <Feather name={showCurrent ? 'eye-off' : 'eye'} size={18} color="#9AA6B2" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.cpField}>
+            <Text style={styles.cpLabel}>New Password</Text>
+            <View style={styles.cpInputRow}>
+              <TextInput
+                style={styles.cpInput}
+                placeholder="••••••••"
+                placeholderTextColor="#9AA6B2"
+                secureTextEntry={!showNext}
+                value={next}
+                onChangeText={setNext}
+              />
+              <TouchableOpacity onPress={() => setShowNext(v => !v)} activeOpacity={0.7}>
+                <Feather name={showNext ? 'eye-off' : 'eye'} size={18} color="#9AA6B2" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.cpField}>
+            <Text style={styles.cpLabel}>Confirm New Password</Text>
+            <View style={styles.cpInputRow}>
+              <TextInput
+                style={styles.cpInput}
+                placeholder="••••••••"
+                placeholderTextColor="#9AA6B2"
+                secureTextEntry
+                value={confirm}
+                onChangeText={setConfirm}
+              />
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.cpSaveBtn, saving && styles.cpSaveBtnDisabled]}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.85}>
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.cpSaveBtnText}>Save Password</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 export function AdminProfileScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [changePasswordVisible, setChangePasswordVisible] = useState(false);
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -85,9 +202,16 @@ export function AdminProfileScreen({navigation}: Props) {
     }, [loadProfile]),
   );
 
+  const handleLogout = useCallback(() => {
+    Alert.alert('Logout', 'Are you sure you want to log out?', [
+      {text: 'Cancel', style: 'cancel'},
+      {text: 'Logout', style: 'destructive', onPress: () => void performLogout()},
+    ]);
+  }, []);
+
   const menuItems: SettingItem[] = [
     {iconName: 'user', label: 'Profile Information'},
-    {iconName: 'lock', label: 'Change Password'},
+    {iconName: 'lock', label: 'Change Password', onPress: () => setChangePasswordVisible(true)},
     {
       iconName: 'account-group-outline',
       label: 'Manage Users',
@@ -126,12 +250,10 @@ export function AdminProfileScreen({navigation}: Props) {
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        <TouchableOpacity
+        <NotificationBell
           style={styles.headerButton}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#1A1C1E" />
-        </TouchableOpacity>
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       <ScrollView
@@ -174,13 +296,17 @@ export function AdminProfileScreen({navigation}: Props) {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.logoutButtonBox} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.logoutButtonBox} activeOpacity={0.8} onPress={handleLogout}>
           <Feather name="log-out" size={18} color="#E26D6D" />
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
 
       <AdminBottomNav activeTab="profile" bottomInset={insets.bottom} navigation={navigation} />
+      <ChangePasswordModal
+        visible={changePasswordVisible}
+        onClose={() => setChangePasswordVisible(false)}
+      />
     </View>
   );
 }
@@ -295,6 +421,71 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     color: '#E26D6D',
     fontSize: 13,
+    fontWeight: '700',
+  },
+  cpOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  cpModal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 36,
+  },
+  cpHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  cpTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1C1E',
+  },
+  cpField: {
+    marginBottom: 14,
+  },
+  cpLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4F5E6D',
+    marginBottom: 6,
+  },
+  cpInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F6F8FB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ECEFF3',
+    paddingHorizontal: 14,
+    height: 46,
+    gap: 8,
+  },
+  cpInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1A1C1E',
+    padding: 0,
+  },
+  cpSaveBtn: {
+    backgroundColor: '#4E929D',
+    borderRadius: 12,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  cpSaveBtnDisabled: {
+    opacity: 0.6,
+  },
+  cpSaveBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '700',
   },
 });

@@ -1,5 +1,23 @@
 import {apiRequest} from './client';
 
+export type AdminOrderDetail = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  subtotal: string | number;
+  deliveryCharge: string | number;
+  total: string | number;
+  notes: string | null;
+  createdAt: string;
+  customer: {fullName: string; phone: string | null; email: string | null; avatarUrl: string | null};
+  vendor: {pharmacyName: string; phone: string | null} | null;
+  items: {id: string; name: string; quantity: number; unitPrice: string | number; lineTotal: string | number; variant: string}[];
+  statusEvents: {id: string; status: string; note: string | null; createdAt: string}[];
+  payment: {method: string; amount: string | number; status: string} | null;
+};
+
 export type AdminAppointment = {
   id: string;
   scheduledDate: string;
@@ -360,5 +378,35 @@ export const adminApi = {
 
   deleteReview(id: string) {
     return apiRequest(`/admin/reviews/${id}`, {method: 'DELETE', auth: true});
+  },
+
+  // ─── Order detail & status ───────────────────────────────────────────────────
+
+  getOrder(id: string) {
+    return apiRequest<AdminOrderDetail>(`/admin/orders/${id}`, {auth: true});
+  },
+
+  updateOrderStatus(id: string, status: string) {
+    return apiRequest(`/admin/orders/${id}/status`, {
+      method: 'PATCH',
+      auth: true,
+      body: {status},
+    });
+  },
+
+  // ─── Monthly chart ───────────────────────────────────────────────────────────
+
+  ordersMonthly() {
+    return apiRequest<{month: string; count: number}[]>('/admin/chart/orders-monthly', {auth: true});
+  },
+
+  // ─── User management ─────────────────────────────────────────────────────────
+
+  updateUserStatus(userId: string, status: string) {
+    return apiRequest(`/users/${userId}/status`, {method: 'PATCH', auth: true, body: {status}});
+  },
+
+  deleteUser(userId: string) {
+    return apiRequest(`/users/${userId}`, {method: 'DELETE', auth: true});
   },
 };

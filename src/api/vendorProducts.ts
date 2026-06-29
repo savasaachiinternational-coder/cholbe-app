@@ -37,4 +37,28 @@ export const vendorProductsApi = {
       body: { isActive },
     });
   },
+
+  delete(id: string) {
+    return apiRequest(`/vendor/products/${id}`, { method: 'DELETE', auth: true });
+  },
+
+  update(id: string, payload: Partial<{
+    name: string;
+    genericName?: string;
+    category?: string;
+    brand?: string;
+    unitPrice: number;
+    discountPrice?: number;
+    stockQuantity: number;
+    minAlertLevel?: number;
+    expiryDate?: string;
+    batchNumber?: string;
+    unitType?: string;
+    temperature?: string;
+    imageUrl?: string;
+    prescriptionRequired?: boolean;
+    reminderActive?: boolean;
+  }>) {
+    return apiRequest(`/vendor/products/${id}`, { method: 'PATCH', auth: true, body: payload });
+  },
 };

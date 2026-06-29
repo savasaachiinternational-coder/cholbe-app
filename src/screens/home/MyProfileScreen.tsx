@@ -1,14 +1,18 @@
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  FlatList,
   Image,
+  KeyboardAvoidingView,
   Linking,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -28,11 +32,22 @@ import {
   type QuickAction,
 } from './profileData';
 import {profileApi, type ProfileOverview} from '../../api/profile';
+import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
 import {performLogout} from '../../auth/sessionControl';
+import {AddEmergencyContactModal} from '../../components/AddEmergencyContactModal';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - 44) / 2;
+const SUMMARY_CARD_GAP = 12;
+const SUMMARY_CARD_WIDTH = SCREEN_WIDTH * 0.78;
+const SUMMARY_SNAP_INTERVAL = SUMMARY_CARD_WIDTH + SUMMARY_CARD_GAP;
+const SUB_TAB_SCROLL_STEP = 160;
+
+type SummaryCarouselItem =
+  | {id: 'conditions'; type: 'conditions'}
+  | {id: 'medications'; type: 'medications'}
+  | {id: 'vitals'; type: 'vitals'};
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyProfile'>;
 
@@ -46,6 +61,14 @@ export function MyProfileScreen({navigation}: Props) {
     useState<ProfileSubTabKey>('overview');
   const [overview, setOverview] = useState<ProfileOverview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [emergencyModalVisible, setEmergencyModalVisible] = useState(false);
+  const [savingEmergency, setSavingEmergency] = useState(false);
+  const [changePwVisible, setChangePwVisible] = useState(false);
+  const [activeSummaryIndex, setActiveSummaryIndex] = useState(0);
+  const subTabsScrollRef = useRef<ScrollView>(null);
+  const [subTabScrollX, setSubTabScrollX] = useState(0);
+  const [subTabContentWidth, setSubTabContentWidth] = useState(0);
+  const [subTabViewportWidth, setSubTabViewportWidth] = useState(0);
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -94,7 +117,21 @@ export function MyProfileScreen({navigation}: Props) {
   const conditions = patient?.conditions ?? [];
   const emergencyContacts = patient?.emergencyContacts ?? [];
   const familyMembers = patient?.familyMembers ?? [];
+  const isFamilyDependent = overview?.isFamilyDependent ?? false;
+  const guardian = overview?.guardian ?? null;
   const medicationCount = overview?.medicationCount ?? 0;
+  const healthVitals = overview?.healthVitals;
+
+  const summaryCarouselItems = useMemo<SummaryCarouselItem[]>(() => {
+    const items: SummaryCarouselItem[] = [
+      {id: 'conditions', type: 'conditions'},
+      {id: 'medications', type: 'medications'},
+    ];
+    if (healthVitals?.bloodPressure || healthVitals?.oxygen) {
+      items.push({id: 'vitals', type: 'vitals'});
+    }
+    return items;
+  }, [healthVitals?.bloodPressure, healthVitals?.oxygen]);
 
   const healthSummary = useMemo(() => {
     const items = [];
@@ -114,8 +151,45 @@ export function MyProfileScreen({navigation}: Props) {
         sub: overview.nextAppointment.timeSlot,
       });
     }
+    if (overview?.healthVitals?.bloodPressure) {
+      items.push({
+        id: 'bp',
+        label: 'Blood Pressure',
+        value: overview.healthVitals.bloodPressure.value,
+        sub: `Checked ${overview.healthVitals.bloodPressure.checkedAgo}`,
+      });
+    }
+    if (overview?.healthVitals?.oxygen) {
+      items.push({
+        id: 'oxygen',
+        label: 'Oxygen',
+        value: overview.healthVitals.oxygen.value,
+        sub: `Checked ${overview.healthVitals.oxygen.checkedAgo}`,
+      });
+    }
     return items;
   }, [overview]);
+
+  const openEmergencyModal = () => setEmergencyModalVisible(true);
+
+  const saveEmergencyContact = async (payload: {
+    name: string;
+    relation: string;
+    phone: string;
+  }) => {
+    setSavingEmergency(true);
+    try {
+      await profileApi.addEmergencyContact(payload);
+      setEmergencyModalVisible(false);
+      await loadProfile();
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not add emergency contact';
+      Alert.alert('Emergency contact', message);
+    } finally {
+      setSavingEmergency(false);
+    }
+  };
 
   const openChat = () => {
     navigation.navigate('ConsultationChat', {
@@ -194,16 +268,43 @@ export function MyProfileScreen({navigation}: Props) {
     }
     if (action.id === 'upload') {
       navigation.navigate('ReportsList');
+      return;
+    }
+    if (action.id === 'passport') {
+      navigation.navigate('ReportsList');
+      return;
+    }
+    if (action.id === 'emergency') {
+      openEmergencyModal();
     }
   };
 
   const onProfileSubTabPress = (key: ProfileSubTabKey) => {
     const tab = PROFILE_SUB_TABS.find(t => t.key === key);
+    if (tab?.route === 'ConsultationSummary') {
+      navigation.navigate('MyAppointment');
+      return;
+    }
     if (tab?.route) {
       navigation.navigate(tab.route);
       return;
     }
     setActiveProfileTab('overview');
+  };
+
+  const canScrollSubTabsLeft = subTabScrollX > 4;
+  const subTabsOverflow = subTabContentWidth > subTabViewportWidth + 4;
+  const canScrollSubTabsRight =
+    subTabsOverflow && subTabScrollX + subTabViewportWidth < subTabContentWidth - 4;
+
+  const scrollSubTabs = (direction: 'left' | 'right') => {
+    const maxOffset = Math.max(0, subTabContentWidth - subTabViewportWidth);
+    const nextOffset =
+      direction === 'left'
+        ? Math.max(0, subTabScrollX - SUB_TAB_SCROLL_STEP)
+        : Math.min(maxOffset, subTabScrollX + SUB_TAB_SCROLL_STEP);
+    subTabsScrollRef.current?.scrollTo({x: nextOffset, animated: true});
+    setSubTabScrollX(nextOffset);
   };
 
   return (
@@ -231,39 +332,85 @@ export function MyProfileScreen({navigation}: Props) {
       </View>
 
       <View style={styles.profileSubTabsWrap}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          bounces={false}
-          style={styles.profileSubTabsScroll}
-          contentContainerStyle={styles.profileSubTabsContent}>
-          {PROFILE_SUB_TABS.map(tab => {
-            const active = activeProfileTab === tab.key;
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                style={[
-                  styles.profileSubTab,
-                  active && styles.profileSubTabActive,
-                ]}
-                activeOpacity={0.85}
-                onPress={() => onProfileSubTabPress(tab.key)}>
-                <Text
+        {subTabsOverflow ? (
+          <TouchableOpacity
+            style={[
+              styles.subTabArrowButton,
+              !canScrollSubTabsLeft && styles.subTabArrowButtonDisabled,
+            ]}
+            activeOpacity={0.75}
+            disabled={!canScrollSubTabsLeft}
+            onPress={() => scrollSubTabs('left')}>
+            <Feather
+              name="chevron-left"
+              size={18}
+              color={canScrollSubTabsLeft ? '#475569' : '#CBD5E1'}
+            />
+          </TouchableOpacity>
+        ) : null}
+
+        <View style={styles.profileSubTabsScrollWrap}>
+          <ScrollView
+            ref={subTabsScrollRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            bounces={false}
+            nestedScrollEnabled
+            scrollEventThrottle={16}
+            style={styles.profileSubTabsScroll}
+            contentContainerStyle={styles.profileSubTabsContent}
+            onLayout={event => setSubTabViewportWidth(event.nativeEvent.layout.width)}
+            onContentSizeChange={width => setSubTabContentWidth(width)}
+            onScroll={event => setSubTabScrollX(event.nativeEvent.contentOffset.x)}>
+            {(isFamilyDependent
+              ? PROFILE_SUB_TABS.filter(tab => tab.key !== 'addFamilyMember')
+              : PROFILE_SUB_TABS
+            ).map(tab => {
+              const active = activeProfileTab === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
                   style={[
-                    styles.profileSubTabText,
-                    active && styles.profileSubTabTextActive,
+                    styles.profileSubTab,
+                    active && styles.profileSubTabActive,
                   ]}
-                  numberOfLines={1}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                  activeOpacity={0.85}
+                  onPress={() => onProfileSubTabPress(tab.key)}>
+                  <Text
+                    style={[
+                      styles.profileSubTabText,
+                      active && styles.profileSubTabTextActive,
+                    ]}
+                    numberOfLines={1}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {subTabsOverflow ? (
+          <TouchableOpacity
+            style={[
+              styles.subTabArrowButton,
+              !canScrollSubTabsRight && styles.subTabArrowButtonDisabled,
+            ]}
+            activeOpacity={0.75}
+            disabled={!canScrollSubTabsRight}
+            onPress={() => scrollSubTabs('right')}>
+            <Feather
+              name="chevron-right"
+              size={18}
+              color={canScrollSubTabsRight ? '#475569' : '#CBD5E1'}
+            />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
         contentContainerStyle={[
           styles.scrollContent,
           {paddingBottom: insets.bottom + 110},
@@ -278,6 +425,11 @@ export function MyProfileScreen({navigation}: Props) {
 
           <View style={styles.bioTextContainer}>
             <Text style={styles.userNameText}>{user?.fullName ?? '—'}</Text>
+            {isFamilyDependent && guardian ? (
+              <Text style={styles.guardianHintText}>
+                Family account · Managed by {guardian.fullName}
+              </Text>
+            ) : null}
             <Text style={styles.userDemographicsText}>{demographics}</Text>
             <Text style={styles.userMetaRow}>📍 {location}</Text>
             <Text style={styles.userMetaRow}>📞 {user?.phone ?? '—'}</Text>
@@ -285,53 +437,138 @@ export function MyProfileScreen({navigation}: Props) {
           </View>
         </View>
 
-        <ScrollView
+        <FlatList
           horizontal
+          data={summaryCarouselItems}
+          keyExtractor={item => item.id}
           showsHorizontalScrollIndicator={false}
+          nestedScrollEnabled
+          decelerationRate="fast"
+          snapToInterval={SUMMARY_SNAP_INTERVAL}
+          snapToAlignment="start"
+          disableIntervalMomentum
+          bounces={false}
           style={styles.summaryHorizontalScroll}
-          contentContainerStyle={styles.summaryScrollContent}>
-          <View style={styles.summaryMetricsCard}>
-            <View style={styles.summaryCardHeader}>
-              <Feather name="heart" size={16} color="#E11D48" />
-              <Text style={styles.summaryCardTitle}>Medical Conditions</Text>
-              <Feather
-                name="chevron-right"
-                size={16}
-                color="#94A3B8"
-                style={styles.summaryCardArrow}
-              />
-            </View>
-            <View style={styles.chipsRowGrid}>
-              {conditions.map(condition => (
-                <View key={condition} style={styles.tagChip}>
-                  <Text style={styles.tagChipText}>{condition}</Text>
+          contentContainerStyle={styles.summaryScrollContent}
+          getItemLayout={(_, index) => ({
+            length: SUMMARY_SNAP_INTERVAL,
+            offset: SUMMARY_SNAP_INTERVAL * index,
+            index,
+          })}
+          onMomentumScrollEnd={event => {
+            const index = Math.round(
+              event.nativeEvent.contentOffset.x / SUMMARY_SNAP_INTERVAL,
+            );
+            setActiveSummaryIndex(
+              Math.min(Math.max(index, 0), summaryCarouselItems.length - 1),
+            );
+          }}
+          renderItem={({item}) => {
+            if (item.type === 'conditions') {
+              return (
+                <View style={styles.summaryMetricsCard}>
+                  <View style={styles.summaryCardHeader}>
+                    <Feather name="heart" size={16} color="#E11D48" />
+                    <Text style={styles.summaryCardTitle}>Medical Conditions</Text>
+                    <Feather
+                      name="chevron-right"
+                      size={16}
+                      color="#94A3B8"
+                      style={styles.summaryCardArrow}
+                    />
+                  </View>
+                  <View style={styles.chipsRowGrid}>
+                    {conditions.length === 0 ? (
+                      <Text style={styles.summaryEmptyText}>No conditions listed</Text>
+                    ) : (
+                      conditions.map(condition => (
+                        <View key={condition} style={styles.tagChip}>
+                          <Text style={styles.tagChipText}>{condition}</Text>
+                        </View>
+                      ))
+                    )}
+                  </View>
                 </View>
-              ))}
-            </View>
-          </View>
+              );
+            }
 
-          <View style={styles.summaryMetricsCard}>
-            <View style={styles.summaryCardHeader}>
-              <FontAwesome name="medkit" size={16} color="#0D9488" />
-              <Text style={styles.summaryCardTitle}>Current Medications</Text>
-              <Feather
-                name="chevron-right"
-                size={16}
-                color="#94A3B8"
-                style={styles.summaryCardArrow}
+            if (item.type === 'medications') {
+              return (
+                <View style={styles.summaryMetricsCard}>
+                  <View style={styles.summaryCardHeader}>
+                    <FontAwesome name="medkit" size={16} color="#0D9488" />
+                    <Text style={styles.summaryCardTitle}>Current Medications</Text>
+                    <Feather
+                      name="chevron-right"
+                      size={16}
+                      color="#94A3B8"
+                      style={styles.summaryCardArrow}
+                    />
+                  </View>
+                  <Text style={styles.medicationQuantityText}>
+                    {medicationCount} Active Medication
+                    {medicationCount === 1 ? '' : 's'}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.viewDetailsChipLink}
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('MedicineList')}>
+                    <Text style={styles.viewDetailsChipText}>View Details</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            }
+
+            return (
+              <View style={styles.summaryMetricsCard}>
+                <View style={styles.summaryCardHeader}>
+                  <Feather name="activity" size={16} color="#0D9488" />
+                  <Text style={styles.summaryCardTitle}>Health Vitals</Text>
+                  <Feather
+                    name="chevron-right"
+                    size={16}
+                    color="#94A3B8"
+                    style={styles.summaryCardArrow}
+                  />
+                </View>
+                {healthVitals?.bloodPressure ? (
+                  <View style={styles.vitalRow}>
+                    <Text style={styles.vitalLabel}>Blood Pressure</Text>
+                    <Text style={styles.vitalValue}>
+                      {healthVitals.bloodPressure.value}
+                    </Text>
+                  </View>
+                ) : null}
+                {healthVitals?.oxygen ? (
+                  <View style={styles.vitalRow}>
+                    <Text style={styles.vitalLabel}>Oxygen</Text>
+                    <Text style={styles.vitalValue}>{healthVitals.oxygen.value}</Text>
+                  </View>
+                ) : null}
+                <TouchableOpacity
+                  style={styles.viewDetailsChipLink}
+                  activeOpacity={0.8}
+                  onPress={() => navigation.navigate('EditProfile')}>
+                  <Text style={styles.viewDetailsChipText}>Update Vitals</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          }}
+        />
+
+        {summaryCarouselItems.length > 1 ? (
+          <View style={styles.summaryDotsRow}>
+            {summaryCarouselItems.map((item, index) => (
+              <View
+                key={item.id}
+                style={[
+                  styles.summaryDot,
+                  index === activeSummaryIndex && styles.summaryDotActive,
+                ]}
               />
-            </View>
-            <Text style={styles.medicationQuantityText}>
-              {medicationCount} Active Medication{medicationCount === 1 ? '' : 's'}
-            </Text>
-            <TouchableOpacity
-              style={styles.viewDetailsChipLink}
-              activeOpacity={0.8}
-              onPress={() => navigation.navigate('MedicineList')}>
-              <Text style={styles.viewDetailsChipText}>View Details</Text>
-            </TouchableOpacity>
+            ))}
           </View>
-        </ScrollView>
+        ) : null}
 
         <Text style={styles.sectionTitleLabel}>Assigned Doctor</Text>
         <View style={styles.assignedDoctorCard}>
@@ -358,7 +595,10 @@ export function MyProfileScreen({navigation}: Props) {
 
         <View style={styles.sectionTitleHeaderRow}>
           <Text style={styles.sectionTitleLabelNoMargin}>Emergency Contract</Text>
-          <TouchableOpacity style={styles.sectionInlineEditRow} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.sectionInlineEditRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('EditProfile')}>
             <Feather name="edit-2" size={12} color="#64748B" />
             <Text style={styles.sectionInlineEditText}>Edit</Text>
           </TouchableOpacity>
@@ -404,7 +644,10 @@ export function MyProfileScreen({navigation}: Props) {
             </View>
           ))}
 
-          <TouchableOpacity style={styles.addContractButton} activeOpacity={0.9}>
+          <TouchableOpacity
+            style={styles.addContractButton}
+            activeOpacity={0.9}
+            onPress={openEmergencyModal}>
             <Feather
               name="plus"
               size={16}
@@ -417,51 +660,86 @@ export function MyProfileScreen({navigation}: Props) {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.sectionTitleHeaderRow}>
-          <Text style={styles.sectionTitleLabelNoMargin}>Family Members</Text>
-          <TouchableOpacity
-            style={styles.sectionInlineEditRow}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('AddFamilyMember')}>
-            <Feather name="edit-2" size={12} color="#64748B" />
-            <Text style={styles.sectionInlineEditText}>Edit</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.familyCarouselScroll}
-          contentContainerStyle={styles.familyScrollContent}>
-          {familyMembers.map(member => (
-            <View key={member.id} style={styles.familyAvatarCard}>
-              <View style={styles.familyAvatarPlaceholder}>
-                <Text style={styles.familyAvatarInitial}>
-                  {member.name.charAt(0).toUpperCase()}
-                </Text>
-              </View>
-              <View style={styles.familyMemberMeta}>
-                <Text style={styles.familyMemberName} numberOfLines={1}>
-                  {member.name}
-                </Text>
-                <Text style={styles.familyMemberRelation}>
-                  {member.relationship}
-                </Text>
-              </View>
+        {!isFamilyDependent ? (
+          <>
+            <View style={styles.sectionTitleHeaderRow}>
+              <Text style={styles.sectionTitleLabelNoMargin}>Family Members</Text>
+              <TouchableOpacity
+                style={styles.sectionInlineEditRow}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('AddFamilyMember')}>
+                <Feather name="edit-2" size={12} color="#64748B" />
+                <Text style={styles.sectionInlineEditText}>Edit</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-        </ScrollView>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.familyCarouselScroll}
+              contentContainerStyle={styles.familyScrollContent}>
+              {familyMembers.length === 0 ? (
+                <TouchableOpacity
+                  style={styles.familyAvatarCard}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('AddFamilyMember')}>
+                  <View style={styles.familyAddPlaceholder}>
+                    <Feather name="plus" size={20} color="#0D9488" />
+                  </View>
+                  <View style={styles.familyMemberMeta}>
+                    <Text style={styles.familyMemberName}>Add member</Text>
+                    <Text style={styles.familyMemberRelation}>Creates login account</Text>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                familyMembers.map(member => {
+                  const loginId =
+                    member.memberUser?.email ??
+                    member.email ??
+                    member.memberUser?.phone ??
+                    member.phone ??
+                    '—';
+                  return (
+                    <TouchableOpacity
+                      key={member.id}
+                      style={styles.familyAvatarCard}
+                      activeOpacity={0.85}
+                      onPress={() =>
+                        navigation.navigate('FamilyMemberDetail', {
+                          memberId: member.id,
+                          memberName: member.name,
+                        })
+                      }>
+                      <View style={styles.familyAvatarPlaceholder}>
+                        <Text style={styles.familyAvatarInitial}>
+                          {member.name.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                      <View style={styles.familyMemberMeta}>
+                        <Text style={styles.familyMemberName} numberOfLines={1}>
+                          {member.name}
+                        </Text>
+                        <Text style={styles.familyMemberRelation}>
+                          {member.relationship}
+                        </Text>
+                        <Text style={styles.familyMemberLogin} numberOfLines={1}>
+                          {loginId}
+                        </Text>
+                        <Text style={styles.familyTapHint}>Tap for full details</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+          </>
+        ) : null}
 
         <View style={styles.profileActionsRow}>
           <TouchableOpacity
             style={styles.profileActionButton}
             activeOpacity={0.85}
-            onPress={() =>
-              navigation.navigate('ConsultationSummary', {
-                doctorName,
-                specialty,
-              })
-            }>
+            onPress={() => navigation.navigate('MyAppointment')}>
             <Feather name="file-text" size={18} color="#0D9488" />
             <Text style={styles.profileActionButtonText}>
               Consultation Summary
@@ -565,6 +843,22 @@ export function MyProfileScreen({navigation}: Props) {
           <TouchableOpacity
             style={styles.settingsRowItem}
             activeOpacity={0.8}
+            onPress={() => setChangePwVisible(true)}>
+            <View style={[styles.settingsIconWrapper, {backgroundColor: '#EFF6FF'}]}>
+              <Feather name="lock" size={20} color="#2563EB" />
+            </View>
+            <View style={styles.settingsTextContent}>
+              <Text style={styles.settingsTitleText}>Change Password</Text>
+              <Text style={styles.settingsSubText}>Update your account password</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color="#94A3B8" />
+          </TouchableOpacity>
+
+          <View style={styles.settingsInnerSeparatorLine} />
+
+          <TouchableOpacity
+            style={styles.settingsRowItem}
+            activeOpacity={0.8}
             onPress={handleLogout}>
             <View style={[styles.settingsIconWrapper, styles.logoutIconBg]}>
               <Feather name="log-out" size={20} color="#DC2626" />
@@ -591,9 +885,141 @@ export function MyProfileScreen({navigation}: Props) {
           onTabPress={handleTabPress}
         />
       </View>
+
+      <AddEmergencyContactModal
+        visible={emergencyModalVisible}
+        saving={savingEmergency}
+        onClose={() => setEmergencyModalVisible(false)}
+        onSave={saveEmergencyContact}
+      />
+
+      <CustomerChangePasswordModal
+        visible={changePwVisible}
+        onClose={() => setChangePwVisible(false)}
+      />
     </View>
   );
 }
+
+function CustomerChangePasswordModal({visible, onClose}: {visible: boolean; onClose: () => void}) {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!current || !next || !confirm) {
+      Alert.alert('Password', 'All fields are required.');
+      return;
+    }
+    if (next.length < 8) {
+      Alert.alert('Password', 'New password must be at least 8 characters.');
+      return;
+    }
+    if (next !== confirm) {
+      Alert.alert('Password', 'Passwords do not match.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await authApi.changePassword(current, next);
+      Alert.alert('Success', 'Password changed successfully.');
+      setCurrent('');
+      setNext('');
+      setConfirm('');
+      onClose();
+    } catch (err) {
+      Alert.alert('Error', err instanceof ApiError ? err.message : 'Could not change password');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={cpStyles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={cpStyles.modal}>
+          <View style={cpStyles.header}>
+            <Text style={cpStyles.title}>Change Password</Text>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+              <Feather name="x" size={22} color="#1E293B" />
+            </TouchableOpacity>
+          </View>
+          {[
+            {label: 'Current Password', value: current, setter: setCurrent},
+            {label: 'New Password', value: next, setter: setNext},
+            {label: 'Confirm Password', value: confirm, setter: setConfirm},
+          ].map(field => (
+            <View key={field.label} style={cpStyles.field}>
+              <Text style={cpStyles.label}>{field.label}</Text>
+              <TextInput
+                style={cpStyles.input}
+                placeholder="••••••••"
+                placeholderTextColor="#94A3B8"
+                secureTextEntry
+                value={field.value}
+                onChangeText={field.setter}
+              />
+            </View>
+          ))}
+          <TouchableOpacity
+            style={[cpStyles.btn, saving && cpStyles.btnDisabled]}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.85}>
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={cpStyles.btnText}>Save Password</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const cpStyles = StyleSheet.create({
+  overlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
+  modal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 36,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  title: {fontSize: 16, fontWeight: '700', color: '#1E293B'},
+  field: {marginBottom: 14},
+  label: {fontSize: 12, fontWeight: '600', color: '#475569', marginBottom: 6},
+  input: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 14,
+    height: 46,
+    fontSize: 14,
+    color: '#1E293B',
+  },
+  btn: {
+    backgroundColor: '#0D9488',
+    borderRadius: 12,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  btnDisabled: {opacity: 0.6},
+  btnText: {color: '#FFFFFF', fontSize: 15, fontWeight: '700'},
+});
 
 function QuickActionIcon({type}: {type: QuickAction['icon']}) {
   if (type === 'medications') {
@@ -629,29 +1055,50 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   profileSubTabsWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
     minHeight: 56,
+    paddingHorizontal: 6,
+    gap: 4,
+  },
+  subTabArrowButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
+  },
+  subTabArrowButtonDisabled: {
+    opacity: 0.45,
+  },
+  profileSubTabsScrollWrap: {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
   },
   profileSubTabsScroll: {
-    flexGrow: 0,
+    flex: 1,
   },
   profileSubTabsContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
     paddingVertical: 10,
   },
   profileSubTab: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     minHeight: 36,
     borderRadius: 20,
     backgroundColor: '#F1F5F9',
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   profileSubTabActive: {
     backgroundColor: '#408E91',
@@ -737,17 +1184,26 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 4,
   },
+  guardianHintText: {
+    fontSize: 11,
+    color: '#0D9488',
+    fontWeight: '600',
+    marginTop: 2,
+    marginBottom: 2,
+  },
   userMetaRow: {
     fontSize: 11,
     color: '#64748B',
     lineHeight: 15,
   },
   summaryHorizontalScroll: {
-    marginVertical: 8,
+    marginTop: 8,
+    marginBottom: 4,
     marginHorizontal: -16,
   },
   summaryScrollContent: {
     paddingHorizontal: 16,
+    paddingBottom: 4,
   },
   summaryMetricsCard: {
     backgroundColor: '#FFFFFF',
@@ -755,8 +1211,47 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     padding: 14,
-    width: SCREEN_WIDTH * 0.58,
-    marginRight: 12,
+    width: SUMMARY_CARD_WIDTH,
+    marginRight: SUMMARY_CARD_GAP,
+    minHeight: 120,
+  },
+  summaryDotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  summaryDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#CBD5E1',
+  },
+  summaryDotActive: {
+    width: 18,
+    backgroundColor: '#408E91',
+  },
+  summaryEmptyText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  vitalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  vitalLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  vitalValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E293B',
   },
   summaryCardHeader: {
     flexDirection: 'row',
@@ -1051,6 +1546,25 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748B',
     fontWeight: '500',
+  },
+  familyMemberLogin: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  familyTapHint: {
+    fontSize: 9,
+    color: '#0D9488',
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  familyAddPlaceholder: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E6F4F1',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileActionsRow: {
     flexDirection: 'row',

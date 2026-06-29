@@ -8,10 +8,18 @@ export type Appointment = {
   fee: string | number;
   status: string;
   agoraChannel: string | null;
+  consultationType?: 'VIDEO' | 'CHAT' | 'AUDIO';
   doctor: {
     id: string;
     specialty: string;
     user: { fullName: string; avatarUrl: string | null };
+  };
+  patient?: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+    phone?: string | null;
+    email?: string | null;
   };
 };
 

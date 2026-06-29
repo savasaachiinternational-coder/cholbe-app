@@ -20,7 +20,7 @@ export type PatientHomeDashboard = {
   medicationStats: { taken: number; missed: number; remaining: number; total: number };
   healthVitals: {
     bloodPressure: { value: string; checkedAgo: string } | null;
-    oxygen: { value: string } | null;
+    oxygen: { value: string; checkedAgo: string } | null;
   };
   refill: { daysUntil: number; familyMonitoring: boolean };
   schedules: Array<{

@@ -1,5 +1,10 @@
 import {apiRequest} from './client';
 
+export type HealthVitals = {
+  bloodPressure: { value: string; checkedAgo: string } | null;
+  oxygen: { value: string; checkedAgo: string } | null;
+};
+
 export type ProfileOverview = {
   user: {
     id: string;
@@ -26,6 +31,9 @@ export type ProfileOverview = {
   } | null;
   latestReport: { title: string; reportDate: string; provider: string | null } | null;
   defaultAddress: { formattedAddress: string; region: string | null } | null;
+  healthVitals: HealthVitals;
+  isFamilyDependent?: boolean;
+  guardian?: { id: string; fullName: string; email: string | null; phone: string | null } | null;
 };
 
 export type FamilyMember = {
@@ -35,7 +43,20 @@ export type FamilyMember = {
   gender: string | null;
   relationship: string;
   phone: string | null;
+  email?: string | null;
   avatarUrl?: string | null;
+  memberUser?: {
+    id: string;
+    fullName: string;
+    email: string | null;
+    phone: string | null;
+    avatarUrl: string | null;
+    patientProfile?: {
+      age: number | null;
+      gender: string | null;
+      bloodGroup: string | null;
+    } | null;
+  } | null;
 };
 
 export type EmergencyContact = {
@@ -43,6 +64,52 @@ export type EmergencyContact = {
   name: string;
   relation: string;
   phone: string;
+};
+
+export type FamilyMemberDetails = {
+  familyMember: {
+    id: string;
+    name: string;
+    relationship: string;
+    age: number | null;
+    gender: string | null;
+    phone: string | null;
+    email: string | null;
+    avatarUrl: string | null;
+  };
+  user: {
+    id: string;
+    fullName: string;
+    email: string | null;
+    phone: string | null;
+    avatarUrl: string | null;
+    patientProfile: {
+      age: number | null;
+      gender: string | null;
+      bloodGroup: string | null;
+      conditions: string[];
+    } | null;
+  };
+  medicationCount: number;
+  medications: {
+    id: string;
+    medicineName: string;
+    dose: string | null;
+    instruction: string | null;
+    isActive: boolean;
+    times: string[];
+  }[];
+  reports: {
+    id: string;
+    title: string;
+    reportType: string;
+    reportDate: string;
+    provider: string | null;
+  }[];
+  appointments: AppointmentSummary[];
+  nextAppointment: AppointmentSummary | null;
+  healthVitals: HealthVitals;
+  defaultAddress: { formattedAddress: string; region: string | null } | null;
 };
 
 export type AppointmentSummary = {
@@ -78,6 +145,8 @@ export const profileApi = {
     gender?: string;
     relationship: string;
     phone?: string;
+    email?: string;
+    password: string;
     avatarUrl?: string;
   }) {
     return apiRequest('/profile/family-members', {method: 'POST', auth: true, body: payload});
@@ -105,6 +174,12 @@ export const profileApi = {
     return apiRequest(`/profile/family-members/${id}`, {method: 'DELETE', auth: true});
   },
 
+  familyMemberDetails(id: string) {
+    return apiRequest<FamilyMemberDetails>(`/profile/family-members/${id}/details`, {
+      auth: true,
+    });
+  },
+
   removeEmergencyContact(id: string) {
     return apiRequest(`/profile/emergency-contacts/${id}`, {method: 'DELETE', auth: true});
   },
@@ -112,6 +187,14 @@ export const profileApi = {
   addEmergencyContact(payload: { name: string; relation: string; phone: string }) {
     return apiRequest('/profile/emergency-contacts', {
       method: 'POST',
+      auth: true,
+      body: payload,
+    });
+  },
+
+  updateVitals(payload: { bloodPressure?: string; oxygen?: string }) {
+    return apiRequest<HealthVitals>('/profile/vitals', {
+      method: 'PATCH',
       auth: true,
       body: payload,
     });

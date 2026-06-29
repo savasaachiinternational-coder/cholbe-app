@@ -66,9 +66,6 @@ export function MyAppointmentScreen({navigation}: Props) {
   );
 
   const listForTab = activeTab === 'upcoming' ? upcoming : past;
-  const appointment = listForTab[0];
-  const doctorName = appointment?.doctorName ?? '—';
-  const specialty = appointment?.specialty ?? '—';
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -90,17 +87,50 @@ export function MyAppointmentScreen({navigation}: Props) {
     navigation.navigate('Home');
   };
 
-  const openConsultationSummary = () => {
-    navigation.navigate('ConsultationSummary', {doctorName, specialty});
+  const openConsultationSummary = (appt: AppointmentDetail) => {
+    navigation.navigate('ConsultationSummary', {
+      appointmentId: appt.id,
+      doctorName: appt.doctorName,
+      specialty: appt.specialty,
+    });
   };
 
-  const joinCall = () => {
-    if (!appointment) return;
+  const joinConsultation = async (appt: AppointmentDetail) => {
+    if (appt.consultationTypeRaw === 'CHAT') {
+      await appointmentsApi.updateStatus(appt.id, 'in_progress').catch(() => undefined);
+      navigation.navigate('ConsultationChat', {
+        appointmentId: appt.id,
+        doctorName: appt.doctorName,
+        specialty: appt.specialty,
+      });
+      return;
+    }
     navigation.navigate('WaitingRoom', {
-      appointmentId: appointment.id,
-      doctorName: appointment.doctorName,
-      specialty: appointment.specialty,
+      appointmentId: appt.id,
+      doctorName: appt.doctorName,
+      specialty: appt.specialty,
     });
+  };
+
+  const cancelAppointment = (appt: AppointmentDetail) => {
+    Alert.alert('Cancel appointment', `Cancel your visit with ${appt.doctorName}?`, [
+      {text: 'Keep', style: 'cancel'},
+      {
+        text: 'Cancel visit',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await appointmentsApi.updateStatus(appt.id, 'cancelled');
+            await loadAppointments();
+          } catch (err) {
+            Alert.alert(
+              'Cancel failed',
+              err instanceof ApiError ? err.message : 'Could not cancel appointment',
+            );
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -158,7 +188,7 @@ export function MyAppointmentScreen({navigation}: Props) {
 
         {loading ? (
           <ActivityIndicator size="large" color="#0D9488" style={{marginTop: 40}} />
-        ) : !appointment ? (
+        ) : listForTab.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
               No {activeTab} appointments yet.
@@ -170,42 +200,38 @@ export function MyAppointmentScreen({navigation}: Props) {
             </TouchableOpacity>
           </View>
         ) : (
-          <>
-            {activeTab === 'past' && (
-              <View style={styles.statusRibbonContainer}>
-                <Feather
-                  name="check-circle"
-                  size={18}
-                  color="#0D9488"
-                  style={styles.ribbonIconMargin}
+          listForTab.map(appointment => (
+            <View key={appointment.id} style={styles.appointmentListItem}>
+              {activeTab === 'past' && appointment.status.toLowerCase() === 'completed' && (
+                <View style={styles.statusRibbonContainer}>
+                  <Feather
+                    name="check-circle"
+                    size={18}
+                    color="#0D9488"
+                    style={styles.ribbonIconMargin}
+                  />
+                  <Text style={styles.statusRibbonText}>
+                    Your consultation with {appointment.doctorName} is complete
+                  </Text>
+                </View>
+              )}
+
+              <AppointmentMainCard
+                appointment={appointment}
+                isUpcoming={activeTab === 'upcoming'}
+                onJoinCall={() => void joinConsultation(appointment)}
+                onViewSummary={() => openConsultationSummary(appointment)}
+                onCancel={() => cancelAppointment(appointment)}
+              />
+
+              {activeTab === 'past' && appointment.status.toLowerCase() === 'completed' && (
+                <ReminderAdvisoryCard
+                  appointment={appointment}
+                  onSubmitFeedback={() => openConsultationSummary(appointment)}
                 />
-                <Text style={styles.statusRibbonText}>
-                  You consultation with {doctorName} is complete
-                </Text>
-              </View>
-            )}
-
-            <AppointmentMainCard
-              appointment={appointment}
-              isUpcoming={activeTab === 'upcoming'}
-              onJoinCall={joinCall}
-              onReschedule={() =>
-                navigation.navigate('BookVideoCall', {
-                  doctorId: appointment.doctorId,
-                  doctorName: appointment.doctorName,
-                  specialty: appointment.specialty,
-                  consultationFee: appointment.fee,
-                })
-              }
-              onViewSummary={openConsultationSummary}
-            />
-
-            <ReminderAdvisoryCard
-              appointment={appointment}
-              isUpcoming={activeTab === 'upcoming'}
-              onSubmitFeedback={openConsultationSummary}
-            />
-          </>
+              )}
+            </View>
+          ))
         )}
       </ScrollView>
 
@@ -230,15 +256,25 @@ function AppointmentMainCard({
   appointment,
   isUpcoming,
   onJoinCall,
-  onReschedule,
   onViewSummary,
+  onCancel,
 }: {
   appointment: AppointmentDetail;
   isUpcoming: boolean;
   onJoinCall: () => void;
-  onReschedule: () => void;
   onViewSummary: () => void;
+  onCancel: () => void;
 }) {
+  const joinLabel =
+    appointment.consultationTypeRaw === 'CHAT'
+      ? appointment.status.toLowerCase() === 'in_progress'
+        ? 'Continue Chat'
+        : 'Open Chat'
+      : appointment.status.toLowerCase() === 'in_progress'
+        ? 'Rejoin Call'
+        : 'Join Call';
+  const joinIcon = appointment.consultationTypeRaw === 'CHAT' ? 'message-circle' : 'video';
+
   return (
     <View style={styles.appointmentMainCard}>
       <View style={styles.doctorProfileBlockRow}>
@@ -294,10 +330,8 @@ function AppointmentMainCard({
             <TouchableOpacity
               style={styles.rescheduleSecondaryButton}
               activeOpacity={0.85}
-              onPress={onReschedule}>
-              <Text style={styles.rescheduleSecondaryButtonText}>
-                Reschedule
-              </Text>
+              onPress={onCancel}>
+              <Text style={styles.rescheduleSecondaryButtonText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -305,12 +339,12 @@ function AppointmentMainCard({
               activeOpacity={0.9}
               onPress={onJoinCall}>
               <Feather
-                name="video"
+                name={joinIcon}
                 size={16}
                 color="#FFFFFF"
                 style={styles.videoIconMargin}
               />
-              <Text style={styles.joinCallPrimaryButtonText}>Join Call</Text>
+              <Text style={styles.joinCallPrimaryButtonText}>{joinLabel}</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -330,20 +364,12 @@ function AppointmentMainCard({
 
 function ReminderAdvisoryCard({
   appointment,
-  isUpcoming,
   onSubmitFeedback,
 }: {
   appointment: AppointmentDetail;
-  isUpcoming: boolean;
   onSubmitFeedback: () => void;
 }) {
-  const reminderBody = isUpcoming ? (
-    <>
-      <Text style={styles.reminderBoldHeadingText}>Reminder: </Text>
-      Your video Consultation with {appointment.doctorName} starts in{' '}
-      {appointment.reminderMinutes} minutes . Please be ready.
-    </>
-  ) : (
+  const reminderBody = (
     <>
       <Text style={styles.reminderBoldHeadingText}>Feedback: </Text>
       Share how your consultation with {appointment.doctorName} went.
@@ -351,7 +377,7 @@ function ReminderAdvisoryCard({
   );
 
   return (
-    <View style={styles.reminderAdvisoryCard}>
+    <View style={[styles.reminderAdvisoryCard, styles.reminderCardSpaced]}>
       <View style={styles.reminderCardContentInnerRow}>
         <View style={styles.bellIconWrapperContainer}>
           <Feather name="bell" size={20} color="#FBBF24" />
@@ -459,7 +485,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.02,
     shadowRadius: 3,
     elevation: 1,
+  },
+  appointmentListItem: {
     marginBottom: 16,
+  },
+  reminderCardSpaced: {
+    marginTop: 12,
   },
   doctorProfileBlockRow: {
     flexDirection: 'row',

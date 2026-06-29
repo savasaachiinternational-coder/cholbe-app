@@ -23,6 +23,7 @@ import {
   ORDER_STATUS_COLOR,
   ORDER_STATUS_LABEL,
 } from '../../utils/pharmacyHelpers';
+import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderListHistory'>;
 
@@ -68,9 +69,11 @@ export function OrderListHistoryScreen({navigation}: Props) {
           <Text style={styles.logoTextSub}>PHARMACY</Text>
         </View>
 
-        <TouchableOpacity style={styles.headerIconButton} onPress={() => navigation.navigate('Notifications')}>
-          <Feather name="bell" size={24} color="#333333" />
-        </TouchableOpacity>
+        <NotificationBell
+          style={styles.headerIconButton}
+          color="#333333"
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       <View style={styles.titleContainer}>

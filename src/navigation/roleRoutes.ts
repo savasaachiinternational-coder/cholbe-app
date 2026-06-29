@@ -14,6 +14,7 @@ export function getHomeRouteForRole(
     case 'ADMIN':
       return 'AHome';
     case 'DOCTOR':
+      return 'DHome';
     case 'CUSTOMER':
     default:
       return 'Home';
