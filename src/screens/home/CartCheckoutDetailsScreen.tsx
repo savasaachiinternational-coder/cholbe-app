@@ -16,7 +16,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
-import { GOOGLE_MAPS_API_KEY } from '../../config/googleMaps';
+import { StaticMapImage } from '../../components/StaticMapImage';
 import type { RootStackParamList } from '../../navigation/types';
 import { addressesApi, type Address } from '../../api/addresses';
 import { authApi } from '../../api/auth';
@@ -38,10 +38,6 @@ const VARIANTS: { key: VariantKey; label: string }[] = [
 
 const DEFAULT_LAT = 23.874;
 const DEFAULT_LNG = 90.3695;
-
-function buildMapPreviewUrl(lat: number, lng: number) {
-  return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=14&size=600x240&scale=2&markers=color:red%7C${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
-}
 
 function parseRegion(region: string | null | undefined) {
   const parts = (region ?? 'Dhaka, Dhaka North, Uttara Sector 12')
@@ -509,8 +505,9 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
             activeOpacity={0.9}
             onPress={openAddressMap}
           >
-            <Image
-              source={{ uri: buildMapPreviewUrl(latitude, longitude) }}
+            <StaticMapImage
+              latitude={latitude}
+              longitude={longitude}
               style={styles.mapPreviewImage}
             />
             <View style={styles.mapPreviewPin}>

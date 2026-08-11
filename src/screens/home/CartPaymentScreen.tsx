@@ -2,6 +2,7 @@ import {useCallback, useEffect, useState, type ReactNode} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -21,6 +22,7 @@ import {cartApi} from '../../api/cart';
 import {ordersApi, uiPaymentToApi} from '../../api/orders';
 import {checkoutSession} from '../../checkout/checkoutSession';
 import {ApiError} from '../../api/client';
+import {LEGAL_URLS} from '../../config/legal';
 import {formatBdt} from '../../utils/pharmacyHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CartPayment'>;
@@ -227,8 +229,13 @@ export function CartPaymentScreen({navigation, route}: Props) {
         </View>
 
         <Text style={styles.termsAgreementText}>
-          By completing this order , I agree to all{' '}
-          <Text style={styles.underlineText}>terms & condition .</Text>
+          By completing this order, I agree to all{' '}
+          <Text
+            style={styles.underlineText}
+            onPress={() => void Linking.openURL(LEGAL_URLS.terms)}>
+            terms & conditions
+          </Text>
+          .
         </Text>
       </ScrollView>
 

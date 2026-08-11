@@ -35,6 +35,7 @@ import {profileApi, type ProfileOverview} from '../../api/profile';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
 import {performLogout} from '../../auth/sessionControl';
+import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 import {AddEmergencyContactModal} from '../../components/AddEmergencyContactModal';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -232,6 +233,10 @@ export function MyProfileScreen({navigation}: Props) {
         },
       },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    confirmAndDeleteAccount();
   };
 
   if (loading && !overview) {
@@ -866,6 +871,24 @@ export function MyProfileScreen({navigation}: Props) {
             <View style={styles.settingsTextContent}>
               <Text style={styles.settingsTitleTextLogout}>Logout</Text>
               <Text style={styles.settingsSubText}>Sign out of your account</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color="#94A3B8" />
+          </TouchableOpacity>
+
+          <View style={styles.settingsInnerSeparatorLine} />
+
+          <TouchableOpacity
+            style={styles.settingsRowItem}
+            activeOpacity={0.8}
+            onPress={handleDeleteAccount}>
+            <View style={[styles.settingsIconWrapper, styles.logoutIconBg]}>
+              <Feather name="trash-2" size={20} color="#DC2626" />
+            </View>
+            <View style={styles.settingsTextContent}>
+              <Text style={styles.settingsTitleTextLogout}>Delete account</Text>
+              <Text style={styles.settingsSubText}>
+                Permanently remove your data from Cholbe
+              </Text>
             </View>
             <Feather name="chevron-right" size={18} color="#94A3B8" />
           </TouchableOpacity>

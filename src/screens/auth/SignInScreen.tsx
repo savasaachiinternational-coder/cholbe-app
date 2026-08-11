@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -15,10 +16,12 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+// TODO(release): restore Apple / Google / Facebook login
+// import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import {LEGAL_URLS} from '../../config/legal';
 
 const SIGN_IN_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -174,6 +177,7 @@ export function SignInScreen({
             </Text>
           </TouchableOpacity>
 
+          {/* TODO(release): restore social login (Apple / Google / Facebook)
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>Or</Text>
@@ -193,8 +197,12 @@ export function SignInScreen({
               <FontAwesome name="facebook" size={24} color="#1877F2" />
             </TouchableOpacity>
           </View>
+          */}
 
-          <View style={styles.privacyContainer}>
+          <TouchableOpacity
+            style={styles.privacyContainer}
+            activeOpacity={0.7}
+            onPress={() => void Linking.openURL(LEGAL_URLS.privacy)}>
             <Feather
               name="shield"
               size={14}
@@ -202,9 +210,9 @@ export function SignInScreen({
               style={styles.privacyIcon}
             />
             <Text style={styles.privacyText}>
-              Your data is private & encrypted
+              Your data is private & encrypted · Privacy Policy
             </Text>
-          </View>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

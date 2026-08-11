@@ -1,4 +1,4 @@
-import {GOOGLE_MAPS_API_KEY} from '../config/googleMaps';
+import {mapsApi} from '../api/maps';
 
 export type GeocodedAddress = {
   formattedAddress: string;
@@ -131,36 +131,17 @@ export function regionFallbackAddress(region?: RegionDraft): GeocodedAddress {
   };
 }
 
+/** Geocoding runs through the backend so the Maps key stays off the device. */
 async function reverseGeocodeWithGoogle(
   latitude: number,
   longitude: number,
 ): Promise<GeocodedAddress | null> {
-  if (
-    !GOOGLE_MAPS_API_KEY ||
-    GOOGLE_MAPS_API_KEY === 'your_google_maps_api_key_here'
-  ) {
-    return null;
-  }
-
   try {
-    const url =
-      `https://maps.googleapis.com/maps/api/geocode/json` +
-      `?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
-    const response = await fetch(url);
-    const data = (await response.json()) as {
-      status: string;
-      results?: Array<{
-        formatted_address: string;
-        address_components: Array<{long_name: string; types: string[]}>;
-      }>;
-    };
-
-    if (data.status !== 'OK' || !data.results?.length) {
+    const result = await mapsApi.reverseGeocode(latitude, longitude);
+    if (!result) {
       return null;
     }
-
-    const result = data.results[0];
-    return buildFromComponents(result.address_components, result.formatted_address);
+    return buildFromComponents(result.components, result.formattedAddress);
   } catch {
     return null;
   }

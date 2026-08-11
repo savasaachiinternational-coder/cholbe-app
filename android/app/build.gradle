@@ -58,7 +58,7 @@ react {
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -76,9 +76,35 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 def secretsPropertiesFile = rootProject.file("secrets.properties")
 def secretsProperties = new Properties()
 if (secretsPropertiesFile.exists()) {
-    secretsProperties.load(new FileInputStream(secretsPropertiesFile))
+    secretsPropertiesFile.withInputStream { secretsProperties.load(it) }
 }
 def mapsApiKey = secretsProperties.getProperty("GOOGLE_MAPS_API_KEY", "")
+
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasUploadKeystore = false
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+    hasUploadKeystore = file(keystoreProperties.getProperty("CHOLBE_UPLOAD_STORE_FILE", "")).exists()
+}
+
+def isBuildingRelease = gradle.startParameter.taskNames.any {
+    it.toLowerCase().contains("release")
+}
+if (isBuildingRelease && !hasUploadKeystore) {
+    throw new GradleException(
+        "Release build requires an upload keystore.\n" +
+        "Copy android/keystore.properties.example to android/keystore.properties, " +
+        "fill in the credentials, and place the .keystore file in android/app/.\n" +
+        "Never sign a Play Store release with debug.keystore."
+    )
+}
+if (isBuildingRelease && mapsApiKey.isEmpty()) {
+    logger.warn(
+        "WARNING: GOOGLE_MAPS_API_KEY is empty. Maps and geocoding will fail at runtime. " +
+        "Set it in android/secrets.properties."
+    )
+}
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -90,12 +116,10 @@ android {
         applicationId "com.cholbe"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 6
+        versionName "1.0.5"
         manifestPlaceholders = [usesCleartextTraffic: "true"]
-        if (!mapsApiKey.isEmpty()) {
-            resValue "string", "google_maps_api_key", mapsApiKey
-        }
+        resValue "string", "google_maps_api_key", mapsApiKey
     }
     signingConfigs {
         debug {
@@ -104,6 +128,14 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (hasUploadKeystore) {
+            release {
+                storeFile file(keystoreProperties.getProperty("CHOLBE_UPLOAD_STORE_FILE"))
+                storePassword keystoreProperties.getProperty("CHOLBE_UPLOAD_STORE_PASSWORD")
+                keyAlias keystoreProperties.getProperty("CHOLBE_UPLOAD_KEY_ALIAS")
+                keyPassword keystoreProperties.getProperty("CHOLBE_UPLOAD_KEY_PASSWORD")
+            }
+        }
     }
     buildTypes {
         debug {
@@ -111,9 +143,7 @@ android {
             manifestPlaceholders = [usesCleartextTraffic: "true"]
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig hasUploadKeystore ? signingConfigs.release : null
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             manifestPlaceholders = [usesCleartextTraffic: "false"]
@@ -130,4 +160,11 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+}
+
+// Cholbe uses Agora for video calls only — not screen sharing.
+// Excluding this removes FOREGROUND_SERVICE_MEDIA_PROJECTION from the release manifest
+// so Play Console does not require a media-projection demo video.
+configurations.configureEach {
+    exclude group: "io.agora.rtc", module: "full-screen-sharing"
 }

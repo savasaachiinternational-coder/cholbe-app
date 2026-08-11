@@ -2,7 +2,6 @@ import {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +20,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {NotificationBell} from '../../components/NotificationBell';
+import {ProductImage} from '../../components/ProductImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AInventory'>;
 
@@ -168,14 +168,7 @@ function StockDonutChart({segments}: {segments: StockSegment[]}) {
 function LowStockRow({item}: {item: LowStockItem}) {
   return (
     <View style={styles.alertCard}>
-      <Image
-        source={{
-          uri:
-            item.imageUrl ??
-            'https://via.placeholder.com/60/ECEFF3/000000?text=Medicine',
-        }}
-        style={styles.alertItemImage}
-      />
+      <ProductImage imageUrl={item.imageUrl} style={styles.alertItemImage} />
       <View style={styles.alertMetaColumn}>
         <Text style={styles.alertItemName}>{item.name}</Text>
         <Text style={styles.alertItemType}>{item.type}</Text>

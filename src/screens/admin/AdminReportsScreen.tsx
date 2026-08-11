@@ -2,7 +2,6 @@ import {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +19,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {formatBdt} from '../../utils/pharmacyHelpers';
 import {NotificationBell} from '../../components/NotificationBell';
+import {ProductImage} from '../../components/ProductImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AReports'>;
 
@@ -78,10 +78,7 @@ function SalesBarChart({barData}: {barData: {height: number; isSolid: boolean}[]
 function MedicineRow({item, isLast}: {item: MedicineItem; isLast: boolean}) {
   return (
     <View style={[styles.medicineItemRow, isLast && styles.medicineItemRowLast]}>
-      <Image
-        source={{uri: 'https://via.placeholder.com/60/ECEFF3/000000?text=Medicine'}}
-        style={styles.medicineImage}
-      />
+      <ProductImage style={styles.medicineImage} />
       <Text style={styles.medicineNameText}>{item.name}</Text>
       <Text style={styles.medicinePriceText}>tk {item.price}</Text>
     </View>

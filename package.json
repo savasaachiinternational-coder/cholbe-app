@@ -1,6 +1,6 @@
 {
   "name": "cholbe",
-  "version": "0.0.1",
+  "version": "1.0.5",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
+    "postinstall": "bash scripts/patch-agora-no-screenshare.sh",
     "gradle:stop": "cd android && ./gradlew --stop",
     "clean:android": "bash scripts/android-clean.sh",
     "free:disk": "bash scripts/android-free-disk.sh",
@@ -23,10 +24,12 @@
     "@react-native/new-app-screen": "0.85.3",
     "@react-navigation/native": "^7.2.4",
     "@react-navigation/native-stack": "^7.15.1",
+    "@sentry/react-native": "^8.20.0",
     "react": "19.2.3",
     "react-native": "0.85.3",
     "react-native-agora": "^4.6.2",
     "react-native-image-picker": "^8.2.1",
+    "react-native-keychain": "^10.0.0",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-maps": "^1.27.2",
     "react-native-nitro-modules": "^0.35.10",

@@ -11,6 +11,7 @@ import {
 } from 'react-native-safe-area-context';
 import {hasSession, getStoredUser, clearSession} from './src/api/tokenStorage';
 import {setLogoutHandler} from './src/auth/sessionControl';
+import {wrapWithCrashReporting} from './src/monitoring/sentry';
 import {getHomeRouteForRole} from './src/navigation/roleRoutes';
 import type {RootStackParamList} from './src/navigation/types';
 import {CreateHealthProfileScreen} from './src/screens/auth/CreateHealthProfileScreen';
@@ -268,4 +269,4 @@ function App() {
   );
 }
 
-export default App;
+export default wrapWithCrashReporting(App);

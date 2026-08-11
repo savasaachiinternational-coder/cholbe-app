@@ -2,7 +2,6 @@ import {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -23,6 +22,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {ADMIN_MEDICINE_FILTERS, type AdminMedicineFilter} from './adminNav';
 import {NotificationBell} from '../../components/NotificationBell';
+import {ProductImage} from '../../components/ProductImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AMedicines'>;
 
@@ -61,12 +61,7 @@ function MedicineCard({
 }) {
   return (
     <TouchableOpacity style={styles.medicineCard} onPress={onPress} activeOpacity={0.85}>
-      <Image
-        source={{
-          uri: item.imageUrl ?? 'https://via.placeholder.com/80x60/ECEFF3/000000?text=Medicine',
-        }}
-        style={styles.medicineImage}
-      />
+      <ProductImage imageUrl={item.imageUrl} style={styles.medicineImage} />
       <View style={styles.metaInfoColumn}>
         <Text style={styles.medicineNameText}>{item.name}</Text>
         <Text style={styles.medicineTypeText}>{item.category ?? item.brand ?? '—'}</Text>
@@ -122,12 +117,8 @@ function MedicineDetailModal({
             </TouchableOpacity>
           </View>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Image
-              source={{
-                uri:
-                  medicine.imageUrl ??
-                  'https://via.placeholder.com/200x120/ECEFF3/000000?text=Medicine',
-              }}
+            <ProductImage
+              imageUrl={medicine.imageUrl}
               style={styles.detailImage}
               resizeMode="contain"
             />

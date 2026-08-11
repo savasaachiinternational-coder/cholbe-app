@@ -112,6 +112,13 @@ export const authApi = {
     });
   },
 
+  async deleteAccount() {
+    return apiRequest<{deleted: boolean; message: string}>('/users/me', {
+      method: 'DELETE',
+      auth: true,
+    });
+  },
+
   async getAllUsers(params?: {role?: string; status?: string}) {
     const qs = new URLSearchParams();
     if (params?.role) qs.set('role', params.role);

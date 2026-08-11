@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,6 +22,7 @@ import {AdminBottomNav} from './AdminBottomNav';
 import {AdminMenuModal} from './AdminMenuModal';
 import {formatBdt} from '../../utils/pharmacyHelpers';
 import {NotificationBell} from '../../components/NotificationBell';
+import {AvatarImage} from '../../components/AvatarImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AHome'>;
 
@@ -225,10 +225,7 @@ export function AdminHomeScreen({navigation}: Props) {
           {paddingBottom: 95 + insets.bottom},
         ]}>
         <View style={styles.welcomeContainer}>
-          <Image
-            source={{uri: 'https://via.placeholder.com/60/E2E8F0/000000?text=Admin'}}
-            style={styles.adminAvatar}
-          />
+          <AvatarImage style={styles.adminAvatar} />
           <View style={styles.welcomeTextColumn}>
             <Text style={styles.welcomeTitle}>
               {(() => {

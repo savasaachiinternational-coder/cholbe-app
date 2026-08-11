@@ -2,7 +2,6 @@ import {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +20,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {NotificationBell} from '../../components/NotificationBell';
+import {AvatarImage} from '../../components/AvatarImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'APayments'>;
 
@@ -85,10 +85,7 @@ function InvoiceCard({item, isLast}: {item: InvoiceRecord; isLast: boolean}) {
       </View>
 
       <View style={styles.cardBodyRow}>
-        <Image
-          source={{uri: 'https://via.placeholder.com/52/E2E8F0/000000?text=User'}}
-          style={styles.userAvatar}
-        />
+        <AvatarImage style={styles.userAvatar} />
         <View style={styles.detailsColumn}>
           <Text style={styles.userNameText}>{item.name}</Text>
           <Text style={styles.dateText}>{item.date}</Text>

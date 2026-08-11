@@ -27,9 +27,15 @@ import {ApiError} from '../../api/client';
 import {uploadFile} from '../../api/uploads';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
-import {formatBdt, productImageUrl} from '../../utils/pharmacyHelpers';
+import {formatBdt} from '../../utils/pharmacyHelpers';
+import {
+  FALLBACK_BANNER,
+  resolveImageSource,
+} from '../../utils/imageFallbacks';
+import {AvatarImage} from '../../components/AvatarImage';
 import {VendorBottomNav} from './VendorBottomNav';
 import {performLogout} from '../../auth/sessionControl';
+import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VProfile'>;
 type ExpandedSection = 'store' | 'wallet' | 'vault' | null;
@@ -474,9 +480,7 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
     setExpandedSection(current => (current === section ? null : section));
   };
 
-  const bannerUri = vendor?.bannerUrl
-    ? productImageUrl(vendor.bannerUrl)
-    : 'https://via.placeholder.com/350x150/A7F3D0/000000?text=Pharmacy+Interior';
+  const bannerSource = resolveImageSource(vendor?.bannerUrl, FALLBACK_BANNER);
 
   return (
     <View style={styles.container}>
@@ -512,7 +516,7 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
             {paddingBottom: 85 + insets.bottom},
           ]}>
           <View style={styles.storeMainCard}>
-            <Image source={{uri: bannerUri}} style={styles.storeBannerImage} />
+            <Image source={bannerSource} style={styles.storeBannerImage} />
             <View style={styles.storeTextInfoBlock}>
               <View style={styles.storeTitleRow}>
                 <Text style={styles.storeNameText}>{vendor?.pharmacyName ?? '—'}</Text>
@@ -533,10 +537,7 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
           <View style={styles.pharmacistCard}>
             <Text style={styles.pharmacistSectionLabel}>Licensed Pharmacist</Text>
             <View style={styles.pharmacistProfileRow}>
-              <Image
-                source={{uri: 'https://via.placeholder.com/50/CBD5E1/000000?text=Doctor'}}
-                style={styles.pharmacistAvatar}
-              />
+              <AvatarImage style={styles.pharmacistAvatar} />
               <View style={styles.pharmacistDetails}>
                 <Text style={styles.pharmacistName}>{vendor?.user?.fullName ?? '—'}</Text>
                 <Text style={styles.pharmacistReg}>
@@ -847,6 +848,13 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
             }>
             <Feather name="log-out" size={18} color="#E26D6D" />
             <Text style={styles.logoutBtnText}>Logout</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteAccountBtn}
+            activeOpacity={0.85}
+            onPress={confirmAndDeleteAccount}>
+            <Feather name="trash-2" size={18} color="#E26D6D" />
+            <Text style={styles.logoutBtnText}>Delete account</Text>
           </TouchableOpacity>
         </ScrollView>
       )}
@@ -1486,6 +1494,20 @@ const styles = StyleSheet.create({
     height: 48,
     marginHorizontal: 16,
     marginTop: 18,
+    marginBottom: 8,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  deleteAccountBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#FCECEC',
+    borderWidth: 1,
+    borderColor: '#F9D5D5',
+    borderRadius: 12,
+    height: 48,
+    marginHorizontal: 16,
+    marginTop: 0,
     marginBottom: 8,
     alignItems: 'center',
     paddingHorizontal: 16,

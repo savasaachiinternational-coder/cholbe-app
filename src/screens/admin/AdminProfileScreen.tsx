@@ -2,7 +2,6 @@ import {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -24,7 +23,9 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {performLogout} from '../../auth/sessionControl';
+import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 import {NotificationBell} from '../../components/NotificationBell';
+import {AvatarImage} from '../../components/AvatarImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AProfile'>;
 
@@ -267,14 +268,7 @@ export function AdminProfileScreen({navigation}: Props) {
             <ActivityIndicator color="#4E929D" style={styles.profileLoader} />
           ) : (
             <>
-              <Image
-                source={{
-                  uri:
-                    admin?.avatarUrl ??
-                    'https://via.placeholder.com/60/E2E8F0/000000?text=Admin',
-                }}
-                style={styles.adminAvatar}
-              />
+              <AvatarImage uri={admin?.avatarUrl} style={styles.adminAvatar} />
               <View style={styles.adminMetaDetails}>
                 <Text style={styles.adminNameText}>{admin?.fullName ?? 'Admin'}</Text>
                 <Text style={styles.adminRoleText}>
@@ -299,6 +293,13 @@ export function AdminProfileScreen({navigation}: Props) {
         <TouchableOpacity style={styles.logoutButtonBox} activeOpacity={0.8} onPress={handleLogout}>
           <Feather name="log-out" size={18} color="#E26D6D" />
           <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteAccountButtonBox}
+          activeOpacity={0.8}
+          onPress={confirmAndDeleteAccount}>
+          <Feather name="trash-2" size={18} color="#E26D6D" />
+          <Text style={styles.logoutButtonText}>Delete account</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -414,6 +415,19 @@ const styles = StyleSheet.create({
     height: 48,
     marginHorizontal: 16,
     marginTop: 18,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  deleteAccountButtonBox: {
+    flexDirection: 'row',
+    backgroundColor: '#FCECEC',
+    borderWidth: 1,
+    borderColor: '#F9D5D5',
+    borderRadius: 12,
+    height: 48,
+    marginHorizontal: 16,
+    marginTop: 10,
     alignItems: 'center',
     paddingHorizontal: 16,
     gap: 10,

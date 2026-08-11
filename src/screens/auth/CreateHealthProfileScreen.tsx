@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -15,10 +16,12 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+// TODO(release): restore Apple / Google / Facebook login
+// import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import {LEGAL_URLS} from '../../config/legal';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -181,25 +184,38 @@ export function CreateHealthProfileScreen({
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                activeOpacity={0.8}
-                onPress={() => setAgreeToTerms(prev => !prev)}>
-                <View
-                  style={[
-                    styles.checkbox,
-                    agreeToTerms && styles.checkboxChecked,
-                  ]}>
-                  {agreeToTerms && (
-                    <Feather name="check" size={12} color="#FFFFFF" />
-                  )}
-                </View>
+              <View style={styles.checkboxContainer}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setAgreeToTerms(prev => !prev)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{checked: agreeToTerms}}>
+                  <View
+                    style={[
+                      styles.checkbox,
+                      agreeToTerms && styles.checkboxChecked,
+                    ]}>
+                    {agreeToTerms && (
+                      <Feather name="check" size={12} color="#FFFFFF" />
+                    )}
+                  </View>
+                </TouchableOpacity>
                 <Text style={styles.checkboxLabel}>
                   By signing up, you agree to our{' '}
-                  <Text style={styles.linkText}>Terms</Text> &{' '}
-                  <Text style={styles.linkText}>Privacy Policy</Text>.
+                  <Text
+                    style={styles.linkText}
+                    onPress={() => void Linking.openURL(LEGAL_URLS.terms)}>
+                    Terms
+                  </Text>{' '}
+                  &{' '}
+                  <Text
+                    style={styles.linkText}
+                    onPress={() => void Linking.openURL(LEGAL_URLS.privacy)}>
+                    Privacy Policy
+                  </Text>
+                  .
                 </Text>
-              </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.footerSection}>
@@ -215,6 +231,7 @@ export function CreateHealthProfileScreen({
                 )}
               </TouchableOpacity>
 
+              {/* TODO(release): restore social login (Apple / Google / Facebook)
               <View style={styles.dividerRow}>
                 <View style={styles.dividerLine} />
                 <Text style={styles.dividerText}>Or</Text>
@@ -234,6 +251,7 @@ export function CreateHealthProfileScreen({
                   <FontAwesome name="facebook" size={24} color="#1877F2" />
                 </TouchableOpacity>
               </View>
+              */}
 
               <TouchableOpacity
                 style={styles.loginRedirectButton}

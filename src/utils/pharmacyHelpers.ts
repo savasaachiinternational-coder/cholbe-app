@@ -1,8 +1,11 @@
 import {ImageSourcePropType} from 'react-native';
-import {API_ORIGIN} from '../config/api';
 import type {PharmacyProduct} from '../api/pharmacy';
+import {
+  FALLBACK_PRODUCT,
+  resolveImageSource,
+} from './imageFallbacks';
 
-export const DEFAULT_PRODUCT_IMAGE = require('../assets/b2.png');
+export const DEFAULT_PRODUCT_IMAGE = FALLBACK_PRODUCT;
 
 export function formatBdt(amount: number | string) {
   const n = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -17,24 +20,7 @@ export function formatBdt(amount: number | string) {
 }
 
 export function getProductImageSource(url?: string | null): ImageSourcePropType {
-  const trimmed = url?.trim();
-  if (!trimmed || isUnreliableImageUrl(trimmed)) {
-    return DEFAULT_PRODUCT_IMAGE;
-  }
-  if (trimmed.startsWith('http')) {
-    return {uri: trimmed};
-  }
-  return {uri: `${API_ORIGIN}${trimmed}`};
-}
-
-function isUnreliableImageUrl(url: string) {
-  const lower = url.toLowerCase();
-  return (
-    lower.includes('via.placeholder.com') ||
-    lower.includes('placeholder.com/') ||
-    lower === 'null' ||
-    lower === 'undefined'
-  );
+  return resolveImageSource(url, DEFAULT_PRODUCT_IMAGE);
 }
 
 export function productImageUrl(url?: string | null) {

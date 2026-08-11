@@ -2,7 +2,6 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,6 +22,7 @@ import {adminApi} from '../../api/admin';
 import {type PublicUser} from '../../api/auth';
 import {ApiError} from '../../api/client';
 import {NotificationBell} from '../../components/NotificationBell';
+import {AvatarImage} from '../../components/AvatarImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AUsers'>;
 
@@ -87,12 +87,7 @@ function UserCard({
 }) {
   return (
     <View style={[styles.userCardRow, isLast && styles.userCardRowLast]}>
-      <Image
-        source={{
-          uri: item.avatarUrl ?? 'https://via.placeholder.com/52/E2E8F0/000000?text=User',
-        }}
-        style={styles.userAvatar}
-      />
+      <AvatarImage uri={item.avatarUrl} style={styles.userAvatar} />
       <View style={styles.metaInfoColumn}>
         <Text style={styles.userNameText}>{item.fullName}</Text>
         <Text style={styles.userEmailText}>{item.email ?? '—'}</Text>

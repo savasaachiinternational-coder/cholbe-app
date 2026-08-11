@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>cholbe</string>
+	<string>Cholbe</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -42,7 +42,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Cholbe needs photo library access to share images and files in consultation chat.</string>
 	<key>GMSApiKey</key>
-	<string>AIzaSyDdAoHeCNbd81rqwMApCne-bB5qYVwCaqk</string>
+	<string>$(GOOGLE_MAPS_API_KEY)</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

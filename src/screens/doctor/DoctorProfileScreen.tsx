@@ -19,6 +19,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {DoctorBottomNav} from './DoctorBottomNav';
 import {performLogout} from '../../auth/sessionControl';
+import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DProfile'>;
 
@@ -192,6 +193,13 @@ export function DoctorProfileScreen({navigation}: Props) {
             <Feather name="log-out" size={16} color="#C62828" />
             <Text style={styles.logoutText}>Log out</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteAccountBtn}
+            activeOpacity={0.7}
+            onPress={confirmAndDeleteAccount}>
+            <Feather name="trash-2" size={16} color="#C62828" />
+            <Text style={styles.logoutText}>Delete account</Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
 
@@ -352,6 +360,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+  },
+  deleteAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFF5F5',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 10,
     borderWidth: 1,
     borderColor: '#FFCDD2',
   },

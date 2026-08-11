@@ -2,7 +2,6 @@ import {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -23,6 +22,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {VendorBottomNav} from './VendorBottomNav';
 import {NotificationBell} from '../../components/NotificationBell';
+import {AvatarImage} from '../../components/AvatarImage';
 import {
   PAYMENT_DATE_FILTERS,
   PAYMENT_STATUS_FILTERS,
@@ -118,10 +118,7 @@ function withinDateFilter(createdAt: string, filter: PaymentDateFilter) {
 function TransactionRow({item}: {item: TransactionItem}) {
   return (
     <View style={styles.transactionCard}>
-      <Image
-        source={{uri: 'https://via.placeholder.com/40/CBD5E1/000000?text=User'}}
-        style={styles.avatarImage}
-      />
+      <AvatarImage style={styles.avatarImage} />
 
       <View style={styles.detailsBlock}>
         <Text style={styles.transactionIdText}>

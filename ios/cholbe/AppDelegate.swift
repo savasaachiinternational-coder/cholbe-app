@@ -15,7 +15,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    if let apiKey = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String {
+    if let apiKey = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String,
+       !apiKey.isEmpty {
       GMSServices.provideAPIKey(apiKey)
     }
 

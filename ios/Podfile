@@ -33,5 +33,27 @@ target 'cholbe' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Inject GOOGLE_MAPS_API_KEY from the untracked ios/secrets.properties so the key
+    # never lands in Info.plist or the .xcodeproj. Pods/ is gitignored.
+    maps_api_key = ''
+    secrets_file = File.join(__dir__, 'secrets.properties')
+    if File.exist?(secrets_file)
+      File.foreach(secrets_file) do |line|
+        stripped = line.strip
+        next if stripped.empty? || stripped.start_with?('#')
+        key, value = stripped.split('=', 2)
+        maps_api_key = value.to_s.strip if key.to_s.strip == 'GOOGLE_MAPS_API_KEY'
+      end
+    else
+      Pod::UI.warn 'ios/secrets.properties not found. Google Maps will be disabled.'
+    end
+
+    installer.aggregate_targets.each do |aggregate_target|
+      aggregate_target.xcconfigs.each do |config_name, config_file|
+        config_file.attributes['GOOGLE_MAPS_API_KEY'] = maps_api_key
+        config_file.save_as(aggregate_target.xcconfig_path(config_name))
+      end
+    end
   end
 end
