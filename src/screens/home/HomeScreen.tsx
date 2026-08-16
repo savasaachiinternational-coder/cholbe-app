@@ -1,0 +1,1342 @@
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useCallback, useMemo, useState} from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import type {RootStackParamList} from '../../navigation/types';
+import Feather from 'react-native-vector-icons/Feather';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
+import {HomeBottomNav} from './HomeBottomNav';
+import {NotificationBell} from '../../components/NotificationBell';
+import {navigateCustomerTab} from './customerTabNavigation';
+import {
+  SCHEDULE_TABS,
+  type BottomTabKey,
+  type ScheduleItem,
+  type ScheduleTab,
+} from './homeData';
+import {ProductImage} from '../../components/ProductImage';
+import {UpdateHealthVitalsModal} from '../../components/UpdateHealthVitalsModal';
+import {formatBdt, productUnitPrice} from '../../utils/pharmacyHelpers';
+import {homeApi, type PatientHomeDashboard} from '../../api/home';
+import {profileApi} from '../../api/profile';
+import {medicationSchedulesApi} from '../../api/medications';
+import {cartApi} from '../../api/cart';
+import {ApiError} from '../../api/client';
+
+const {width: SCREEN_WIDTH} = Dimensions.get('window');
+const PRODUCT_CARD_WIDTH = SCREEN_WIDTH * 0.43;
+
+function normalizeTime(timeStr: string) {
+  return timeStr.trim().replace(/\s+/g, ' ').toUpperCase();
+}
+
+function isSlotTaken(
+  logs: Array<{status: string; scheduledTime: string | null}>,
+  scheduledTime: string,
+) {
+  const normalized = normalizeTime(scheduledTime);
+  return logs.some(
+    (log) =>
+      log.status === 'taken' &&
+      log.scheduledTime &&
+      normalizeTime(log.scheduledTime) === normalized,
+  );
+}
+
+type HomeNavigation = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+
+export function HomeScreen() {
+  useEdgeToEdgeStatusBar();
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<HomeNavigation>();
+
+  const [activeTab, setActiveTab] = useState<BottomTabKey>('home');
+  const [scheduleTab, setScheduleTab] = useState<ScheduleTab>('upcoming');
+  const [dashboard, setDashboard] = useState<PatientHomeDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [vitalsModalOpen, setVitalsModalOpen] = useState(false);
+  const [savingVitals, setSavingVitals] = useState(false);
+
+  const loadHome = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await homeApi.dashboard();
+      setDashboard(data);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not load home';
+      Alert.alert('Home', message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadHome();
+    }, [loadHome]),
+  );
+
+  const scheduleGroups = useMemo(() => {
+    const schedules = dashboard?.schedules ?? [];
+    const nextSlot = dashboard?.nextMedication
+      ? {
+          scheduleId: dashboard.nextMedication.scheduleId,
+          scheduledTime: dashboard.nextMedication.scheduledTime,
+        }
+      : null;
+    const map = new Map<string, ScheduleItem[]>();
+    schedules.forEach((s) => {
+      const times = s.times.length ? s.times : ['Anytime'];
+      times.forEach((time, tIdx) => {
+        const taken =
+          time !== 'Anytime' ? isSlotTaken(s.todayLogs ?? [], time) : false;
+        const isNext =
+          nextSlot?.scheduleId === s.id &&
+          nextSlot.scheduledTime &&
+          normalizeTime(nextSlot.scheduledTime) === normalizeTime(time);
+        const items = map.get(time) ?? [];
+        items.push({
+          id: `${s.id}-${tIdx}`,
+          name: s.medicineName,
+          detail: [s.dose, s.mealTiming].filter(Boolean).join(' • ') || 'Scheduled dose',
+          icon: 'pill',
+          active: isNext && !taken,
+          taken,
+          showDismiss: !taken,
+          showCheck: !taken,
+          scheduleId: s.id,
+          scheduledTime: time !== 'Anytime' ? time : undefined,
+        });
+        map.set(time, items);
+      });
+    });
+    return Array.from(map.entries()).map(([time, items]) => ({time, items}));
+  }, [dashboard]);
+
+  const markTaken = async (scheduleId?: string, scheduledTime?: string) => {
+    const targetScheduleId = scheduleId ?? dashboard?.nextMedication?.scheduleId;
+    const targetTime = scheduledTime ?? dashboard?.nextMedication?.scheduledTime;
+    if (!targetScheduleId || !targetTime) return;
+    if (
+      !scheduleId &&
+      dashboard?.nextMedication &&
+      !dashboard.nextMedication.canMarkTaken
+    ) {
+      return;
+    }
+    try {
+      await medicationSchedulesApi.logDose(targetScheduleId, 'taken', {
+        scheduledTime: targetTime,
+      });
+      loadHome();
+    } catch (err) {
+      Alert.alert('Medication', err instanceof ApiError ? err.message : 'Could not log dose');
+    }
+  };
+
+  const snoozeMedication = async () => {
+    const scheduleId = dashboard?.nextMedication?.scheduleId;
+    const scheduledTime = dashboard?.nextMedication?.scheduledTime;
+    if (!scheduleId || !scheduledTime || !dashboard?.nextMedication?.canMarkTaken) return;
+    try {
+      await medicationSchedulesApi.logDose(scheduleId, 'snoozed', {
+        snoozeMinutes: 10,
+        scheduledTime,
+      });
+      loadHome();
+    } catch (err) {
+      Alert.alert('Medication', err instanceof ApiError ? err.message : 'Could not snooze');
+    }
+  };
+
+  const addToCart = async (productId: string) => {
+    try {
+      await cartApi.addItem(productId, 1);
+      Alert.alert('Cart', 'Added to cart');
+    } catch (err) {
+      Alert.alert('Cart', err instanceof ApiError ? err.message : 'Could not add to cart');
+    }
+  };
+
+  const user = dashboard?.user;
+  const nextMed = dashboard?.nextMedication;
+  const allDosesTaken = dashboard?.allDosesTakenToday ?? false;
+  const canMarkTaken = nextMed?.canMarkTaken ?? false;
+  const stats = dashboard?.medicationStats;
+  const vitals = dashboard?.healthVitals;
+  const refill = dashboard?.refill;
+  const unreadCount = dashboard?.unreadNotifications ?? 0;
+
+  const handleTabPress = (tab: BottomTabKey) => {
+    if (tab === 'home') {
+      setActiveTab('home');
+      return;
+    }
+    navigateCustomerTab(navigation, tab);
+  };
+
+  const openReportsList = () => navigation.navigate('ReportsList');
+
+  const saveVitals = async (payload: {bloodPressure?: string; oxygen?: string}) => {
+    setSavingVitals(true);
+    try {
+      await profileApi.updateVitals(payload);
+      setVitalsModalOpen(false);
+      await loadHome();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not save vitals';
+      Alert.alert('Health Status', message);
+    } finally {
+      setSavingVitals(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+          <Feather name="menu" size={24} color="#1E293B" />
+        </TouchableOpacity>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoTextPrimary}>Cholbe</Text>
+          <Text style={styles.logoTextSecondary}>PHARMACY</Text>
+        </View>
+        <NotificationBell
+          style={styles.iconButton}
+          color="#1E293B"
+          onPress={() => navigation.navigate('Notifications')}
+        />
+      </View>
+
+      {loading && !dashboard ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color="#0D9488" />
+        </View>
+      ) : (
+      <ScrollView
+        style={styles.mainScroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {paddingBottom: insets.bottom + 100},
+        ]}>
+        <View style={styles.userInfoContainer}>
+          <Image
+            source={
+              user?.avatarUrl
+                ? {uri: user.avatarUrl}
+                : require('../../assets/b2.png')
+            }
+            style={styles.avatar}
+          />
+          <View style={styles.userMeta}>
+            <Text style={styles.userName}>{user?.fullName ?? '—'}</Text>
+            <View style={styles.locationRow}>
+              <Feather name="map-pin" size={14} color="#64748B" />
+              <Text style={styles.locationText}>{user?.location ?? 'Add address'}</Text>
+            </View>
+            <Text style={styles.lastSeenText}>
+              Last seen by Dashboard: {user?.lastActiveLabel ?? '—'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.heroCard}>
+          <View style={styles.waveDecorator1} />
+          <View style={styles.waveDecorator2} />
+
+          <View style={styles.heroHeaderRow}>
+            <Feather name="bell" size={16} color="#475569" />
+            <Text style={styles.heroLabel}>Next Medication</Text>
+          </View>
+
+          <Text style={styles.medicationTitle}>
+            {allDosesTaken
+              ? "You're all caught up"
+              : nextMed?.medicineName ?? 'No medication scheduled'}
+          </Text>
+          <Text style={styles.medicationSubtitle}>
+            {allDosesTaken
+              ? 'All doses taken for today. Great job!'
+              : nextMed?.dose
+                ? `${nextMed.dose} — Time to take your medicine`
+                : 'Add a medication to get reminders'}
+          </Text>
+
+          {nextMed && !allDosesTaken ? (
+            <View style={styles.timeTag}>
+              <Feather name="activity" size={12} color="#0EA5E9" />
+              <Text style={styles.timeTagText}>{nextMed.minutesUntilLabel}</Text>
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            style={[
+              styles.markTakenButton,
+              (!canMarkTaken || allDosesTaken) && styles.markTakenButtonDisabled,
+            ]}
+            activeOpacity={0.85}
+            onPress={() => markTaken()}
+            disabled={!canMarkTaken || allDosesTaken}>
+            <Text style={styles.markTakenButtonText}>
+              {allDosesTaken ? 'Taken for today' : 'Mark as Taken'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.snoozeButton}
+            activeOpacity={0.7}
+            onPress={snoozeMedication}
+            disabled={!canMarkTaken || allDosesTaken}>
+            <Text
+              style={[
+                styles.snoozeText,
+                (!canMarkTaken || allDosesTaken) && styles.snoozeTextDisabled,
+              ]}>
+              Snooze 10 minutes
+            </Text>
+            <Feather
+              name="chevron-right"
+              size={14}
+              color={!canMarkTaken || allDosesTaken ? '#CBD5E1' : '#64748B'}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('PharmacyShop')}>
+            <Feather
+              name="shopping-cart"
+              size={18}
+              color="#2DD4BF"
+              style={styles.actionIcon}
+            />
+            <Text style={styles.actionButtonText}>Order Medicine</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('DoctorList')}>
+            <Feather
+              name="phone"
+              size={18}
+              color="#2DD4BF"
+              style={styles.actionIcon}
+            />
+            <Text style={styles.actionButtonText}>Contact Doctor</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.statusCard}>
+          <View style={styles.statusHeader}>
+            <Feather name="bell" size={16} color="#475569" />
+            <Text style={styles.statusTitle}>Health Status</Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setVitalsModalOpen(true)}>
+              <Text style={styles.updateVitalsLink}>Update</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setVitalsModalOpen(true)}>
+            <View style={styles.metricsRow}>
+              <View style={styles.metricItem}>
+                <Feather
+                  name="activity"
+                  size={20}
+                  color="#2DD4BF"
+                  style={styles.metricIcon}
+                />
+                <View>
+                  <Text style={styles.metricLabel}>
+                    Bp{' '}
+                    <Text style={styles.metricValue}>
+                      {vitals?.bloodPressure?.value ?? '—'}
+                    </Text>
+                  </Text>
+                  <Text style={styles.metricTimestamp}>
+                    Last checked: {vitals?.bloodPressure?.checkedAgo ?? '—'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[styles.metricItem, styles.metricBorderLeft]}>
+                <Feather
+                  name="heart"
+                  size={20}
+                  color="#2DD4BF"
+                  style={styles.metricIcon}
+                />
+                <View>
+                  <Text style={styles.metricLabel}>
+                    Oxygen:{' '}
+                    <Text style={styles.metricValue}>
+                      {vitals?.oxygen?.value ?? '—'}
+                    </Text>
+                  </Text>
+                  <Text style={styles.metricTimestamp}>
+                    Last checked: {vitals?.oxygen?.checkedAgo ?? '—'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.viewReportsButton}
+            activeOpacity={0.8}
+            onPress={openReportsList}>
+            <Text style={styles.viewReportsText}>View Reports</Text>
+          </TouchableOpacity>
+        </View>
+
+        <UpdateHealthVitalsModal
+          visible={vitalsModalOpen}
+          initialBloodPressure={vitals?.bloodPressure?.value ?? ''}
+          initialOxygen={vitals?.oxygen?.value ?? ''}
+          saving={savingVitals}
+          onClose={() => setVitalsModalOpen(false)}
+          onSave={saveVitals}
+        />
+
+        <View style={styles.alertCard}>
+          <View style={styles.alertLeftContent}>
+            <View style={styles.alertRow}>
+              <Feather name="bell" size={16} color="#475569" />
+              <Text style={styles.alertText}>
+                Next refill in {refill?.daysUntil ?? 0} days
+              </Text>
+            </View>
+            <View style={[styles.alertRow, styles.alertRowSpaced]}>
+              <Feather name="users" size={16} color="#10B981" />
+              <Text style={styles.alertSubtext}>
+                {refill?.familyMonitoring
+                  ? 'Family is monitoring you'
+                  : 'Add family members to enable monitoring'}
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.scanBadge} activeOpacity={0.8}>
+            <Feather name="activity" size={22} color="#059669" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.viewMedicineButton}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('MedicineList')}>
+            <Text style={styles.viewMedicineText}>View Medicine</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.statsGrid}>
+          <View style={[styles.statBox, styles.statTaken]}>
+            <View style={styles.statBoxHeader}>
+              <Text style={[styles.statLabel, styles.statLabelTaken]}>Taken</Text>
+              <Feather name="check-circle" size={16} color="#16A34A" />
+            </View>
+            <Text style={styles.statNumber}>{stats?.taken ?? 0}</Text>
+          </View>
+          <View style={[styles.statBox, styles.statMissed]}>
+            <View style={styles.statBoxHeader}>
+              <Text style={[styles.statLabel, styles.statLabelMissed]}>Missed</Text>
+              <Feather name="x-circle" size={16} color="#EF4444" />
+            </View>
+            <Text style={styles.statNumber}>{stats?.missed ?? 0}</Text>
+          </View>
+        </View>
+
+        <View style={[styles.statsGrid, styles.statsGridSecond]}>
+          <View style={[styles.statBox, styles.statRemaining]}>
+            <View style={styles.statBoxHeader}>
+              <Text style={[styles.statLabel, styles.statLabelRemaining]}>
+                Remaining
+              </Text>
+              <FontAwesome name="medkit" size={16} color="#7C3AED" />
+            </View>
+            <Text style={styles.statNumber}>{stats?.remaining ?? 0}</Text>
+          </View>
+          <View style={[styles.statBox, styles.statTotal]}>
+            <View style={styles.statBoxHeader}>
+              <Text style={[styles.statLabel, styles.statLabelTotal]}>Total</Text>
+              <Feather name="activity" size={16} color="#2563EB" />
+            </View>
+            <Text style={styles.statNumber}>{stats?.total ?? 0}</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.addMedicineButton}
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate('AddMedication')}>
+          <Feather
+            name="plus"
+            size={20}
+            color="#FFFFFF"
+            style={styles.addMedIcon}
+          />
+          <Text style={styles.addMedicineButtonText}>Add Medicine</Text>
+        </TouchableOpacity>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabsContainer}
+          contentContainerStyle={styles.tabsContent}>
+          {SCHEDULE_TABS.map(tab => {
+            const active =
+              tab.key !== 'waitingRoom' && scheduleTab === tab.key;
+            const isWaitingRoom = tab.key === 'waitingRoom';
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={
+                  isWaitingRoom
+                    ? styles.waitingRoomTab
+                    : active
+                      ? styles.activeTab
+                      : styles.inactiveTab
+                }
+                onPress={() => {
+                  if (isWaitingRoom) {
+                    const appt = dashboard?.nextAppointment;
+                    if (appt) {
+                      navigation.navigate('WaitingRoom', {
+                        appointmentId: appt.id,
+                        doctorName: appt.doctorName,
+                        specialty: appt.specialty,
+                      });
+                    } else {
+                      navigation.navigate('MyAppointment');
+                    }
+                    return;
+                  }
+                  setScheduleTab(tab.key);
+                }}
+                activeOpacity={0.8}>
+                {active && <View style={styles.activeTabDot} />}
+                <Text
+                  style={
+                    isWaitingRoom
+                      ? styles.waitingRoomTabText
+                      : active
+                        ? styles.activeTabText
+                        : styles.inactiveTabText
+                  }>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {scheduleGroups.map(group => (
+          <View key={group.time}>
+            <Text style={styles.timeSectionHeader}>{group.time}</Text>
+            {group.items.map(item => (
+              <ScheduleRow
+                key={item.id}
+                item={item}
+                onTaken={
+                  item.taken || !item.scheduleId || !item.scheduledTime
+                    ? undefined
+                    : () => markTaken(item.scheduleId, item.scheduledTime)
+                }
+              />
+            ))}
+          </View>
+        ))}
+
+        <TouchableOpacity
+          style={[styles.viewReportsButton, styles.viewReportsSpaced]}
+          activeOpacity={0.8}
+          onPress={openReportsList}>
+          <Text style={styles.viewReportsText}>View Reports</Text>
+        </TouchableOpacity>
+
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeading}>Related Medicine</Text>
+          <TouchableOpacity
+            style={styles.viewAllRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('MedicineList')}>
+            <Text style={styles.viewAllText}>View All</Text>
+            <Feather name="chevron-right" size={14} color="#64748B" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.carouselContent}>
+          {dashboard?.relatedProducts.map(product => {
+            const price = Number(product.discountPrice ?? product.unitPrice);
+            const original = Number(product.unitPrice);
+            const discount =
+              product.discountPrice && original > price
+                ? `${Math.round(((original - price) / original) * 100)}%`
+                : null;
+            return (
+            <View key={product.id} style={styles.productCard}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() =>
+                  navigation.navigate('PharmacyDetails', {productId: product.id})
+                }>
+                {discount ? (
+                  <View style={styles.discountBadge}>
+                    <Text style={styles.discountText}>{discount}</Text>
+                  </View>
+                ) : null}
+              <ProductImage
+                imageUrl={product.imageUrl}
+                style={styles.productImage}
+              />
+                <Text style={styles.productTitle}>{product.name}</Text>
+                <Text style={styles.productWeight}>
+                  {product.genericName ?? product.category ?? ''}
+                </Text>
+                <View style={styles.productPricingRow}>
+                  <Text style={styles.productVol}>{product.category ?? 'Item'}</Text>
+                  {product.discountPrice ? (
+                    <Text style={styles.oldPrice}>{formatBdt(original)}</Text>
+                  ) : null}
+                  <Text style={styles.currentPrice}>{formatBdt(price)}</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.addToCartButton}
+                activeOpacity={0.8}
+                onPress={() => addToCart(product.id)}>
+                <Text style={styles.addToCartText}>Add to Cart</Text>
+              </TouchableOpacity>
+            </View>
+          );
+          })}
+        </ScrollView>
+      </ScrollView>
+      )}
+
+      <View style={styles.bottomNavWrap}>
+        <HomeBottomNav
+          activeTab={activeTab}
+          bottomInset={insets.bottom}
+          onTabPress={handleTabPress}
+        />
+      </View>
+    </View>
+  );
+}
+
+function ScheduleRow({
+  item,
+  onTaken,
+}: {
+  item: ScheduleItem;
+  onTaken?: () => void;
+}) {
+  const active = item.active;
+  const taken = item.taken;
+
+  return (
+    <View
+      style={[
+        styles.medicationRowCard,
+        active && styles.medicationActiveCard,
+        taken && styles.medicationTakenCard,
+      ]}>
+      {item.icon === 'insulin' ? (
+        <Feather
+          name="activity"
+          size={22}
+          color={active ? '#FFFFFF' : '#94A3B8'}
+        />
+      ) : (
+        <FontAwesome
+          name="medkit"
+          size={20}
+          color={active ? '#FFFFFF' : '#94A3B8'}
+        />
+      )}
+      <View style={styles.medicationRowMeta}>
+        <Text
+          style={[
+            styles.medicationRowTitle,
+            active && styles.medicationRowTitleActive,
+          ]}>
+          {item.name}
+        </Text>
+        <Text
+          style={[
+            styles.medicationRowSub,
+            active && styles.medicationRowSubActive,
+          ]}>
+          {item.detail}
+        </Text>
+      </View>
+      <View style={styles.actionIconsRight}>
+        {item.showDismiss !== false && !taken && (
+          <Feather
+            name="x-circle"
+            size={22}
+            color={active ? '#FFFFFF' : '#CBD5E1'}
+            style={styles.dismissIcon}
+          />
+        )}
+        {taken ? (
+          <Feather name="check-circle" size={22} color="#22C55E" />
+        ) : item.showCheck !== false ? (
+          <TouchableOpacity activeOpacity={0.8} onPress={onTaken} disabled={!onTaken}>
+            <Feather
+              name="check-circle"
+              size={22}
+              color={active ? '#FFFFFF' : '#000000'}
+            />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  loadingWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mainScroll: {
+    flex: 1,
+  },
+  bottomNavWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  iconButton: {
+    position: 'relative',
+    padding: 4,
+    width: 40,
+    alignItems: 'center',
+  },
+  bellDot: {
+    position: 'absolute',
+    top: 4,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    zIndex: 1,
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  logoTextPrimary: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0284C7',
+  },
+  logoTextSecondary: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#64748B',
+    marginLeft: 4,
+    letterSpacing: 1,
+    marginBottom: 3,
+  },
+  userInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#E2E8F0',
+  },
+  userMeta: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  locationText: {
+    fontSize: 13,
+    color: '#64748B',
+    marginLeft: 4,
+  },
+  lastSeenText: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 4,
+  },
+  heroCard: {
+    backgroundColor: '#E0F2FE',
+    borderRadius: 24,
+    padding: 20,
+    marginTop: 8,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  waveDecorator1: {
+    position: 'absolute',
+    right: -20,
+    top: -20,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: '#BAE6FD',
+    opacity: 0.4,
+  },
+  waveDecorator2: {
+    position: 'absolute',
+    right: 20,
+    bottom: -40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#BAE6FD',
+    opacity: 0.3,
+  },
+  heroHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  heroLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+    marginLeft: 6,
+  },
+  medicationTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  medicationSubtitle: {
+    fontSize: 14,
+    color: '#475569',
+    marginTop: 2,
+  },
+  timeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 10,
+  },
+  timeTagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0EA5E9',
+    marginLeft: 4,
+  },
+  markTakenButton: {
+    backgroundColor: '#334E68',
+    borderRadius: 18,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  markTakenButtonDisabled: {
+    backgroundColor: '#94A3B8',
+    opacity: 0.85,
+  },
+  markTakenButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  snoozeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  snoozeText: {
+    fontSize: 13,
+    color: '#64748B',
+    marginRight: 2,
+  },
+  snoozeTextDisabled: {
+    color: '#CBD5E1',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  actionIcon: {
+    marginRight: 8,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  statusCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 16,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  statusTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#475569',
+    marginLeft: 6,
+  },
+  updateVitalsLink: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0D9488',
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  metricItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  metricBorderLeft: {
+    borderLeftWidth: 1,
+    borderLeftColor: '#E2E8F0',
+    paddingLeft: 16,
+  },
+  metricIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  metricLabel: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  metricValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  metricTimestamp: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  viewReportsButton: {
+    backgroundColor: '#F0FDFA',
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  viewReportsText: {
+    color: '#0D9488',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  viewReportsSpaced: {
+    marginVertical: 16,
+  },
+  alertCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 16,
+    position: 'relative',
+  },
+  alertLeftContent: {
+    paddingRight: 60,
+  },
+  alertRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  alertRowSpaced: {
+    marginTop: 8,
+  },
+  alertText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+    marginLeft: 6,
+  },
+  alertSubtext: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#10B981',
+    marginLeft: 6,
+  },
+  scanBadge: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#D1FAE5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewMedicineButton: {
+    backgroundColor: '#F0FDFA',
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  viewMedicineText: {
+    color: '#0D9488',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    gap: 12,
+  },
+  statsGridSecond: {
+    marginTop: 12,
+  },
+  statBox: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 14,
+  },
+  statTaken: {
+    backgroundColor: '#F0FDF4',
+  },
+  statMissed: {
+    backgroundColor: '#FEF2F2',
+  },
+  statRemaining: {
+    backgroundColor: '#F5F3FF',
+  },
+  statTotal: {
+    backgroundColor: '#EFF6FF',
+  },
+  statBoxHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statLabelTaken: {
+    color: '#16A34A',
+  },
+  statLabelMissed: {
+    color: '#DC2626',
+  },
+  statLabelRemaining: {
+    color: '#7C3AED',
+  },
+  statLabelTotal: {
+    color: '#2563EB',
+  },
+  statNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginTop: 8,
+  },
+  addMedicineButton: {
+    backgroundColor: '#E11D48',
+    borderRadius: 20,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  addMedIcon: {
+    marginRight: 6,
+  },
+  addMedicineButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  tabsContainer: {
+    marginTop: 20,
+    marginBottom: 12,
+    marginHorizontal: -16,
+  },
+  tabsContent: {
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  inactiveTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    justifyContent: 'center',
+  },
+  inactiveTabText: {
+    fontSize: 14,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  waitingRoomTab: {
+    backgroundColor: '#F0FDFA',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#14B8A6',
+  },
+  waitingRoomTabText: {
+    fontSize: 14,
+    color: '#0D9488',
+    fontWeight: '600',
+  },
+  activeTab: {
+    backgroundColor: '#1E293B',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  activeTabDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FB923C',
+    marginRight: 6,
+  },
+  activeTabText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  timeSectionHeader: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  medicationRowCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  medicationActiveCard: {
+    backgroundColor: '#38A3A5',
+    borderColor: '#38A3A5',
+  },
+  medicationTakenCard: {
+    opacity: 0.72,
+  },
+  medicationRowMeta: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  medicationRowTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  medicationRowTitleActive: {
+    color: '#FFFFFF',
+  },
+  medicationRowSub: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  medicationRowSubActive: {
+    color: '#E2E8F0',
+  },
+  actionIconsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dismissIcon: {
+    marginRight: 10,
+    opacity: 0.8,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  viewAllRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewAllText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginRight: 2,
+  },
+  carouselContent: {
+    paddingBottom: 8,
+  },
+  productCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 12,
+    width: PRODUCT_CARD_WIDTH,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  discountBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#F43F5E',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    zIndex: 1,
+  },
+  discountText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  productImage: {
+    width: '100%',
+    height: 100,
+    borderRadius: 14,
+    backgroundColor: '#F8FAFC',
+    resizeMode: 'cover',
+  },
+  productTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginTop: 8,
+  },
+  productWeight: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  productPricingRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 6,
+  },
+  productVol: {
+    fontSize: 11,
+    color: '#94A3B8',
+    flex: 1,
+  },
+  oldPrice: {
+    fontSize: 11,
+    color: '#94A3B8',
+    textDecorationLine: 'line-through',
+    marginRight: 4,
+  },
+  currentPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  addToCartButton: {
+    borderWidth: 1,
+    borderColor: '#0D9488',
+    borderRadius: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  addToCartText: {
+    color: '#0D9488',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});
