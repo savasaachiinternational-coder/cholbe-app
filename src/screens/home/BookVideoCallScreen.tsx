@@ -9,6 +9,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
@@ -24,8 +26,45 @@ import {ApiError} from '../../api/client';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const SLOT_WIDTH = (SCREEN_WIDTH - 32 - 24) / 4;
+/** Sized so two dates fill the pill exactly; a third onwards scrolls. */
+const DATE_CHIP_WIDTH = (SCREEN_WIDTH - 32 - 8) / 2;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookVideoCall'>;
+
+/** Whole days from today: 0 = today, 1 = tomorrow. */
+function dayOffsetFromToday(date: string): number {
+  const d = new Date(`${date}T12:00:00`);
+  const today = new Date();
+  return Math.round(
+    (new Date(d.toDateString()).getTime() -
+      new Date(today.toDateString()).getTime()) /
+      86400000,
+  );
+}
+
+/** "Mon, 28 Apr" — the full picker's label. */
+function formatFullDateLabel(date: string): string {
+  return new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+/** "Today Apr 26" / "Tomorrow" / "Mon, 28 Apr", matching the design. */
+function formatDateChipLabel(date: string): string {
+  const offset = dayOffsetFromToday(date);
+  if (offset === 0) {
+    return `Today ${new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', {
+      month: 'short',
+      day: 'numeric',
+    })}`;
+  }
+  if (offset === 1) {
+    return 'Tomorrow';
+  }
+  return formatFullDateLabel(date);
+}
 
 export function BookVideoCallScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
@@ -37,6 +76,7 @@ export function BookVideoCallScreen({navigation, route}: Props) {
   const baseFee = route.params?.consultationFee ?? 'BDT 800';
 
   const [duration, setDuration] = useState<'15' | '30'>('15');
+  // no need need to delete the consultation type
   const [consultationType, setConsultationType] = useState<'VIDEO' | 'AUDIO' | 'CHAT'>('VIDEO');
   const [availableDates, setAvailableDates] = useState<DoctorAvailabilityDate[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
@@ -76,6 +116,12 @@ export function BookVideoCallScreen({navigation, route}: Props) {
   }, [baseFee, duration]);
 
   const durationLabel = duration === '15' ? '15 Minutes' : '30 Minutes';
+
+  /** Today / tomorrow only — the quick pill above the full date picker. */
+  const quickDates = useMemo(
+    () => availableDates.filter(d => dayOffsetFromToday(d.date) <= 1),
+    [availableDates],
+  );
 
   const selectedDateLabel = useMemo(() => {
     if (!selectedDate) return 'Select date';
@@ -147,6 +193,7 @@ export function BookVideoCallScreen({navigation, route}: Props) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+        <View style={styles.headerIconTitle}> 
         <TouchableOpacity
           style={styles.iconButton}
           activeOpacity={0.7}
@@ -154,6 +201,7 @@ export function BookVideoCallScreen({navigation, route}: Props) {
           <Feather name="chevron-left" size={24} color="#1E293B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Book a Video Call</Text>
+        </View>
         <TouchableOpacity
           style={styles.iconButton}
           activeOpacity={0.7}
@@ -189,7 +237,7 @@ export function BookVideoCallScreen({navigation, route}: Props) {
           </View>
         </View>
 
-        <View style={styles.segmentContainer}>
+        {/* <View style={styles.segmentContainer}>
           <TouchableOpacity
             style={[
               styles.segmentTab,
@@ -235,12 +283,12 @@ export function BookVideoCallScreen({navigation, route}: Props) {
               Chat
             </Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <View style={styles.segmentContainer}>
           <TouchableOpacity
             style={[
-              styles.segmentTab,
+              styles.segmentButton,
               duration === '15' && styles.segmentActiveTab,
             ]}
             onPress={() => setDuration('15')}
@@ -261,7 +309,7 @@ export function BookVideoCallScreen({navigation, route}: Props) {
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.segmentTab,
+              styles.segmentButtonRight,
               duration === '30' && styles.segmentActiveTab,
             ]}
             onPress={() => setDuration('30')}
@@ -287,6 +335,7 @@ export function BookVideoCallScreen({navigation, route}: Props) {
           <Text style={styles.pricingDescription}>
             Paid video Consultation (Via cholbe App)
           </Text>
+          <View style={styles.pricingDivider} />
           <View style={styles.metaRow}>
             <Feather name="clock" size={14} color="#14B8A6" />
             <Text style={styles.metaRowText}>About {durationLabel}</Text>
@@ -297,43 +346,51 @@ export function BookVideoCallScreen({navigation, route}: Props) {
           </View>
         </View>
 
-        <Text style={styles.blockSectionTitle}>Select Date</Text>
         {loadingAvailability ? (
-          <ActivityIndicator color="#14B8A6" style={{marginVertical: 12}} />
+          <ActivityIndicator color="#14B8A6" style={styles.availabilityLoader} />
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daySegment}>
-            {availableDates.map(item => {
-              const d = new Date(`${item.date}T12:00:00`);
-              const label = d.toLocaleDateString('en-GB', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-              });
-              const active = selectedDate === item.date;
-              return (
-                <TouchableOpacity
+          <>
+            {quickDates.length > 0 && (
+              <View style={styles.daySegment}>
+                {quickDates.map((item, index) => (
+                  <DateChip
+                    key={item.date}
+                    date={item.date}
+                    label={formatDateChipLabel(item.date)}
+                    available={item.available}
+                    active={selectedDate === item.date}
+                    side={
+                      quickDates.length > 1
+                        ? index === 0
+                          ? 'left'
+                          : 'right'
+                        : undefined
+                    }
+                    widthStyle={styles.dateChip}
+                    onSelect={setSelectedDate}
+                  />
+                ))}
+              </View>
+            )}
+
+            {/* <Text style={styles.blockSectionTitle}>Select Date</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.dateScroller}>
+              {availableDates.map(item => (
+                <DateChip
                   key={item.date}
-                  style={[
-                    styles.segmentTab,
-                    styles.dateChip,
-                    active && styles.segmentActiveTab,
-                    !item.available && styles.dateChipDisabled,
-                  ]}
-                  disabled={!item.available}
-                  onPress={() => setSelectedDate(item.date)}
-                  activeOpacity={0.8}>
-                  <Text
-                    style={[
-                      styles.segmentTabText,
-                      active && styles.segmentActiveTabText,
-                      !item.available && styles.dateChipDisabledText,
-                    ]}>
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+                  date={item.date}
+                  label={formatFullDateLabel(item.date)}
+                  available={item.available}
+                  active={selectedDate === item.date}
+                  widthStyle={styles.dateChipWide}
+                  onSelect={setSelectedDate}
+                />
+              ))}
+            </ScrollView> */}
+          </>
         )}
 
         <Text style={styles.blockSectionTitle}>Available Time Slot</Text>
@@ -411,9 +468,9 @@ export function BookVideoCallScreen({navigation, route}: Props) {
       </ScrollView>
 
       <TouchableOpacity
-        style={[styles.floatingScanButton, {bottom: insets.bottom + 160}]}
+        style={[styles.floatingScanButton, {bottom: insets.bottom + 100}]}
         activeOpacity={0.85}>
-        <Feather name="maximize" size={24} color="#1E293B" />
+        <Image source={require('../../assets/syaiicon.png')} />
       </TouchableOpacity>
 
       <View style={styles.bottomNavWrap}>
@@ -424,6 +481,50 @@ export function BookVideoCallScreen({navigation, route}: Props) {
         />
       </View>
     </View>
+  );
+}
+
+type DateChipProps = {
+  date: string;
+  label: string;
+  available: boolean;
+  active: boolean;
+  side?: 'left' | 'right';
+  widthStyle: StyleProp<ViewStyle>;
+  onSelect: (date: string) => void;
+};
+
+function DateChip({
+  date,
+  label,
+  available,
+  active,
+  side,
+  widthStyle,
+  onSelect,
+}: DateChipProps) {
+  return (
+    <TouchableOpacity
+      style={[
+        styles.segmentTab,
+        widthStyle,
+        active && styles.segmentActiveTab,
+        !available && styles.dateChipDisabled,
+        side === 'left' && styles.chipRoundedLeft,
+        side === 'right' && styles.chipRoundedRight,
+      ]}
+      disabled={!available}
+      onPress={() => onSelect(date)}
+      activeOpacity={0.8}>
+      <Text
+        style={[
+          styles.segmentTabText,
+          active && styles.segmentActiveTabText,
+          !available && styles.dateChipDisabledText,
+        ]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
@@ -471,7 +572,7 @@ function PaymentOption({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F4F3FC',
   },
   header: {
     flexDirection: 'row',
@@ -479,7 +580,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F3FC',
+  },
+  headerIconTitle:{
+    flexDirection:'row',
+    gap:10
   },
   iconButton: {
     padding: 4,
@@ -488,8 +593,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontWeight: '600',
+    color: '#424242',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -499,6 +604,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 16,
+    backgroundColor:'#F4F3FC'
   },
   doctorAvatar: {
     width: 64,
@@ -512,13 +618,13 @@ const styles = StyleSheet.create({
   },
   doctorName: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontWeight: '600',
+    color: '#212121',
   },
   doctorSpecialty: {
-    fontSize: 13,
-    color: '#64748B',
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#616161',
+    fontWeight: '400',
     marginTop: 1,
   },
   onlineStatusRow: {
@@ -535,23 +641,48 @@ const styles = StyleSheet.create({
   },
   onlineStatusText: {
     fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
+    color: '#616161',
+    fontWeight: '400',
   },
   segmentContainer: {
     flexDirection: 'row',
     backgroundColor: '#F1F5F9',
-    borderRadius: 14,
-    padding: 4,
+    borderRadius: 40,
     justifyContent: 'space-between',
   },
+  // Date row mirrors the duration segment: one pill track, active chip filled.
   daySegment: {
-    marginTop: 20,
-    marginBottom: 16,
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 40,
+    marginTop: 16,
+  },
+  availabilityLoader: {
+    marginTop: 16,
   },
   dateChip: {
-    marginRight: 8,
+    width: DATE_CHIP_WIDTH,
+    flex: 0,
+  },
+  // Half-pill corners. These MUST zero the opposite side: segmentTab sets
+  // borderRadius: 40, so only naming the corners you want rounded leaves the
+  // other two rounded too, and the chip stays a full pill.
+  chipRoundedLeft: {
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  chipRoundedRight: {
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  },
+  // Full date picker below the quick pill. flexGrow:0 keeps the horizontal
+  // scroller from stretching, so the 16dp gap to the next heading stays exact.
+  dateScroller: {
+    flexGrow: 0,
+  },
+  dateChipWide: {
     minWidth: 96,
+    marginRight: 8,
     flex: 0,
   },
   dateChipDisabled: {
@@ -566,8 +697,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    // Matches segmentButton so the date pill and duration pill are the same height.
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 40,
+    marginHorizontal: 2,
+  },
+  segmentButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderTopLeftRadius: 40,
+    borderBottomLeftRadius:40,
+    marginHorizontal: 2,
+  },
+  segmentButtonRight: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderTopRightRadius: 40,
+    borderBottomRightRadius:40,
     marginHorizontal: 2,
   },
   segmentActiveTab: {
@@ -585,22 +737,28 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   pricingDetailsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F3FC',
     borderRadius: 16,
     padding: 16,
-    marginTop: 14,
+    marginTop: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    elevation:0.1,
   },
   pricingValue: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontWeight: '600',
+    color: '#616161',
   },
   pricingDescription: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748B',
     marginTop: 4,
+    marginBottom: 12,
+  },
+  pricingDivider: {
+    height: 1,
+    backgroundColor: '#E6E3EE',
     marginBottom: 12,
   },
   metaRow: {
@@ -616,11 +774,12 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontWeight: '500',
   },
+  // Owns the 16dp gap above every section heading, per the design annotations.
   blockSectionTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#475569',
-    marginTop: 20,
+    marginTop: 16,
     marginBottom: 12,
   },
   slotsGrid: {
@@ -629,10 +788,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   slotBadgeButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#E6E3EE',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
+    borderColor: '#E6E3EE',
+    borderRadius: 40,
     paddingVertical: 8,
     alignItems: 'center',
   },
@@ -652,12 +811,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F3FC',
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E6E3EE',
   },
   paymentActiveCardRow: {
     borderColor: '#408E91',
@@ -700,20 +859,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#94A3B8',
     lineHeight: 15,
-    marginTop: 12,
-    marginBottom: 16,
+    marginTop: 16,
+    marginBottom: 48,
   },
   confirmCheckoutButton: {
     backgroundColor: '#408E91',
-    borderRadius: 24,
-    paddingVertical: 16,
+    borderRadius: 40,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#408E91',
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   confirmDisabled: {
     opacity: 0.7,
@@ -721,7 +880,7 @@ const styles = StyleSheet.create({
   confirmCheckoutButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   floatingScanButton: {
     position: 'absolute',

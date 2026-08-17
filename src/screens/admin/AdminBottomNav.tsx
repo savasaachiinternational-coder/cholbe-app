@@ -4,7 +4,6 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../navigation/types';
 import {ADMIN_TABS, type AdminTabKey} from './adminNav';
-
 type Props = {
   activeTab: AdminTabKey;
   bottomInset: number;

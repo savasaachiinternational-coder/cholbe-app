@@ -109,6 +109,7 @@ export function OnboardingScreen({onFinish, onSignIn}: Props) {
                   source={slide.image}
                   style={styles.illustrationFill}
                   resizeMode="contain"
+                  fadeDuration={0}
                 />
                 <View style={styles.floatingCard}>
                   <Text style={styles.floatingCardText}>

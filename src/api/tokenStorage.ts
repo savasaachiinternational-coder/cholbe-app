@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = '@cholbe/access_token';
 const USER_KEY = '@cholbe/user';
+const IS_FIRST_TIME = '@cholbe/isfirsttime';
 
 export type StoredUser = {
   id: string;
@@ -19,6 +20,12 @@ export async function saveSession(accessToken: string, user: StoredUser) {
 
 export async function getAccessToken() {
   return AsyncStorage.getItem(TOKEN_KEY);
+}
+export async function getIsFirtTime():Promise<boolean> {
+  return (await AsyncStorage.getItem(IS_FIRST_TIME)!=='No');
+}
+export async function setIsFirtTime() {
+  return await AsyncStorage.setItem(IS_FIRST_TIME,'No');
 }
 
 export async function getStoredUser(): Promise<StoredUser | null> {

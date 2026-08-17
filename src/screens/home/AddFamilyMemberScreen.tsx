@@ -130,7 +130,7 @@ export function AddFamilyMemberScreen({navigation}: Props) {
         'Family member added',
         'They can now sign in with their email or phone and password.',
       );
-      navigation.goBack();
+     navigation.canGoBack() ? navigation.goBack() : null;
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not save member';
       Alert.alert('Family member', message);
@@ -172,7 +172,7 @@ export function AddFamilyMemberScreen({navigation}: Props) {
           ) : (
             <View style={styles.cameraIconContainer}>
               {uploadingPhoto ? (
-                <ActivityIndicator color="#0D9488" />
+                <ActivityIndicator color="#0D9488" size={'large'}/>
               ) : (
                 <Feather name="camera" size={22} color="#0D9488" />
               )}

@@ -27,6 +27,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ActiveVideoCall'>;
 const DOCTOR_AVATAR = require('../../assets/b2.png');
 
 export function ActiveVideoCallScreen({navigation, route}: Props) {
+  //status bar behaviour function
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
 

@@ -27,8 +27,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AddressMapPicker'>;
 const {width} = Dimensions.get('window');
 
 const DEFAULT_COORDS = {
-  latitude: 23.874,
-  longitude: 90.3695,
+  latitude: 24.9022,
+  longitude: 91.8624,
 };
 
 async function requestLocationPermission() {

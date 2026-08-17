@@ -1,6 +1,6 @@
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useCallback, useMemo, useState} from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { use, useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,30 +12,31 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import type {RootStackParamList} from '../../navigation/types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { RootStackParamList } from '../../navigation/types';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import {HomeBottomNav} from './HomeBottomNav';
-import {NotificationBell} from '../../components/NotificationBell';
-import {navigateCustomerTab} from './customerTabNavigation';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import { HomeBottomNav } from './HomeBottomNav';
+import { NotificationBell } from '../../components/NotificationBell';
+import { navigateCustomerTab } from './customerTabNavigation';
 import {
   SCHEDULE_TABS,
   type BottomTabKey,
   type ScheduleItem,
   type ScheduleTab,
 } from './homeData';
-import {ProductImage} from '../../components/ProductImage';
-import {UpdateHealthVitalsModal} from '../../components/UpdateHealthVitalsModal';
-import {formatBdt, productUnitPrice} from '../../utils/pharmacyHelpers';
-import {homeApi, type PatientHomeDashboard} from '../../api/home';
-import {profileApi} from '../../api/profile';
-import {medicationSchedulesApi} from '../../api/medications';
-import {cartApi} from '../../api/cart';
-import {ApiError} from '../../api/client';
+import { ProductImage } from '../../components/ProductImage';
+import { UpdateHealthVitalsModal } from '../../components/UpdateHealthVitalsModal';
+import { formatBdt, productUnitPrice } from '../../utils/pharmacyHelpers';
+import { homeApi, type PatientHomeDashboard } from '../../api/home';
+import { profileApi } from '../../api/profile';
+import { medicationSchedulesApi } from '../../api/medications';
+import { cartApi } from '../../api/cart';
+import { ApiError } from '../../api/client';
 
-const {width: SCREEN_WIDTH} = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PRODUCT_CARD_WIDTH = SCREEN_WIDTH * 0.43;
 
 function normalizeTime(timeStr: string) {
@@ -43,12 +44,12 @@ function normalizeTime(timeStr: string) {
 }
 
 function isSlotTaken(
-  logs: Array<{status: string; scheduledTime: string | null}>,
+  logs: Array<{ status: string; scheduledTime: string | null }>,
   scheduledTime: string,
 ) {
   const normalized = normalizeTime(scheduledTime);
   return logs.some(
-    (log) =>
+    log =>
       log.status === 'taken' &&
       log.scheduledTime &&
       normalizeTime(log.scheduledTime) === normalized,
@@ -75,7 +76,8 @@ export function HomeScreen() {
       const data = await homeApi.dashboard();
       setDashboard(data);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not load home';
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load home';
       Alert.alert('Home', message);
     } finally {
       setLoading(false);
@@ -97,7 +99,7 @@ export function HomeScreen() {
         }
       : null;
     const map = new Map<string, ScheduleItem[]>();
-    schedules.forEach((s) => {
+    schedules.forEach(s => {
       const times = s.times.length ? s.times : ['Anytime'];
       times.forEach((time, tIdx) => {
         const taken =
@@ -110,9 +112,11 @@ export function HomeScreen() {
         items.push({
           id: `${s.id}-${tIdx}`,
           name: s.medicineName,
-          detail: [s.dose, s.mealTiming].filter(Boolean).join(' • ') || 'Scheduled dose',
+          detail:
+            [s.dose, s.mealTiming].filter(Boolean).join(' • ') ||
+            'Scheduled dose',
           icon: 'pill',
-          active: isNext && !taken,
+          active: !!(isNext && !taken),
           taken,
           showDismiss: !taken,
           showCheck: !taken,
@@ -122,12 +126,14 @@ export function HomeScreen() {
         map.set(time, items);
       });
     });
-    return Array.from(map.entries()).map(([time, items]) => ({time, items}));
+    return Array.from(map.entries()).map(([time, items]) => ({ time, items }));
   }, [dashboard]);
 
   const markTaken = async (scheduleId?: string, scheduledTime?: string) => {
-    const targetScheduleId = scheduleId ?? dashboard?.nextMedication?.scheduleId;
-    const targetTime = scheduledTime ?? dashboard?.nextMedication?.scheduledTime;
+    const targetScheduleId =
+      scheduleId ?? dashboard?.nextMedication?.scheduleId;
+    const targetTime =
+      scheduledTime ?? dashboard?.nextMedication?.scheduledTime;
     if (!targetScheduleId || !targetTime) return;
     if (
       !scheduleId &&
@@ -142,14 +148,22 @@ export function HomeScreen() {
       });
       loadHome();
     } catch (err) {
-      Alert.alert('Medication', err instanceof ApiError ? err.message : 'Could not log dose');
+      Alert.alert(
+        'Medication',
+        err instanceof ApiError ? err.message : 'Could not log dose',
+      );
     }
   };
 
   const snoozeMedication = async () => {
     const scheduleId = dashboard?.nextMedication?.scheduleId;
     const scheduledTime = dashboard?.nextMedication?.scheduledTime;
-    if (!scheduleId || !scheduledTime || !dashboard?.nextMedication?.canMarkTaken) return;
+    if (
+      !scheduleId ||
+      !scheduledTime ||
+      !dashboard?.nextMedication?.canMarkTaken
+    )
+      return;
     try {
       await medicationSchedulesApi.logDose(scheduleId, 'snoozed', {
         snoozeMinutes: 10,
@@ -157,7 +171,10 @@ export function HomeScreen() {
       });
       loadHome();
     } catch (err) {
-      Alert.alert('Medication', err instanceof ApiError ? err.message : 'Could not snooze');
+      Alert.alert(
+        'Medication',
+        err instanceof ApiError ? err.message : 'Could not snooze',
+      );
     }
   };
 
@@ -166,7 +183,10 @@ export function HomeScreen() {
       await cartApi.addItem(productId, 1);
       Alert.alert('Cart', 'Added to cart');
     } catch (err) {
-      Alert.alert('Cart', err instanceof ApiError ? err.message : 'Could not add to cart');
+      Alert.alert(
+        'Cart',
+        err instanceof ApiError ? err.message : 'Could not add to cart',
+      );
     }
   };
 
@@ -189,14 +209,18 @@ export function HomeScreen() {
 
   const openReportsList = () => navigation.navigate('ReportsList');
 
-  const saveVitals = async (payload: {bloodPressure?: string; oxygen?: string}) => {
+  const saveVitals = async (payload: {
+    bloodPressure?: string;
+    oxygen?: string;
+  }) => {
     setSavingVitals(true);
     try {
       await profileApi.updateVitals(payload);
       setVitalsModalOpen(false);
       await loadHome();
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not save vitals';
+      const message =
+        err instanceof ApiError ? err.message : 'Could not save vitals';
       Alert.alert('Health Status', message);
     } finally {
       setSavingVitals(false);
@@ -205,13 +229,19 @@ export function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, {paddingTop: insets.top + 8}]}>
-        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          activeOpacity={0.7}
+          onPress={() => {}}
+        >
           <Feather name="menu" size={24} color="#1E293B" />
         </TouchableOpacity>
         <View style={styles.logoContainer}>
-          <Text style={styles.logoTextPrimary}>Cholbe</Text>
-          <Text style={styles.logoTextSecondary}>PHARMACY</Text>
+          <Image
+            source={require('../../assets/logoImage.png')}
+            style={styles.iconImage}
+          />
         </View>
         <NotificationBell
           style={styles.iconButton}
@@ -225,413 +255,461 @@ export function HomeScreen() {
           <ActivityIndicator size="large" color="#0D9488" />
         </View>
       ) : (
-      <ScrollView
-        style={styles.mainScroll}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {paddingBottom: insets.bottom + 100},
-        ]}>
-        <View style={styles.userInfoContainer}>
-          <Image
-            source={
-              user?.avatarUrl
-                ? {uri: user.avatarUrl}
-                : require('../../assets/b2.png')
-            }
-            style={styles.avatar}
-          />
-          <View style={styles.userMeta}>
-            <Text style={styles.userName}>{user?.fullName ?? '—'}</Text>
-            <View style={styles.locationRow}>
-              <Feather name="map-pin" size={14} color="#64748B" />
-              <Text style={styles.locationText}>{user?.location ?? 'Add address'}</Text>
+        <ScrollView
+          style={styles.mainScroll}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 100 },
+          ]}
+        >
+          <View style={styles.profileBgWrap}>
+            <Image
+              source={require('../../assets/home_profile_bg.png')}
+              style={styles.profileBgArt}
+              resizeMode="cover"
+            />
+            <View style={styles.profileBgNotch} pointerEvents="none" />
+            <View style={styles.userInfoContainer}>
+              <Image
+                source={
+                  user?.avatarUrl
+                    ? { uri: user.avatarUrl }
+                    : require('../../assets/b2.png')
+                }
+                style={styles.avatar}
+              />
+              <View style={styles.userMeta}>
+                <Text style={styles.userName}>{user?.fullName ?? '—'}</Text>
+                <View style={styles.locationRow}>
+                  <Feather name="map-pin" size={14} color="#64748B" />
+                  <Text style={styles.locationText}>
+                    {user?.location ?? 'Add address'}
+                  </Text>
+                </View>
+                <Text style={styles.lastSeenText}>
+                  Last seen by Dashboard: {user?.lastActiveLabel ?? '—'}
+                </Text>
+              </View>
             </View>
-            <Text style={styles.lastSeenText}>
-              Last seen by Dashboard: {user?.lastActiveLabel ?? '—'}
+          </View>
+          <View style={styles.heroCard}>
+            {/* <View style={styles.waveDecorator1} />
+          <View style={styles.waveDecorator2} /> */}
+            <Image
+              source={require('../../assets/medicine_cardbg.png')}
+              style={styles.heroCardBg}
+              resizeMode="cover"
+            />
+            <View style={styles.heroHeaderRow}>
+              <Feather name="bell" size={16} color="#475569" />
+              <Text style={styles.heroLabel}>Next Medication</Text>
+            </View>
+
+            <Text style={styles.medicationTitle}>
+              {allDosesTaken
+                ? "You're all caught up"
+                : nextMed?.medicineName ?? 'No medication scheduled'}
             </Text>
-          </View>
-        </View>
-
-        <View style={styles.heroCard}>
-          <View style={styles.waveDecorator1} />
-          <View style={styles.waveDecorator2} />
-
-          <View style={styles.heroHeaderRow}>
-            <Feather name="bell" size={16} color="#475569" />
-            <Text style={styles.heroLabel}>Next Medication</Text>
-          </View>
-
-          <Text style={styles.medicationTitle}>
-            {allDosesTaken
-              ? "You're all caught up"
-              : nextMed?.medicineName ?? 'No medication scheduled'}
-          </Text>
-          <Text style={styles.medicationSubtitle}>
-            {allDosesTaken
-              ? 'All doses taken for today. Great job!'
-              : nextMed?.dose
+            <Text style={styles.medicationSubtitle}>
+              {allDosesTaken
+                ? 'All doses taken for today. Great job!'
+                : nextMed?.dose
                 ? `${nextMed.dose} — Time to take your medicine`
                 : 'Add a medication to get reminders'}
-          </Text>
-
-          {nextMed && !allDosesTaken ? (
-            <View style={styles.timeTag}>
-              <Feather name="activity" size={12} color="#0EA5E9" />
-              <Text style={styles.timeTagText}>{nextMed.minutesUntilLabel}</Text>
-            </View>
-          ) : null}
-
-          <TouchableOpacity
-            style={[
-              styles.markTakenButton,
-              (!canMarkTaken || allDosesTaken) && styles.markTakenButtonDisabled,
-            ]}
-            activeOpacity={0.85}
-            onPress={() => markTaken()}
-            disabled={!canMarkTaken || allDosesTaken}>
-            <Text style={styles.markTakenButtonText}>
-              {allDosesTaken ? 'Taken for today' : 'Mark as Taken'}
             </Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.snoozeButton}
-            activeOpacity={0.7}
-            onPress={snoozeMedication}
-            disabled={!canMarkTaken || allDosesTaken}>
-            <Text
-              style={[
-                styles.snoozeText,
-                (!canMarkTaken || allDosesTaken) && styles.snoozeTextDisabled,
-              ]}>
-              Snooze 10 minutes
-            </Text>
-            <Feather
-              name="chevron-right"
-              size={14}
-              color={!canMarkTaken || allDosesTaken ? '#CBD5E1' : '#64748B'}
-            />
-          </TouchableOpacity>
-        </View>
+            {nextMed && !allDosesTaken ? (
+              <View style={styles.timeTag}>
+                <Feather name="activity" size={12} color="#0EA5E9" />
+                <Text style={styles.timeTagText}>
+                  {nextMed.minutesUntilLabel}
+                </Text>
+              </View>
+            ) : null}
 
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('PharmacyShop')}>
-            <Feather
-              name="shopping-cart"
-              size={18}
-              color="#2DD4BF"
-              style={styles.actionIcon}
-            />
-            <Text style={styles.actionButtonText}>Order Medicine</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('DoctorList')}>
-            <Feather
-              name="phone"
-              size={18}
-              color="#2DD4BF"
-              style={styles.actionIcon}
-            />
-            <Text style={styles.actionButtonText}>Contact Doctor</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            <Feather name="bell" size={16} color="#475569" />
-            <Text style={styles.statusTitle}>Health Status</Text>
             <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setVitalsModalOpen(true)}>
-              <Text style={styles.updateVitalsLink}>Update</Text>
+              style={[
+                styles.markTakenButton,
+                (!canMarkTaken || allDosesTaken) &&
+                  styles.markTakenButtonDisabled,
+              ]}
+              activeOpacity={0.85}
+              onPress={() => markTaken()}
+              disabled={!canMarkTaken || allDosesTaken}
+            >
+              <Text style={styles.markTakenButtonText}>
+                {allDosesTaken ? 'Taken for today' : 'Mark as Taken'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.snoozeButton}
+              activeOpacity={0.7}
+              onPress={snoozeMedication}
+              disabled={!canMarkTaken || allDosesTaken}
+            >
+              <Text
+                style={[
+                  styles.snoozeText,
+                  (!canMarkTaken || allDosesTaken) && styles.snoozeTextDisabled,
+                ]}
+              >
+                Snooze 10 minutes
+              </Text>
+              <Feather
+                name="chevron-right"
+                size={14}
+                color={!canMarkTaken || allDosesTaken ? '#CBD5E1' : '#64748B'}
+              />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => setVitalsModalOpen(true)}>
-            <View style={styles.metricsRow}>
-              <View style={styles.metricItem}>
-                <Feather
-                  name="activity"
-                  size={20}
-                  color="#2DD4BF"
-                  style={styles.metricIcon}
-                />
-                <View>
-                  <Text style={styles.metricLabel}>
-                    Bp{' '}
-                    <Text style={styles.metricValue}>
-                      {vitals?.bloodPressure?.value ?? '—'}
-                    </Text>
-                  </Text>
-                  <Text style={styles.metricTimestamp}>
-                    Last checked: {vitals?.bloodPressure?.checkedAgo ?? '—'}
-                  </Text>
-                </View>
-              </View>
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('PharmacyShop')}
+            >
+              <Feather
+                name="shopping-cart"
+                size={18}
+                color="#2DD4BF"
+                style={styles.actionIcon}
+              />
+              <Text style={styles.actionButtonText}>Order Medicine</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('DoctorList')}
+            >
+              <Feather
+                name="phone"
+                size={18}
+                color="#2DD4BF"
+                style={styles.actionIcon}
+              />
+              <Text style={styles.actionButtonText}>Contact Doctor</Text>
+            </TouchableOpacity>
+          </View>
 
-              <View style={[styles.metricItem, styles.metricBorderLeft]}>
-                <Feather
-                  name="heart"
-                  size={20}
-                  color="#2DD4BF"
-                  style={styles.metricIcon}
-                />
-                <View>
-                  <Text style={styles.metricLabel}>
-                    Oxygen:{' '}
-                    <Text style={styles.metricValue}>
-                      {vitals?.oxygen?.value ?? '—'}
-                    </Text>
-                  </Text>
-                  <Text style={styles.metricTimestamp}>
-                    Last checked: {vitals?.oxygen?.checkedAgo ?? '—'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.viewReportsButton}
-            activeOpacity={0.8}
-            onPress={openReportsList}>
-            <Text style={styles.viewReportsText}>View Reports</Text>
-          </TouchableOpacity>
-        </View>
-
-        <UpdateHealthVitalsModal
-          visible={vitalsModalOpen}
-          initialBloodPressure={vitals?.bloodPressure?.value ?? ''}
-          initialOxygen={vitals?.oxygen?.value ?? ''}
-          saving={savingVitals}
-          onClose={() => setVitalsModalOpen(false)}
-          onSave={saveVitals}
-        />
-
-        <View style={styles.alertCard}>
-          <View style={styles.alertLeftContent}>
-            <View style={styles.alertRow}>
+          <View style={styles.statusCard}>
+            <View style={styles.statusHeader}>
               <Feather name="bell" size={16} color="#475569" />
-              <Text style={styles.alertText}>
-                Next refill in {refill?.daysUntil ?? 0} days
-              </Text>
+              <Text style={styles.statusTitle}>Health Status</Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setVitalsModalOpen(true)}
+              >
+                <Text style={styles.updateVitalsLink}>Update</Text>
+              </TouchableOpacity>
             </View>
-            <View style={[styles.alertRow, styles.alertRowSpaced]}>
-              <Feather name="users" size={16} color="#10B981" />
-              <Text style={styles.alertSubtext}>
-                {refill?.familyMonitoring
-                  ? 'Family is monitoring you'
-                  : 'Add family members to enable monitoring'}
-              </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setVitalsModalOpen(true)}
+            >
+              <View style={styles.metricsRow}>
+                <View style={styles.metricItem}>
+                  <Feather
+                    name="activity"
+                    size={20}
+                    color="#2DD4BF"
+                    style={styles.metricIcon}
+                  />
+                  <View>
+                    <Text style={styles.metricLabel}>
+                      Bp{' '}
+                      <Text style={styles.metricValue}>
+                        {vitals?.bloodPressure?.value ?? '—'}
+                      </Text>
+                    </Text>
+                    <Text style={styles.metricTimestamp}>
+                      Last checked: {vitals?.bloodPressure?.checkedAgo ?? '—'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.metricItem, styles.metricBorderLeft]}>
+                  <Feather
+                    name="heart"
+                    size={20}
+                    color="#2DD4BF"
+                    style={styles.metricIcon}
+                  />
+                  <View>
+                    <Text style={styles.metricLabel}>
+                      Oxygen:{' '}
+                      <Text style={styles.metricValue}>
+                        {vitals?.oxygen?.value ?? '—'}
+                      </Text>
+                    </Text>
+                    <Text style={styles.metricTimestamp}>
+                      Last checked: {vitals?.oxygen?.checkedAgo ?? '—'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.viewReportsButton}
+              activeOpacity={0.8}
+              onPress={openReportsList}
+            >
+              <Text style={styles.viewReportsText}>View Reports</Text>
+            </TouchableOpacity>
+          </View>
+
+          <UpdateHealthVitalsModal
+            visible={vitalsModalOpen}
+            initialBloodPressure={vitals?.bloodPressure?.value ?? ''}
+            initialOxygen={vitals?.oxygen?.value ?? ''}
+            saving={savingVitals}
+            onClose={() => setVitalsModalOpen(false)}
+            onSave={saveVitals}
+          />
+
+          <View style={styles.alertCard}>
+            <View style={styles.alertLeftContent}>
+              <View style={styles.alertRow}>
+                <Feather name="bell" size={16} color="#475569" />
+                <Text style={styles.alertText}>
+                  Next refill in {refill?.daysUntil ?? 0} days
+                </Text>
+              </View>
+              <View style={[styles.alertRow, styles.alertRowSpaced]}>
+                <Feather name="users" size={16} color="#10B981" />
+                <Text style={styles.alertSubtext}>
+                  {refill?.familyMonitoring
+                    ? 'Family is monitoring you'
+                    : 'Add family members to enable monitoring'}
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.scanBadge} activeOpacity={0.8} onPress={() => navigation.navigate('AiSymptomHome')}>
+             <Image style={styles.aiHelpIcon} source={require('../../assets/syaiicon.png')}/>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.viewMedicineButton}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('MedicineList')}
+            >
+              <Text style={styles.viewMedicineText}>View Medicine</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.statsGrid}>
+            <View style={[styles.statBox, styles.statTaken]}>
+              <View style={styles.statBoxHeader}>
+                <Text style={[styles.statLabel, styles.statLabelTaken]}>
+                  Taken
+                </Text>
+                <Feather name="check-circle" size={16} color="#16A34A" />
+              </View>
+              <Text style={styles.statNumber}>{stats?.taken ?? 0}</Text>
+            </View>
+            <View style={[styles.statBox, styles.statMissed]}>
+              <View style={styles.statBoxHeader}>
+                <Text style={[styles.statLabel, styles.statLabelMissed]}>
+                  Missed
+                </Text>
+                <Feather name="x-circle" size={16} color="#EF4444" />
+              </View>
+              <Text style={styles.statNumber}>{stats?.missed ?? 0}</Text>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.scanBadge} activeOpacity={0.8}>
-            <Feather name="activity" size={22} color="#059669" />
-          </TouchableOpacity>
+          <View style={[styles.statsGrid, styles.statsGridSecond]}>
+            <View style={[styles.statBox, styles.statRemaining]}>
+              <View style={styles.statBoxHeader}>
+                <Text style={[styles.statLabel, styles.statLabelRemaining]}>
+                  Remaining
+                </Text>
+                <FontAwesome name="medkit" size={16} color="#7C3AED" />
+              </View>
+              <Text style={styles.statNumber}>{stats?.remaining ?? 0}</Text>
+            </View>
+            <View style={[styles.statBox, styles.statTotal]}>
+              <View style={styles.statBoxHeader}>
+                <Text style={[styles.statLabel, styles.statLabelTotal]}>
+                  Total
+                </Text>
+                <Feather name="activity" size={16} color="#2563EB" />
+              </View>
+              <Text style={styles.statNumber}>{stats?.total ?? 0}</Text>
+            </View>
+          </View>
 
           <TouchableOpacity
-            style={styles.viewMedicineButton}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('MedicineList')}>
-            <Text style={styles.viewMedicineText}>View Medicine</Text>
+            style={styles.addMedicineButton}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('AddMedication')}
+          >
+            <Feather
+              name="plus"
+              size={20}
+              color="#FFFFFF"
+              style={styles.addMedIcon}
+            />
+            <Text style={styles.addMedicineButtonText}>Add Medicine</Text>
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.statsGrid}>
-          <View style={[styles.statBox, styles.statTaken]}>
-            <View style={styles.statBoxHeader}>
-              <Text style={[styles.statLabel, styles.statLabelTaken]}>Taken</Text>
-              <Feather name="check-circle" size={16} color="#16A34A" />
-            </View>
-            <Text style={styles.statNumber}>{stats?.taken ?? 0}</Text>
-          </View>
-          <View style={[styles.statBox, styles.statMissed]}>
-            <View style={styles.statBoxHeader}>
-              <Text style={[styles.statLabel, styles.statLabelMissed]}>Missed</Text>
-              <Feather name="x-circle" size={16} color="#EF4444" />
-            </View>
-            <Text style={styles.statNumber}>{stats?.missed ?? 0}</Text>
-          </View>
-        </View>
-
-        <View style={[styles.statsGrid, styles.statsGridSecond]}>
-          <View style={[styles.statBox, styles.statRemaining]}>
-            <View style={styles.statBoxHeader}>
-              <Text style={[styles.statLabel, styles.statLabelRemaining]}>
-                Remaining
-              </Text>
-              <FontAwesome name="medkit" size={16} color="#7C3AED" />
-            </View>
-            <Text style={styles.statNumber}>{stats?.remaining ?? 0}</Text>
-          </View>
-          <View style={[styles.statBox, styles.statTotal]}>
-            <View style={styles.statBoxHeader}>
-              <Text style={[styles.statLabel, styles.statLabelTotal]}>Total</Text>
-              <Feather name="activity" size={16} color="#2563EB" />
-            </View>
-            <Text style={styles.statNumber}>{stats?.total ?? 0}</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.addMedicineButton}
-          activeOpacity={0.9}
-          onPress={() => navigation.navigate('AddMedication')}>
-          <Feather
-            name="plus"
-            size={20}
-            color="#FFFFFF"
-            style={styles.addMedIcon}
-          />
-          <Text style={styles.addMedicineButtonText}>Add Medicine</Text>
-        </TouchableOpacity>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tabsContainer}
-          contentContainerStyle={styles.tabsContent}>
-          {SCHEDULE_TABS.map(tab => {
-            const active =
-              tab.key !== 'waitingRoom' && scheduleTab === tab.key;
-            const isWaitingRoom = tab.key === 'waitingRoom';
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                style={
-                  isWaitingRoom
-                    ? styles.waitingRoomTab
-                    : active
-                      ? styles.activeTab
-                      : styles.inactiveTab
-                }
-                onPress={() => {
-                  if (isWaitingRoom) {
-                    const appt = dashboard?.nextAppointment;
-                    if (appt) {
-                      navigation.navigate('WaitingRoom', {
-                        appointmentId: appt.id,
-                        doctorName: appt.doctorName,
-                        specialty: appt.specialty,
-                      });
-                    } else {
-                      navigation.navigate('MyAppointment');
-                    }
-                    return;
-                  }
-                  setScheduleTab(tab.key);
-                }}
-                activeOpacity={0.8}>
-                {active && <View style={styles.activeTabDot} />}
-                <Text
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tabsContainer}
+            contentContainerStyle={styles.tabsContent}
+          >
+            {SCHEDULE_TABS.map(tab => {
+              const active =
+                tab.key !== 'waitingRoom' && scheduleTab === tab.key;
+              const isWaitingRoom = tab.key === 'waitingRoom';
+              return (
+                <TouchableOpacity
+                  key={tab.key}
                   style={
                     isWaitingRoom
-                      ? styles.waitingRoomTabText
+                      ? styles.waitingRoomTab
                       : active
+                      ? styles.activeTab
+                      : styles.inactiveTab
+                  }
+                  onPress={() => {
+                    if (isWaitingRoom) {
+                      const appt = dashboard?.nextAppointment;
+                      if (appt) {
+                        navigation.navigate('WaitingRoom', {
+                          appointmentId: appt.id,
+                          doctorName: appt.doctorName,
+                          specialty: appt.specialty,
+                        });
+                      } else {
+                        navigation.navigate('MyAppointment');
+                      }
+                      return;
+                    }
+                    setScheduleTab(tab.key);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  {active && <View style={styles.activeTabDot} />}
+                  <Text
+                    style={
+                      isWaitingRoom
+                        ? styles.waitingRoomTabText
+                        : active
                         ? styles.activeTabText
                         : styles.inactiveTabText
-                  }>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                    }
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
 
-        {scheduleGroups.map(group => (
-          <View key={group.time}>
-            <Text style={styles.timeSectionHeader}>{group.time}</Text>
-            {group.items.map(item => (
-              <ScheduleRow
-                key={item.id}
-                item={item}
-                onTaken={
-                  item.taken || !item.scheduleId || !item.scheduledTime
-                    ? undefined
-                    : () => markTaken(item.scheduleId, item.scheduledTime)
-                }
-              />
-            ))}
-          </View>
-        ))}
-
-        <TouchableOpacity
-          style={[styles.viewReportsButton, styles.viewReportsSpaced]}
-          activeOpacity={0.8}
-          onPress={openReportsList}>
-          <Text style={styles.viewReportsText}>View Reports</Text>
-        </TouchableOpacity>
-
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionHeading}>Related Medicine</Text>
-          <TouchableOpacity
-            style={styles.viewAllRow}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('MedicineList')}>
-            <Text style={styles.viewAllText}>View All</Text>
-            <Feather name="chevron-right" size={14} color="#64748B" />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.carouselContent}>
-          {dashboard?.relatedProducts.map(product => {
-            const price = Number(product.discountPrice ?? product.unitPrice);
-            const original = Number(product.unitPrice);
-            const discount =
-              product.discountPrice && original > price
-                ? `${Math.round(((original - price) / original) * 100)}%`
-                : null;
-            return (
-            <View key={product.id} style={styles.productCard}>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() =>
-                  navigation.navigate('PharmacyDetails', {productId: product.id})
-                }>
-                {discount ? (
-                  <View style={styles.discountBadge}>
-                    <Text style={styles.discountText}>{discount}</Text>
-                  </View>
-                ) : null}
-              <ProductImage
-                imageUrl={product.imageUrl}
-                style={styles.productImage}
-              />
-                <Text style={styles.productTitle}>{product.name}</Text>
-                <Text style={styles.productWeight}>
-                  {product.genericName ?? product.category ?? ''}
-                </Text>
-                <View style={styles.productPricingRow}>
-                  <Text style={styles.productVol}>{product.category ?? 'Item'}</Text>
-                  {product.discountPrice ? (
-                    <Text style={styles.oldPrice}>{formatBdt(original)}</Text>
-                  ) : null}
-                  <Text style={styles.currentPrice}>{formatBdt(price)}</Text>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.addToCartButton}
-                activeOpacity={0.8}
-                onPress={() => addToCart(product.id)}>
-                <Text style={styles.addToCartText}>Add to Cart</Text>
-              </TouchableOpacity>
+          {scheduleGroups.map(group => (
+            <View key={group.time}>
+              <Text style={styles.timeSectionHeader}>{group.time}</Text>
+              {group.items.map(item => (
+                <ScheduleRow
+                  key={item.id}
+                  item={item}
+                  onTaken={
+                    item.taken || !item.scheduleId || !item.scheduledTime
+                      ? undefined
+                      : () => markTaken(item.scheduleId, item.scheduledTime)
+                  }
+                />
+              ))}
             </View>
-          );
-          })}
+          ))}
+
+          <TouchableOpacity
+            style={[styles.viewReportsButton, styles.viewReportsSpaced]}
+            activeOpacity={0.8}
+            onPress={openReportsList}
+          >
+            <Text style={styles.viewReportsText}>View Reports</Text>
+          </TouchableOpacity>
+
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeading}>Related Medicine</Text>
+            <TouchableOpacity
+              style={styles.viewAllRow}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('MedicineList')}
+            >
+              <Text style={styles.viewAllText}>View All</Text>
+              <Feather name="chevron-right" size={14} color="#64748B" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carouselContent}
+          >
+            {dashboard?.relatedProducts.map(product => {
+              const price = Number(product.discountPrice ?? product.unitPrice);
+              const original = Number(product.unitPrice);
+              const discount =
+                product.discountPrice && original > price
+                  ? `${Math.round(((original - price) / original) * 100)}%`
+                  : null;
+              return (
+                <View key={product.id} style={styles.productCard}>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() =>
+                      navigation.navigate('PharmacyDetails', {
+                        productId: product.id,
+                      })
+                    }
+                  >
+                    {discount ? (
+                      <View style={styles.discountBadge}>
+                        <Text style={styles.discountText}>{discount}</Text>
+                      </View>
+                    ) : null}
+                    <ProductImage
+                      imageUrl={product.imageUrl}
+                      style={styles.productImage}
+                    />
+                    <Text style={styles.productTitle}>{product.name}</Text>
+                    <Text style={styles.productWeight}>
+                      {product.genericName ?? product.category ?? ''}
+                    </Text>
+                    <View style={styles.productPricingRow}>
+                      <Text style={styles.productVol}>
+                        {product.category ?? 'Item'}
+                      </Text>
+                      {product.discountPrice ? (
+                        <Text style={styles.oldPrice}>
+                          {formatBdt(original)}
+                        </Text>
+                      ) : null}
+                      <Text style={styles.currentPrice}>
+                        {formatBdt(price)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.addToCartButton}
+                    activeOpacity={0.8}
+                    onPress={() => addToCart(product.id)}
+                  >
+                    <Text style={styles.addToCartText}>Add to Cart</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </ScrollView>
         </ScrollView>
-      </ScrollView>
       )}
 
       <View style={styles.bottomNavWrap}>
@@ -661,7 +739,8 @@ function ScheduleRow({
         styles.medicationRowCard,
         active && styles.medicationActiveCard,
         taken && styles.medicationTakenCard,
-      ]}>
+      ]}
+    >
       {item.icon === 'insulin' ? (
         <Feather
           name="activity"
@@ -669,8 +748,8 @@ function ScheduleRow({
           color={active ? '#FFFFFF' : '#94A3B8'}
         />
       ) : (
-        <FontAwesome
-          name="medkit"
+        <MaterialCommunityIcons 
+          name="pill"
           size={20}
           color={active ? '#FFFFFF' : '#94A3B8'}
         />
@@ -680,14 +759,16 @@ function ScheduleRow({
           style={[
             styles.medicationRowTitle,
             active && styles.medicationRowTitleActive,
-          ]}>
+          ]}
+        >
           {item.name}
         </Text>
         <Text
           style={[
             styles.medicationRowSub,
             active && styles.medicationRowSubActive,
-          ]}>
+          ]}
+        >
           {item.detail}
         </Text>
       </View>
@@ -703,7 +784,11 @@ function ScheduleRow({
         {taken ? (
           <Feather name="check-circle" size={22} color="#22C55E" />
         ) : item.showCheck !== false ? (
-          <TouchableOpacity activeOpacity={0.8} onPress={onTaken} disabled={!onTaken}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onTaken}
+            disabled={!onTaken}
+          >
             <Feather
               name="check-circle"
               size={22}
@@ -743,8 +828,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
+    paddingBottom: 4,
+    backgroundColor: '#F5F2FE',
   },
   iconButton: {
     position: 'relative',
@@ -778,6 +863,55 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     letterSpacing: 1,
     marginBottom: 3,
+  },
+  iconImage: {
+    height: 48,
+    width: 150,
+    resizeMode: 'cover',
+  },
+  profileBgWrap: {
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
+    paddingTop: 32,
+    paddingBottom: 34,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  profileBgCurve: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  profileBgArt: {
+    position: 'absolute',
+    width: SCREEN_WIDTH * 1.6,
+    height: SCREEN_WIDTH * 1.6,
+    left: -SCREEN_WIDTH * 0.3,
+    top: -SCREEN_WIDTH * 0.62,
+    opacity: 0.25
+  },
+  // the curve in the top center
+  profileBgNotch: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: SCREEN_WIDTH,
+    top: 30 - SCREEN_WIDTH,
+    backgroundColor: '#F5F2FE',
+    borderBottomLeftRadius: SCREEN_WIDTH / 2,
+    borderBottomRightRadius: SCREEN_WIDTH / 2,
+    transform: [{ scaleX: 2 }],
+  },
+  heroCardBg: {
+    position: 'absolute',
+    top: 0,
+    left: -40,
+    width: '160%',
+    height: '160%',
+    opacity: 0.25,
+    transform: [{ rotate: '-15deg' }],
   },
   userInfoContainer: {
     flexDirection: 'row',
@@ -816,10 +950,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   heroCard: {
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#F3F2FB',
     borderRadius: 24,
-    padding: 20,
-    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginTop: -25,
+    height: 200,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -846,7 +982,7 @@ const styles = StyleSheet.create({
   heroHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   heroLabel: {
     fontSize: 13,
@@ -856,7 +992,7 @@ const styles = StyleSheet.create({
   },
   medicationTitle: {
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#0F172A',
   },
   medicationSubtitle: {
@@ -872,7 +1008,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    marginTop: 10,
+    marginTop: 5,
   },
   timeTagText: {
     fontSize: 12,
@@ -881,11 +1017,11 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   markTakenButton: {
-    backgroundColor: '#334E68',
+    backgroundColor: '#307887',
     borderRadius: 18,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 8,
   },
   markTakenButtonDisabled: {
     backgroundColor: '#94A3B8',
@@ -916,6 +1052,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     gap: 12,
   },
+  aiHelpIcon:{
+    height:44,
+    width:44,
+    borderRadius:22
+  },
   actionButton: {
     flex: 1,
     flexDirection: 'row',
@@ -927,7 +1068,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
     elevation: 1,
@@ -1043,9 +1184,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     top: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#D1FAE5',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1061,6 +1202,42 @@ const styles = StyleSheet.create({
     color: '#0D9488',
     fontSize: 14,
     fontWeight: '600',
+  },
+  statSummaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    marginTop: 16,
+    elevation:1
+  },
+  statSummaryItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statSummaryDivider: {
+    width: 1,
+    height: 26,
+    backgroundColor: '#5ad7c0',
+  },
+  statSummaryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  statSummaryTaken: {
+    color: '#2DBDA8',
+  },
+  statSummaryUpcoming: {
+    color: '#F5A623',
+  },
+  statSummaryMissed: {
+    color: '#F26D6D',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -1167,24 +1344,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   activeTab: {
-    backgroundColor: '#1E293B',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: '#111827',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: 8,
   },
   activeTabDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FB923C',
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#F59E0B',
     marginRight: 6,
   },
   activeTabText: {
-    fontSize: 14,
-    color: '#FFFFFF',
+    fontSize: 13,
+    color: '#F3F2FB',
     fontWeight: '600',
   },
   timeSectionHeader: {

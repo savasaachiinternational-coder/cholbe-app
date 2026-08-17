@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
@@ -18,8 +19,18 @@ import type {RootStackParamList} from '../../navigation/types';
 import {MedicationReviewContent} from '../../components/MedicationReviewContent';
 import {useMedicationDraft} from '../../context/MedicationDraftContext';
 import {ApiError} from '../../api/client';
+import { WaveTitleBand } from '../../components/WaveTitleBand';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewMedication'>;
+
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
 
 const {width} = Dimensions.get('window');
 
@@ -52,15 +63,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
           onPress={() => navigation.goBack()}>
           <Feather name="chevron-left" size={28} color="#333333" />
         </TouchableOpacity>
-
-        <View style={styles.logoContainer}>
-          <View style={styles.logoPlaceholder}>
-            <MaterialCommunityIcons name="medical-bag" size={20} color="#00A896" />
-            <Text style={styles.logoTextMain}>Cholbe</Text>
-          </View>
-          <Text style={styles.logoTextSub}>PHARMACY</Text>
-        </View>
-
+        <Image source ={require('../../assets/logoImage.png')} style={styles.iconImage}/>
         <TouchableOpacity
           style={styles.headerIconButton}
           activeOpacity={0.7}
@@ -69,10 +72,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.titleContainer}>
-        <Text style={styles.screenTitle}>Review Medication</Text>
-      </View>
-
+       <WaveTitleBand title={'Review Medication'} color="#F5F2FD" style={[styles.waveDesign,styles.screenTitle]}/>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollCanvasContent}>
@@ -154,7 +154,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9FE',
+    backgroundColor: '#F5F2FD',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -167,6 +167,10 @@ const styles = StyleSheet.create({
     padding: 4,
     width: 32,
     alignItems: 'flex-end',
+  }, iconImage: {
+    height: 48,
+    width: 150,
+    resizeMode: 'cover',
   },
   backButton: {
     padding: 4,
@@ -182,12 +186,14 @@ const styles = StyleSheet.create({
   },
   logoTextMain: {
     fontSize: 22,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E3A60',
     marginLeft: 4,
   },
   logoTextSub: {
     fontSize: 9,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#49739B',
     letterSpacing: 2,
@@ -199,14 +205,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   screenTitle: {
-    fontSize: 20,
+    fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#333333',
+    color: '#424242',
   },
   scrollCanvasContent: {
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 160,
+  },
+  waveDesign:{
+    paddingTop:5,
+    marginTop:-10,
+    paddingBottom:10
   },
   reviewDetailsCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.75)',
@@ -226,19 +238,23 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   medicineNameText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#333333',
+    fontSize: 16,
+    fontFamily: FONT.bold,
+    fontWeight: '600',
+    color: '#424242',
     marginBottom: 4,
   },
   medicineSubtext: {
-    fontSize: 14,
-    color: '#7D8797',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: '#616161',
     fontWeight: '400',
   },
+  // Centred so the icon lines up with the text's midline. lineHeight 22 makes the
+  // text box taller than the 20px icon, so flex-start left the icon riding high.
   infoBlockRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 20,
     position: 'relative',
     paddingLeft: 8,
@@ -246,7 +262,6 @@ const styles = StyleSheet.create({
   iconColumn: {
     width: 36,
     alignItems: 'center',
-    paddingTop: 2,
   },
   detailsColumn: {
     flex: 1,
@@ -254,19 +269,23 @@ const styles = StyleSheet.create({
   },
   sectionLabelText: {
     fontSize: 15,
+    fontFamily: FONT.medium,
     color: '#8A94A6',
     fontWeight: '500',
     marginBottom: 12,
   },
   inlineInfoValueText: {
-    fontSize: 15,
-    color: '#8A94A6',
-    fontWeight: '400',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: '#616161',
+    fontWeight: '600',
     lineHeight: 22,
+    verticalAlign:'middle'
   },
   boldSpan: {
-    color: '#495057',
-    fontWeight: '500',
+    color: '#212121',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   timelineItem: {
     flexDirection: 'row',
@@ -281,9 +300,10 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   timelineContentText: {
-    fontSize: 14,
-    color: '#495057',
-    fontWeight: '500',
+    fontSize: 12,
+    fontFamily: FONT.medium,
+    color: '#212121',
+    fontWeight: '400',
     flex: 1,
   },
   dividerLine: {
@@ -291,7 +311,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F2F7',
     marginVertical: 8,
   },
-  refillBlock: {marginBottom: 8},
+  // Multi-line block: centring here would drop the icon to the middle of the
+  // whole list, so it stays pinned to the first line.
+  refillBlock: {marginBottom: 8, alignItems: 'flex-start'},
   dualActionFooterContainer: {
     position: 'absolute',
     left: 0,
@@ -305,22 +327,23 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#EBEFF5',
-    height: 54,
-    borderRadius: 27,
+    backgroundColor: '#E6E3EE',
+    height: 48,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#5A6E85',
-    fontSize: 17,
+    color: '#4DA69F',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   saveButton: {
     flex: 1.3,
     backgroundColor: '#45A096',
-    height: 54,
-    borderRadius: 27,
+    height: 48,
+    borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#45A096',
@@ -330,8 +353,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
+    color: '#FFF',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bottomTabBar: {
@@ -354,12 +378,14 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
+    fontFamily: FONT.medium,
     color: '#9CA3AF',
     marginTop: 5,
     fontWeight: '500',
   },
   activeTabLabel: {
     color: '#45A096',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

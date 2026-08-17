@@ -6,6 +6,21 @@ export type MedicationFrequency =
   | 'monthly'
   | 'custom';
 
+export type MedicationStrength =
+  | '2.5mg'
+  | '5mg'
+  | '10mg'
+  | '12.5mg'
+  | '20mg'
+  | '25mg'
+  | '40mg'
+  | '50mg'
+  | '100mg'
+  | '200mg'
+  | '250mg'
+  | '500mg'
+  | '1000mg';
+
 export type MedicationSource = 'manual' | 'camera' | 'gallery' | 'saved';
 
 export type MedicationDraft = {
@@ -49,6 +64,24 @@ export const REMINDER_MINUTE_OPTIONS = [
 ];
 
 export const INVENTORY_OPTIONS = [5, 10, 15, 20, 30, 50];
+
+// Ordered list for the Strength picker. Kept in the same order as the union so
+// the dropdown reads low-to-high.
+export const STRENGTH_OPTIONS: MedicationStrength[] = [
+  '2.5mg',
+  '5mg',
+  '10mg',
+  '12.5mg',
+  '20mg',
+  '25mg',
+  '40mg',
+  '50mg',
+  '100mg',
+  '200mg',
+  '250mg',
+  '500mg',
+  '1000mg',
+];
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);

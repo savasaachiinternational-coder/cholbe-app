@@ -42,6 +42,8 @@ src/config/googleMaps.ts
 node_modules/
 npm-debug.log
 yarn-error.log
+docs/
+nasir/
 
 # fastlane
 #

@@ -20,6 +20,15 @@ import {useMedicationDraft} from '../../context/MedicationDraftContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewDetails'>;
 
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
 const {width} = Dimensions.get('window');
 
 export function ReviewDetailsScreen({navigation}: Props) {
@@ -129,18 +138,20 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingHorizontal: 16,
     paddingBottom: 12,
+    gap:10,
     backgroundColor: '#F9F9FE',
   },
   backButton: {
     padding: 2,
   },
   headerTitleText: {
-    fontSize: 20,
+    fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#333333',
+    color: '#424242',
   },
   headerSpacer: {width: 28},
   scrollCanvasContent: {
@@ -149,7 +160,7 @@ const styles = StyleSheet.create({
     paddingBottom: 150,
   },
   reviewMainCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9F9FE',
     borderRadius: 24,
     padding: 16,
     shadowColor: '#E0E4F0',
@@ -158,6 +169,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
     borderWidth: 1,
+    
     borderColor: '#F0F2F7',
   },
   topPillRow: {
@@ -179,6 +191,7 @@ const styles = StyleSheet.create({
   bellIcon: {marginRight: 6},
   alertPillText: {
     fontSize: 14,
+    fontFamily: FONT.medium,
     color: '#5A6578',
     fontWeight: '500',
     marginRight: 6,
@@ -192,12 +205,14 @@ const styles = StyleSheet.create({
   },
   medicineNameText: {
     fontSize: 20,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#333333',
     marginBottom: 4,
   },
   medicineSubtext: {
     fontSize: 14,
+    fontFamily: FONT.regular,
     color: '#8A94A6',
     fontWeight: '400',
   },
@@ -216,17 +231,20 @@ const styles = StyleSheet.create({
   },
   sectionLabelText: {
     fontSize: 15,
+    fontFamily: FONT.medium,
     color: '#7D8797',
     fontWeight: '500',
     marginBottom: 10,
   },
   inlineInfoValueText: {
     fontSize: 15,
+    fontFamily: FONT.regular,
     color: '#7D8797',
     fontWeight: '400',
   },
   boldSpan: {
     color: '#5A6578',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   timelineItem: {
@@ -243,6 +261,7 @@ const styles = StyleSheet.create({
   },
   timelineContentText: {
     fontSize: 14,
+    fontFamily: FONT.medium,
     color: '#5A6578',
     fontWeight: '500',
     flex: 1,
@@ -264,6 +283,7 @@ const styles = StyleSheet.create({
   editButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   footerActionContainer: {
@@ -285,6 +305,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bottomNavWrap: {

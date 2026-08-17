@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useState} from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -10,27 +10,27 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {adminApi} from '../../api/admin';
-import {ApiError} from '../../api/client';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../navigation/types';
-import {AdminBottomNav} from './AdminBottomNav';
-import {AdminMenuModal} from './AdminMenuModal';
-import {formatBdt} from '../../utils/pharmacyHelpers';
-import {NotificationBell} from '../../components/NotificationBell';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { adminApi } from '../../api/admin';
+import { ApiError } from '../../api/client';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../navigation/types';
+import { AdminBottomNav } from './AdminBottomNav';
+import { AdminMenuModal } from './AdminMenuModal';
+import { formatBdt } from '../../utils/pharmacyHelpers';
+import { NotificationBell } from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AHome'>;
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const CHART_WIDTH = width - 64;
 const CHART_PLOT_HEIGHT = 150;
 
-type MonthlyPoint = {month: string; count: number};
+type MonthlyPoint = { month: string; count: number };
 
 type DashboardData = {
   totalOrders: number;
@@ -40,7 +40,7 @@ type DashboardData = {
   growthPercent: number;
 };
 
-function buildChartPoints(data: MonthlyPoint[]): {x: number; y: number}[] {
+function buildChartPoints(data: MonthlyPoint[]): { x: number; y: number }[] {
   if (data.length === 0) return [];
   const max = Math.max(...data.map(d => d.count), 1);
   const n = data.length;
@@ -61,8 +61,8 @@ function ChartLineSegment({
   plotWidth,
   plotHeight,
 }: {
-  start: {x: number; y: number};
-  end: {x: number; y: number};
+  start: { x: number; y: number };
+  end: { x: number; y: number };
   plotWidth: number;
   plotHeight: number;
 }) {
@@ -83,24 +83,47 @@ function ChartLineSegment({
           left: x1,
           top: y1,
           width: length,
-          transform: [{rotate: `${angle}deg`}],
+          transform: [{ rotate: `${angle}deg` }],
         },
       ]}
     />
   );
 }
 
-function OrderOverviewChart({plotWidth, points}: {plotWidth: number; points: {x: number; y: number}[]}) {
+function OrderOverviewChart({
+  plotWidth,
+  points,
+}: {
+  plotWidth: number;
+  points: { x: number; y: number }[];
+}) {
   if (points.length < 2) {
     return (
-      <View style={[styles.chartPlot, {width: plotWidth, height: CHART_PLOT_HEIGHT, justifyContent: 'center', alignItems: 'center'}]}>
-        <Text style={{color: '#9AA6B2', fontSize: 12}}>No chart data yet</Text>
+      <View
+        style={[
+          styles.chartPlot,
+          {
+            width: plotWidth,
+            height: CHART_PLOT_HEIGHT,
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
+        ]}
+      >
+        <Text style={{ color: '#9AA6B2', fontSize: 12 }}>
+          No chart data yet
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.chartPlot, {width: plotWidth, height: CHART_PLOT_HEIGHT}]}>
+    <View
+      style={[
+        styles.chartPlot,
+        { width: plotWidth, height: CHART_PLOT_HEIGHT },
+      ]}
+    >
       <LinearGradient
         colors={['rgba(78, 146, 157, 0.25)', 'rgba(78, 146, 157, 0)']}
         style={styles.chartGradientFill}
@@ -150,7 +173,7 @@ function MetricCard({
   );
 }
 
-export function AdminHomeScreen({navigation}: Props) {
+export function AdminHomeScreen({ navigation }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -168,7 +191,8 @@ export function AdminHomeScreen({navigation}: Props) {
       setDashboard(data);
       setMonthlyData(monthly);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not load dashboard';
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load dashboard';
       Alert.alert('Dashboard', message);
     } finally {
       setLoading(false);
@@ -181,31 +205,57 @@ export function AdminHomeScreen({navigation}: Props) {
     }, [loadDashboard]),
   );
 
-  const chartPoints = useMemo(() => buildChartPoints(monthlyData), [monthlyData]);
-  const chartMonthLabels = useMemo(() => monthlyData.map(d => d.month), [monthlyData]);
-  const chartMaxCount = useMemo(() => Math.max(...monthlyData.map(d => d.count), 0), [monthlyData]);
+  const chartPoints = useMemo(
+    () => buildChartPoints(monthlyData),
+    [monthlyData],
+  );
+  const chartMonthLabels = useMemo(
+    () => monthlyData.map(d => d.month),
+    [monthlyData],
+  );
+  const chartMaxCount = useMemo(
+    () => Math.max(...monthlyData.map(d => d.count), 0),
+    [monthlyData],
+  );
 
   const metrics = useMemo(() => {
     const pct = dashboard ? `(${dashboard.growthPercent}%)` : '';
     return [
       [
-        {title: 'Total Orders', value: String(dashboard?.totalOrders ?? '—'), percentage: pct},
-        {title: 'Total Revenue', value: dashboard ? formatRevenue(dashboard.totalRevenue) : '—', percentage: pct},
+        {
+          title: 'Total Orders',
+          value: String(dashboard?.totalOrders ?? '—'),
+          percentage: pct,
+        },
+        {
+          title: 'Total Revenue',
+          value: dashboard ? formatRevenue(dashboard.totalRevenue) : '—',
+          percentage: pct,
+        },
       ],
       [
-        {title: 'Total Users', value: String(dashboard?.totalUsers ?? '—'), percentage: pct},
-        {title: 'Total Vendor', value: String(dashboard?.totalVendors ?? '—'), percentage: pct},
+        {
+          title: 'Total Users',
+          value: String(dashboard?.totalUsers ?? '—'),
+          percentage: pct,
+        },
+        {
+          title: 'Total Vendor',
+          value: String(dashboard?.totalVendors ?? '—'),
+          percentage: pct,
+        },
       ],
     ];
   }, [dashboard]);
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.headerButton}
           activeOpacity={0.7}
-          onPress={() => setMenuOpen(true)}>
+          onPress={() => setMenuOpen(true)}
+        >
           <Feather name="menu" size={24} color="#1A1C1E" />
         </TouchableOpacity>
         <View style={styles.logoContainer}>
@@ -222,11 +272,14 @@ export function AdminHomeScreen({navigation}: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          {paddingBottom: 95 + insets.bottom},
-        ]}>
+          { paddingBottom: 95 + insets.bottom },
+        ]}
+      >
         <View style={styles.welcomeContainer}>
           <Image
-            source={{uri: 'https://via.placeholder.com/60/E2E8F0/000000?text=Admin'}}
+            source={{
+              uri: 'https://via.placeholder.com/60/E2E8F0/000000?text=Admin',
+            }}
             style={styles.adminAvatar}
           />
           <View style={styles.welcomeTextColumn}>
@@ -238,14 +291,26 @@ export function AdminHomeScreen({navigation}: Props) {
                 return 'Good Evening, Admin';
               })()}
             </Text>
-            <Text style={styles.welcomeSubtitle}>Here's what's happening today.</Text>
+            <Text style={styles.welcomeSubtitle}>
+              Here's what's happening today.
+            </Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.dateSelectorDropdown} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.dateSelectorDropdown}
+          onPress={()=> {}}
+          activeOpacity={0.8}
+        >
           <Feather name="calendar" size={16} color="#4F5E6D" />
           <Text style={styles.dateSelectorText}>
-            {new Date().toLocaleDateString('en-GB', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-')}
+            {new Date()
+              .toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })
+              .replace(/\//g, '-')}
           </Text>
           <Feather name="chevron-down" size={16} color="#4F5E6D" />
         </TouchableOpacity>
@@ -256,7 +321,11 @@ export function AdminHomeScreen({navigation}: Props) {
           metrics.map((row, rowIndex) => (
             <View
               key={row.map(metric => metric.title).join('-')}
-              style={[styles.metricsGridRow, rowIndex > 0 && styles.metricsGridRowSpaced]}>
+              style={[
+                styles.metricsGridRow,
+                rowIndex > 0 && styles.metricsGridRowSpaced,
+              ]}
+            >
               {row.map(metric => (
                 <MetricCard
                   key={metric.title}
@@ -272,19 +341,22 @@ export function AdminHomeScreen({navigation}: Props) {
         <View style={styles.quickLinksRow}>
           <TouchableOpacity
             style={styles.quickLinkCard}
-            onPress={() => navigation.navigate('ADoctors')}>
+            onPress={() => navigation.navigate('ADoctors')}
+          >
             <Feather name="user-check" size={20} color="#0D9488" />
             <Text style={styles.quickLinkText}>Doctors</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickLinkCard}
-            onPress={() => navigation.navigate('AAppointments')}>
+            onPress={() => navigation.navigate('AAppointments')}
+          >
             <Feather name="calendar" size={20} color="#0D9488" />
             <Text style={styles.quickLinkText}>Appointments</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickLinkCard}
-            onPress={() => navigation.navigate('AReviews')}>
+            onPress={() => navigation.navigate('AReviews')}
+          >
             <Feather name="star" size={20} color="#0D9488" />
             <Text style={styles.quickLinkText}>Reviews</Text>
           </TouchableOpacity>
@@ -293,7 +365,10 @@ export function AdminHomeScreen({navigation}: Props) {
         <View style={styles.chartSectionCard}>
           <View style={styles.chartHeaderRow}>
             <Text style={styles.chartSectionHeadingText}>Order Overview</Text>
-            <TouchableOpacity style={styles.chartTimeDropdown} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.chartTimeDropdown}
+              activeOpacity={0.8}
+            >
               <Text style={styles.chartTimeDropdownText}>This Week</Text>
               <Feather name="chevron-down" size={14} color="#4F5E6D" />
             </TouchableOpacity>
@@ -301,7 +376,13 @@ export function AdminHomeScreen({navigation}: Props) {
 
           <View style={styles.graphBodyContainer}>
             <View style={styles.yAxisContainer}>
-              {[chartMaxCount, Math.round(chartMaxCount * 0.75), Math.round(chartMaxCount * 0.5), Math.round(chartMaxCount * 0.25), 0].map((label, i) => (
+              {[
+                chartMaxCount,
+                Math.round(chartMaxCount * 0.75),
+                Math.round(chartMaxCount * 0.5),
+                Math.round(chartMaxCount * 0.25),
+                0,
+              ].map((label, i) => (
                 <Text key={i} style={styles.axisLabelText}>
                   {label}
                 </Text>
@@ -315,7 +396,10 @@ export function AdminHomeScreen({navigation}: Props) {
               <View style={[styles.gridLineGuide, styles.gridLine75]} />
               <View style={[styles.gridLineGuide, styles.gridLine100]} />
 
-              <OrderOverviewChart plotWidth={CHART_WIDTH - 40} points={chartPoints} />
+              <OrderOverviewChart
+                plotWidth={CHART_WIDTH - 40}
+                points={chartPoints}
+              />
             </View>
           </View>
 
@@ -329,7 +413,11 @@ export function AdminHomeScreen({navigation}: Props) {
         </View>
       </ScrollView>
 
-      <AdminBottomNav activeTab="home" bottomInset={insets.bottom} navigation={navigation} />
+      <AdminBottomNav
+        activeTab="home"
+        bottomInset={insets.bottom}
+        navigation={navigation}
+      />
       <AdminMenuModal
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -569,7 +657,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: '#ECEFF3',
+    backgroundColor: '#ecf3ed',
   },
   gridLine25: {
     top: '25%',

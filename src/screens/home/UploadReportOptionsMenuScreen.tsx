@@ -1,22 +1,27 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import {
   Dimensions,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../navigation/types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../navigation/types';
+import { WaveTitleBand } from '../../components/WaveTitleBand';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'UploadReportOptionsMenu'>;
+type Props = NativeStackScreenProps<
+  RootStackParamList,
+  'UploadReportOptionsMenu'
+>;
 type UploadOption = 'camera' | 'gallery' | 'saved';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const CARD_SPACING = 16;
 const CARD_WIDTH = (width - 40 - CARD_SPACING) / 2;
 
@@ -29,7 +34,11 @@ const UPLOAD_OPTIONS: {
     key: 'camera',
     label: 'Camera',
     icon: () => (
-      <MaterialCommunityIcons name="camera-plus-outline" size={32} color="#45A096" />
+      <MaterialCommunityIcons
+        name="camera-plus-outline"
+        size={32}
+        color="#45A096"
+      />
     ),
   },
   {
@@ -44,7 +53,7 @@ const UPLOAD_OPTIONS: {
   },
 ];
 
-export function UploadReportOptionsMenuScreen({navigation}: Props) {
+export function UploadReportOptionsMenuScreen({ navigation }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [selectedOption, setSelectedOption] = useState<UploadOption>('camera');
@@ -66,39 +75,48 @@ export function UploadReportOptionsMenuScreen({navigation}: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.headerContainer, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.backButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
+          onPress={() => navigation.goBack()}
+        >
           <Feather name="chevron-left" size={28} color="#333333" />
         </TouchableOpacity>
 
-        <View style={styles.logoContainer}>
+        {/* <View style={styles.logoContainer}>
           <View style={styles.logoPlaceholder}>
             <MaterialCommunityIcons name="medical-bag" size={20} color="#00A896" />
             <Text style={styles.logoTextMain}>Cholbe</Text>
           </View>
           <Text style={styles.logoTextSub}>PHARMACY</Text>
-        </View>
+        </View> */}
+        <Image
+          source={require('../../assets/logoImage.png')}
+          style={styles.iconImage}
+        />
 
         <TouchableOpacity
           style={styles.headerIconButton}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
+          onPress={() => navigation.navigate('Notifications')}
+        >
           <Feather name="bell" size={24} color="#333333" />
         </TouchableOpacity>
       </View>
+      <WaveTitleBand
+        title="Add Report"
+        color="#F4F1FD"
+        style={styles.waveText}
+      />
 
-      <View style={styles.titleContainer}>
+      {/* <View style={styles.titleContainer}>
         <Text style={styles.screenTitle}>Upload Report</Text>
-      </View>
+      </View> */}
 
       <View
-        style={[
-          styles.contentCard,
-          {paddingBottom: bottomNavHeight + 88},
-        ]}>
+        style={[styles.contentCard, { paddingBottom: bottomNavHeight + 88 }]}
+      >
         <View style={styles.gridWrapper}>
           {UPLOAD_OPTIONS.map(opt => {
             const active = selectedOption === opt.key;
@@ -111,7 +129,8 @@ export function UploadReportOptionsMenuScreen({navigation}: Props) {
                   active && styles.activeCardBackground,
                 ]}
                 activeOpacity={0.8}
-                onPress={() => setSelectedOption(opt.key)}>
+                onPress={() => setSelectedOption(opt.key)}
+              >
                 <View style={styles.iconBox}>{opt.icon()}</View>
                 <Text style={styles.cardLabelText}>{opt.label}</Text>
               </TouchableOpacity>
@@ -120,20 +139,24 @@ export function UploadReportOptionsMenuScreen({navigation}: Props) {
         </View>
       </View>
 
-      <View style={[styles.footerActionContainer, {bottom: bottomNavHeight}]}>
+      <View style={[styles.footerActionContainer, { bottom: bottomNavHeight }]}>
         <TouchableOpacity
           style={styles.continueButton}
           activeOpacity={0.9}
-          onPress={handleContinue}>
+          onPress={handleContinue}
+        >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.bottomTabBar, {paddingBottom: 12 + insets.bottom}]}>
+      <View
+        style={[styles.bottomTabBar, { paddingBottom: 12 + insets.bottom }]}
+      >
         <TouchableOpacity
           style={styles.tabItem}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('Home')}>
+          onPress={() => navigation.navigate('Home')}
+        >
           <Feather name="home" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Home</Text>
         </TouchableOpacity>
@@ -141,7 +164,8 @@ export function UploadReportOptionsMenuScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.tabItem}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('PharmacyShop')}>
+          onPress={() => navigation.navigate('PharmacyShop')}
+        >
           <MaterialCommunityIcons name="clippy" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Pharmacy</Text>
         </TouchableOpacity>
@@ -149,20 +173,30 @@ export function UploadReportOptionsMenuScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.tabItem}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('MedicineList')}>
-          <MaterialCommunityIcons name="heart-pulse" size={24} color="#A0A5BA" />
+          onPress={() => navigation.navigate('MedicineList')}
+        >
+          <MaterialCommunityIcons
+            name="heart-pulse"
+            size={24}
+            color="#A0A5BA"
+          />
           <Text style={styles.tabLabel}>Medication</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem} activeOpacity={0.7}>
-          <MaterialCommunityIcons name="file-document-outline" size={24} color="#45A096" />
+          <MaterialCommunityIcons
+            name="file-document-outline"
+            size={24}
+            color="#45A096"
+          />
           <Text style={[styles.tabLabel, styles.activeTabLabel]}>Report</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.tabItem}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('MyProfile')}>
+          onPress={() => navigation.navigate('MyProfile')}
+        >
           <Feather name="user" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Profile</Text>
         </TouchableOpacity>
@@ -174,7 +208,7 @@ export function UploadReportOptionsMenuScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9FE',
+    backgroundColor: '#F4F1FD',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -185,6 +219,11 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 4,
+  },
+  iconImage: {
+    height: 48,
+    width: 150,
+    resizeMode: 'cover',
   },
   headerIconButton: {
     padding: 4,
@@ -220,15 +259,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333333',
   },
+  waveText: {
+    color: '#424242',
+    fontSize: 18,
+    paddingBottom:30,
+    fontWeight: '600',
+  },
   contentCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F1FD',
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingHorizontal: 20,
+    marginTop:-20,
     paddingTop: 40,
     shadowColor: '#E0E4F0',
-    shadowOffset: {width: 0, height: -10},
+    shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.4,
     shadowRadius: 15,
     elevation: 4,
@@ -245,7 +291,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FCFCFE',
+    backgroundColor: '#F5F2FE',
+    elevation:0.1,
   },
   activeCardBorder: {
     borderWidth: 1.5,
@@ -258,7 +305,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   activeCardBackground: {
-    backgroundColor: '#F2FAF9',
+    backgroundColor: '#F5F2FE',
   },
   iconBox: {
     marginBottom: 14,

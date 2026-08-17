@@ -1,4 +1,4 @@
-import {Text, View} from 'react-native';
+import {Image, StyleSheet, Text, View} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useMedicationDraft} from '../context/MedicationDraftContext';
@@ -7,6 +7,8 @@ import {
   formatFrequencyLabel,
   formatMealTimingLabel,
 } from '../utils/medicationDraft';
+
+const CARD_BG = require('../assets/medicine_cardbg.png');
 
 type Props = {
   styles: Record<string, object>;
@@ -17,6 +19,10 @@ export function MedicationReviewContent({styles}: Props) {
 
   return (
     <>
+      {/* Direct child of the fragment so it anchors to the card, not to a row.
+          First in order so it paints behind everything below it. */}
+      <Image source={CARD_BG} style={bg.cardBg} resizeMode="cover" />
+
       <View style={styles.metaTitleBlock}>
         <Text style={styles.medicineNameText}>{draft.medicineName || 'Medicine'}</Text>
         <Text style={styles.medicineSubtext}>
@@ -138,3 +144,14 @@ export function MedicationReviewContent({styles}: Props) {
     </>
   );
 }
+
+const bg = StyleSheet.create({
+  cardBg: {
+    position: 'absolute',
+    left: -16,      
+    right: -16,
+    bottom: -16,
+    aspectRatio: 600 / 270,   // the asset's real dimensions
+    opacity: 0.1,
+  },
+});

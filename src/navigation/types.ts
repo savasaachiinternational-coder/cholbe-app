@@ -104,11 +104,49 @@ export type RootStackParamList = {
       }
     | undefined;
   UploadReportOptionsMenu: undefined;
+  ReportPreview:
+    | {
+        fileUri?: string;
+        fileUrl?: string;
+        fileName?: string;
+        mimeType?: string;
+        reportTitle?: string;
+        reportType?: 'LAB' | 'PRESCRIPTION' | 'IMAGING' | 'OTHER';
+        provider?: string;
+        reportId?: string;
+        patientName?: string;
+        reportDate?: string;
+        startDate?: string;
+        endDate?: string;
+        tip?: string;
+        totalPages?: number;
+      }
+    | undefined;
   ChooseFromReportGallery: undefined;
   SavedReport: undefined;
   CameraReport: undefined;
   ViewReportDetails: {reportId: string};
-  ReportUploadedSuccess: undefined;
+  ReportDetailsView: {
+    reportId: string;
+    patientName?: string;
+    doctorName?: string;
+    doctorSpecialty?: string;
+    totalPages?: number;
+  };
+  ReportUploadedSuccess:
+    | {
+        reportId?: string;
+        reportTitle?: string;
+        reportType?: 'LAB' | 'PRESCRIPTION' | 'IMAGING' | 'OTHER';
+        provider?: string;
+        reportDate?: string;
+        patientName?: string;
+        fileName?: string;
+        mimeType?: string;
+        fileUrl?: string;
+        tip?: string;
+      }
+    | undefined;
   PharmacyShop: undefined;
   PharmacyDetails: {productId: string};
   PharmacyCartOverlay: undefined;
@@ -144,4 +182,7 @@ export type RootStackParamList = {
   OrderCompletedDetails: {orderId: string};
   PharmacyPrescriptionMenu: undefined;
   ChooseFromPharmacyGallery: undefined;
+  //AiSymptom
+
+  AiSymptomHome:undefined;
 };

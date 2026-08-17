@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,28 +9,39 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../navigation/types';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {HomeBottomNav} from './HomeBottomNav';
-import type {BottomTabKey} from './homeData';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../navigation/types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { WaveWithChild } from '../../components/WaveWithChild';
+import { HomeBottomNav } from './HomeBottomNav';
+import type { BottomTabKey } from './homeData';
+
 import {
   type AppointmentDetail,
   isUpcomingAppointment,
   toAppointmentDetail,
 } from '../../api/utils/appointmentHelpers';
-import {appointmentsApi, type Appointment} from '../../api/appointments';
-import {ApiError} from '../../api/client';
-
+import { appointmentsApi, type Appointment } from '../../api/appointments';
+import { ApiError } from '../../api/client';
 type Props = NativeStackScreenProps<RootStackParamList, 'MyAppointment'>;
 type AppointmentTab = 'upcoming' | 'past';
 
 const DOCTOR_AVATAR = require('../../assets/b2.png');
 
-export function MyAppointmentScreen({navigation}: Props) {
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
+export function MyAppointmentScreen({ navigation }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<AppointmentTab>('upcoming');
@@ -43,7 +54,8 @@ export function MyAppointmentScreen({navigation}: Props) {
       const data = await appointmentsApi.list();
       setItems(data);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not load appointments';
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load appointments';
       Alert.alert('Appointments', message);
     } finally {
       setLoading(false);
@@ -97,7 +109,9 @@ export function MyAppointmentScreen({navigation}: Props) {
 
   const joinConsultation = async (appt: AppointmentDetail) => {
     if (appt.consultationTypeRaw === 'CHAT') {
-      await appointmentsApi.updateStatus(appt.id, 'in_progress').catch(() => undefined);
+      await appointmentsApi
+        .updateStatus(appt.id, 'in_progress')
+        .catch(() => undefined);
       navigation.navigate('ConsultationChat', {
         appointmentId: appt.id,
         doctorName: appt.doctorName,
@@ -113,33 +127,40 @@ export function MyAppointmentScreen({navigation}: Props) {
   };
 
   const cancelAppointment = (appt: AppointmentDetail) => {
-    Alert.alert('Cancel appointment', `Cancel your visit with ${appt.doctorName}?`, [
-      {text: 'Keep', style: 'cancel'},
-      {
-        text: 'Cancel visit',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await appointmentsApi.updateStatus(appt.id, 'cancelled');
-            await loadAppointments();
-          } catch (err) {
-            Alert.alert(
-              'Cancel failed',
-              err instanceof ApiError ? err.message : 'Could not cancel appointment',
-            );
-          }
+    Alert.alert(
+      'Cancel appointment',
+      `Cancel your visit with ${appt.doctorName}?`,
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Cancel visit',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await appointmentsApi.updateStatus(appt.id, 'cancelled');
+              await loadAppointments();
+            } catch (err) {
+              Alert.alert(
+                'Cancel failed',
+                err instanceof ApiError
+                  ? err.message
+                  : 'Could not cancel appointment',
+              );
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.backButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
+          onPress={() => navigation.goBack()}
+        >
           <Feather name="chevron-left" size={24} color="#1E293B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Appointment</Text>
@@ -150,44 +171,64 @@ export function MyAppointmentScreen({navigation}: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          {paddingBottom: insets.bottom + 110},
-        ]}>
-        <View style={styles.segmentedControlContainer}>
-          <TouchableOpacity
-            style={[
-              styles.segmentTab,
-              activeTab === 'upcoming' && styles.segmentActiveTab,
-            ]}
-            activeOpacity={0.85}
-            onPress={() => setActiveTab('upcoming')}>
-            <Text
+          { paddingBottom: insets.bottom + 110 },
+        ]}
+      >
+        <WaveWithChild>
+          <View style={styles.segmentedControlContainer}>
+            <TouchableOpacity
               style={[
-                styles.segmentTabText,
-                activeTab === 'upcoming' && styles.segmentActiveTabText,
-              ]}>
-              Upcoming
-            </Text>
-          </TouchableOpacity>
+                styles.segmentTab,
+                activeTab === 'upcoming' && styles.segmentActiveTab,
+                activeTab === 'upcoming' && styles.segmentActiveTabLeft,
+              ]}
+              activeOpacity={0.85}
+              onPress={() => setActiveTab('upcoming')}
+            >
+              <Text
+                style={[
+                  styles.segmentTabText,
+                  activeTab === 'upcoming' && styles.segmentActiveTabText,
+                ]}
+              >
+                Upcoming
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.segmentTab,
-              activeTab === 'past' && styles.segmentActiveTab,
-            ]}
-            activeOpacity={0.85}
-            onPress={() => setActiveTab('past')}>
-            <Text
+            <TouchableOpacity
               style={[
-                styles.segmentTabText,
-                activeTab === 'past' && styles.segmentActiveTabText,
-              ]}>
-              Past
-            </Text>
-          </TouchableOpacity>
-        </View>
+                styles.segmentTab,
+                activeTab === 'past' && styles.segmentActiveTab,
+                activeTab === 'past' && styles.segmentActiveTabRight,
+              ]}
+              activeOpacity={0.85}
+              onPress={() => setActiveTab('past')}
+            >
+              <Text
+                style={[
+                  styles.segmentTabText,
+                  activeTab === 'past' && styles.segmentActiveTabText,
+                ]}
+              >
+                Past
+              </Text>
+            </TouchableOpacity>
 
+
+          </View>
+
+           <View style={styles.successMessageRow}>
+            <Feather name='check-circle' size ={20} color={'#0D9488'}/>
+            <Text>You consultation with Dr. Ahmed is complete</Text>
+          </View>
+        </WaveWithChild>
+        <View style={styles.emptySpace}/>
         {loading ? (
-          <ActivityIndicator size="large" color="#0D9488" style={{marginTop: 40}} />
+          <ActivityIndicator
+            size="large"
+            color="#0D9488"
+            style={{ marginTop: 40 }}
+          />
         ) : listForTab.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
@@ -195,26 +236,29 @@ export function MyAppointmentScreen({navigation}: Props) {
             </Text>
             <TouchableOpacity
               style={styles.bookNowButton}
-              onPress={() => navigation.navigate('DoctorList')}>
+              onPress={() => navigation.navigate('DoctorList')}
+            >
               <Text style={styles.bookNowButtonText}>Find a doctor</Text>
             </TouchableOpacity>
           </View>
         ) : (
           listForTab.map(appointment => (
             <View key={appointment.id} style={styles.appointmentListItem}>
-              {activeTab === 'past' && appointment.status.toLowerCase() === 'completed' && (
-                <View style={styles.statusRibbonContainer}>
-                  <Feather
-                    name="check-circle"
-                    size={18}
-                    color="#0D9488"
-                    style={styles.ribbonIconMargin}
-                  />
-                  <Text style={styles.statusRibbonText}>
-                    Your consultation with {appointment.doctorName} is complete
-                  </Text>
-                </View>
-              )}
+              {activeTab === 'past' &&
+                appointment.status.toLowerCase() === 'completed' && (
+                  <View style={styles.statusRibbonContainer}>
+                    <Feather
+                      name="check-circle"
+                      size={18}
+                      color="#0D9488"
+                      style={styles.ribbonIconMargin}
+                    />
+                    <Text style={styles.statusRibbonText}>
+                      Your consultation with {appointment.doctorName} is
+                      complete
+                    </Text>
+                  </View>
+                )}
 
               <AppointmentMainCard
                 appointment={appointment}
@@ -224,21 +268,25 @@ export function MyAppointmentScreen({navigation}: Props) {
                 onCancel={() => cancelAppointment(appointment)}
               />
 
-              {activeTab === 'past' && appointment.status.toLowerCase() === 'completed' && (
-                <ReminderAdvisoryCard
-                  appointment={appointment}
-                  onSubmitFeedback={() => openConsultationSummary(appointment)}
-                />
-              )}
+              {activeTab === 'past' &&
+                appointment.status.toLowerCase() === 'completed' && (
+                  <ReminderAdvisoryCard
+                    appointment={appointment}
+                    onSubmitFeedback={() =>
+                      openConsultationSummary(appointment)
+                    }
+                  />
+                )}
             </View>
           ))
         )}
       </ScrollView>
-
+        
       <TouchableOpacity
-        style={[styles.floatingScanButton, {bottom: insets.bottom + 90}]}
-        activeOpacity={0.85}>
-        <Feather name="maximize" size={24} color="#1E293B" />
+        style={[styles.floatingScanButton, { bottom: insets.bottom + 90 }]}
+        activeOpacity={0.85}
+      >
+          <Image source={require('../../assets/syaiicon.png')} />
       </TouchableOpacity>
 
       <View style={styles.bottomNavWrap}>
@@ -271,9 +319,10 @@ function AppointmentMainCard({
         ? 'Continue Chat'
         : 'Open Chat'
       : appointment.status.toLowerCase() === 'in_progress'
-        ? 'Rejoin Call'
-        : 'Join Call';
-  const joinIcon = appointment.consultationTypeRaw === 'CHAT' ? 'message-circle' : 'video';
+      ? 'Rejoin Call'
+      : 'Join Call';
+  const joinIcon =
+    appointment.consultationTypeRaw === 'CHAT' ? 'message-circle' : 'video';
 
   return (
     <View style={styles.appointmentMainCard}>
@@ -281,7 +330,9 @@ function AppointmentMainCard({
         <Image source={DOCTOR_AVATAR} style={styles.doctorAvatarImage} />
         <View style={styles.doctorMetadataTextContainer}>
           <Text style={styles.doctorNameText}>{appointment.doctorName}</Text>
-          <Text style={styles.doctorSpecialtyText}>{appointment.specialty}</Text>
+          <Text style={styles.doctorSpecialtyText}>
+            {appointment.specialty}
+          </Text>
         </View>
       </View>
 
@@ -318,7 +369,8 @@ function AppointmentMainCard({
             style={[
               styles.countdownAlertText,
               !isUpcoming && styles.countdownCompleteText,
-            ]}>
+            ]}
+          >
             {appointment.countdownLabel}
           </Text>
         </View>
@@ -330,14 +382,16 @@ function AppointmentMainCard({
             <TouchableOpacity
               style={styles.rescheduleSecondaryButton}
               activeOpacity={0.85}
-              onPress={onCancel}>
+              onPress={onCancel}
+            >
               <Text style={styles.rescheduleSecondaryButtonText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.joinCallPrimaryButton}
               activeOpacity={0.9}
-              onPress={onJoinCall}>
+              onPress={onJoinCall}
+            >
               <Feather
                 name={joinIcon}
                 size={16}
@@ -351,7 +405,8 @@ function AppointmentMainCard({
           <TouchableOpacity
             style={styles.viewSummaryFullButton}
             activeOpacity={0.9}
-            onPress={onViewSummary}>
+            onPress={onViewSummary}
+          >
             <Text style={styles.joinCallPrimaryButtonText}>
               View Consultation Summary
             </Text>
@@ -390,7 +445,8 @@ function ReminderAdvisoryCard({
       <TouchableOpacity
         style={styles.feedbackActionSubmitButton}
         activeOpacity={0.9}
-        onPress={onSubmitFeedback}>
+        onPress={onSubmitFeedback}
+      >
         <Text style={styles.feedbackActionSubmitButtonText}>
           Submit Feedback
         </Text>
@@ -402,25 +458,27 @@ function ReminderAdvisoryCard({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: '#F4F3FC',
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 14,
+    paddingBottom: 8,
     backgroundColor: '#F5F6FA',
   },
   backButton: {
     padding: 4,
-    width: 32,
+    width: 24,
   },
   headerTitle: {
+    marginLeft: 10,
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#424242',
     flex: 1,
-    textAlign: 'center',
   },
   headerSpacer: {
     width: 32,
@@ -430,29 +488,44 @@ const styles = StyleSheet.create({
   },
   segmentedControlContainer: {
     flexDirection: 'row',
-    backgroundColor: '#E2E8F0',
-    borderRadius: 14,
+    backgroundColor: '#F4F3FC',
+    borderRadius: 40,
     padding: 4,
-    marginTop: 12,
     marginBottom: 16,
   },
   segmentTab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
+    borderRadius: 40,
   },
   segmentActiveTab: {
+    experimental_backgroundImage:
+      'linear-gradient(286deg, #307887 0%, #74ACB3 100%)',
     backgroundColor: '#408E91',
   },
+  segmentActiveTabLeft: {
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+    borderBottomLeftRadius: 40,
+  },
+  // CSS: border-radius: 0 40px 40px 0
+  segmentActiveTabRight: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 40,
+    borderBottomRightRadius: 40,
+    borderBottomLeftRadius: 0,
+  },
   segmentTabText: {
-    fontSize: 14,
-    color: '#64748B',
-    fontWeight: '600',
+    fontSize: 12,
+    color: '#616161',
+    fontFamily: FONT.semibold,
+    fontWeight: '400',
   },
   segmentActiveTabText: {
-    color: '#FFFFFF',
+    color: '#FFF',
   },
   statusRibbonContainer: {
     flexDirection: 'row',
@@ -470,21 +543,26 @@ const styles = StyleSheet.create({
   },
   statusRibbonText: {
     fontSize: 13,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#334155',
     flex: 1,
   },
   appointmentMainCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
     shadowRadius: 3,
     elevation: 1,
+  },
+  emptySpace:{
+      height:24,
+      width:'100%'
   },
   appointmentListItem: {
     marginBottom: 16,
@@ -506,48 +584,53 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2E8F0',
   },
   doctorMetadataTextContainer: {
-    marginLeft: 14,
+    marginLeft: 12,
   },
   doctorNameText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: 18,
+    fontFamily: FONT.bold,
+    fontWeight: '600',
+    color: '#212121',
   },
   doctorSpecialtyText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#616161',
+    fontFamily: FONT.medium,
+    fontWeight: '400',
     marginTop: 2,
   },
   bookingDetailsBlock: {
     paddingVertical: 14,
   },
   dateTimestampLabelText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#64748B',
+    fontSize: 12,
+    fontFamily: FONT.medium,
+    fontWeight: '400',
+    color: '#616161',
   },
   durationRangeLabelText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
     marginTop: 2,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   specDetailRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   specDetailRowSpaced: {
-    marginTop: 6,
+    marginTop: 3,
   },
   inlineIconSpacing: {
     marginRight: 6,
   },
   specDetailMainText: {
-    fontSize: 13,
-    color: '#64748B',
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#616161',
+    fontFamily: FONT.medium,
+    fontWeight: '400',
   },
   smallSeparatingDot: {
     width: 4,
@@ -557,18 +640,21 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   specDetailValueText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#475569',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
   },
   countdownAlertText: {
-    fontSize: 13,
-    color: '#64748B',
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#616161',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   countdownCompleteText: {
     color: '#0D9488',
-    fontWeight: '600',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   cardActionButtonsRowContainer: {
     flexDirection: 'row',
@@ -578,21 +664,22 @@ const styles = StyleSheet.create({
   rescheduleSecondaryButton: {
     flex: 0.48,
     backgroundColor: '#E2E8F0',
-    borderRadius: 16,
+    borderRadius: 40,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rescheduleSecondaryButtonText: {
     color: '#475569',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   joinCallPrimaryButton: {
     flex: 0.48,
     backgroundColor: '#408E91',
-    borderRadius: 16,
-    paddingVertical: 14,
+    borderRadius: 40,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -602,25 +689,26 @@ const styles = StyleSheet.create({
   },
   joinCallPrimaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   viewSummaryFullButton: {
     flex: 1,
     backgroundColor: '#408E91',
-    borderRadius: 16,
-    paddingVertical: 14,
+    borderRadius: 40,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   reminderAdvisoryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFAFA',
     borderRadius: 24,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.02,
     shadowRadius: 3,
     elevation: 1,
@@ -638,26 +726,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reminderMainTitleBodyText: {
-    fontSize: 13,
-    color: '#64748B',
+    fontSize: 14,
+    color: '#616161',
     lineHeight: 18,
-    fontWeight: '500',
+    fontFamily: FONT.medium,
+    fontWeight: '600',
   },
   reminderBoldHeadingText: {
-    color: '#1E293B',
-    fontWeight: '700',
+    color: '#616161',
+    fontFamily: FONT.bold,
+    fontWeight: '600',
   },
   feedbackActionSubmitButton: {
     backgroundColor: '#408E91',
-    borderRadius: 16,
+    borderRadius: 40,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   feedbackActionSubmitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#FFF',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   floatingScanButton: {
     position: 'absolute',
@@ -669,7 +760,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 4,
@@ -682,14 +773,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 10,
   },
+  successMessageRow:{
+    flex:1,
+    flexDirection:'row',
+    justifyContent:'center'
+  },
   emptyState: {
     alignItems: 'center',
-    marginTop: 48,
     paddingHorizontal: 24,
   },
   emptyStateText: {
     fontSize: 15,
     color: '#64748B',
+    fontFamily: FONT.regular,
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -701,6 +797,7 @@ const styles = StyleSheet.create({
   },
   bookNowButtonText: {
     color: '#FFFFFF',
+    fontFamily: FONT.bold,
     fontWeight: '700',
   },
 });

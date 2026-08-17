@@ -226,7 +226,10 @@ export function AdminMedicinesScreen({navigation}: Props) {
         medicine.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       setUpdatingId(medicine.id);
       try {
+         console.log('successfully update in');
         await medicinesApi.updateStatus(medicine.id, nextStatus);
+        console.log('successfully update in server');
+        
         await loadMedicines();
       } catch (err) {
         const message = err instanceof ApiError ? err.message : 'Could not update status';

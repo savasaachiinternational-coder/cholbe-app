@@ -39,7 +39,7 @@ export function AddFromCameraScreen({navigation}: Props) {
         mediaType: 'photo',
         cameraType,
         saveToPhotos: false,
-        quality: 0.85,
+        quality: 0.8,
       });
 
       const asset = result.assets?.[0];
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 18,
   },
   focusReticleContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
   },
