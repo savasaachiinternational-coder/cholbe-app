@@ -14,8 +14,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabKey } from '../screens/home/homeData';
 import { WaveTitleBand } from './WaveTitleBand';
 import { navigateCustomerTab } from '../screens/home/customerTabNavigation';
-
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 const { width } = Dimensions.get('window');
+
+type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 // Android resolves a weight by the exact font file name, so each weight is
 // referenced by its own family name.
@@ -50,6 +54,7 @@ export function PassportListScreenLayout({
   children,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<Navigation>();
 
   return (
     <View style={styles.container}>
@@ -84,7 +89,11 @@ export function PassportListScreenLayout({
       <View
         style={{ marginTop: -16, justifyContent: 'center', marginBottom: 12 }}
       >
-        <WaveTitleBand title={title} color="#F9F9FE" style={styles.screenTitle} />
+        <WaveTitleBand
+          title={title}
+          color="#F9F9FE"
+          style={styles.screenTitle}
+        />
       </View>
       {/*      
 
@@ -113,9 +122,9 @@ export function PassportListScreenLayout({
       <TouchableOpacity
         style={[styles.floatingGradientFab, { bottom: insets.bottom + 94 }]}
         activeOpacity={0.85}
-        onPress={()=>{}}
+        onPress={() => navigation.navigate('AiSymptomHome')}
       >
-        <Image source={require('../assets/syaiicon.png')}/>
+        <Image source={require('../assets/syaiicon.png')} />
         {/* <View style={styles.fabInnerContent}>
           <MaterialCommunityIcons
             name="face-recognition"

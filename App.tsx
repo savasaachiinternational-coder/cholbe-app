@@ -83,7 +83,7 @@ function App() {
       await enterMainApp();
       return;
     }
-    if(isFirstTime){
+    if(!isFirstTime){
       setPhase('onboarding');
       return;
     }

@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {PermissionsAndroid, Platform} from 'react-native';
 import Sound from 'react-native-nitro-sound';
 
@@ -26,6 +26,17 @@ async function requestMicPermission() {
 export function useVoiceRecorder() {
   const [recording, setRecording] = useState(false);
   const [recordMs, setRecordMs] = useState(0);
+  // Why the last start() failed, so callers can tell a denied mic apart from a
+  // recorder that could not start at all.
+  const [lastError, setLastError] = useState<string | null>(null);
+  // start() resolves before the state update lands, so callers that want the
+  // reason right after an await read it through the ref instead.
+  const lastErrorRef = useRef<string | null>(null);
+
+  const recordError = useCallback((reason: string | null) => {
+    lastErrorRef.current = reason;
+    setLastError(reason);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -37,8 +48,13 @@ export function useVoiceRecorder() {
   const start = useCallback(async () => {
     if (recording) return true;
 
+    recordError(null);
+
     const allowed = await requestMicPermission();
-    if (!allowed) return false;
+    if (!allowed) {
+      recordError('Microphone permission was denied.');
+      return false;
+    }
 
     try {
       const fileName = `voice-${Date.now()}.m4a`;
@@ -55,13 +71,16 @@ export function useVoiceRecorder() {
       setRecording(true);
       setRecordMs(0);
       return true;
-    } catch {
+    } catch (err) {
+      recordError(
+        err instanceof Error ? err.message : 'Could not start the recorder.',
+      );
       Sound.removeRecordBackListener();
       setRecording(false);
       setRecordMs(0);
       return false;
     }
-  }, [recording]);
+  }, [recording, recordError]);
 
   const stop = useCallback(async () => {
     try {
@@ -89,8 +108,12 @@ export function useVoiceRecorder() {
     }
   }, []);
 
+  const getLastError = useCallback(() => lastErrorRef.current, []);
+
   return {
     recording,
+    lastError,
+    getLastError,
     recordLabel: formatRecordTime(recordMs),
     start,
     stop,

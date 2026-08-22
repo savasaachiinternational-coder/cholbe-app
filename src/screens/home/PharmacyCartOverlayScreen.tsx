@@ -21,16 +21,35 @@ import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
 import {ApiError} from '../../api/client';
 import {ProductImage} from '../../components/ProductImage';
 import {
+  discountPercent,
   formatBdt,
+  productListPrice,
   productUnitPrice,
   unitTypeToVariant,
 } from '../../utils/pharmacyHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyCartOverlay'>;
+type VariantKey = 'PC' | 'STRIPE' | 'BOX';
+
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
 
 const {width} = Dimensions.get('window');
 const CARD_SPACING = 12;
 const CARD_WIDTH = (width - 32 - CARD_SPACING) / 2;
+const DELIVERY_CHARGE = 30;
+
+const VARIANT_ROWS: {key: VariantKey; label: string}[] = [
+  {key: 'PC', label: '1 PC'},
+  {key: 'STRIPE', label: '1 Stripe = 10 pcs'},
+  {key: 'BOX', label: '1 Box = 10 Stripes'},
+];
 
 export function PharmacyCartOverlayScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
@@ -87,6 +106,74 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
     navigation.navigate('CartCheckoutDetails');
   };
 
+  // The cart line only carries the paid unit price, so the shop list is used to
+  // recover the struck-through list price and the discount badge.
+  const productById = new Map(products.map(item => [item.id, item]));
+
+  const variantQuantity = (variant: VariantKey) =>
+    cartItems
+      .filter(item => item.variant === variant)
+      .reduce((total, item) => total + item.quantity, 0);
+
+  const handleVariantStep = async (variant: VariantKey, delta: number) => {
+    const target = cartItems.find(item => item.variant === variant);
+    if (!target) {
+      return;
+    }
+    const next = target.quantity + delta;
+    try {
+      const cart =
+        next < 1
+          ? await cartApi.removeItem(target.id)
+          : await cartApi.updateItem(target.id, next);
+      setCartItems(cart.items);
+      setSubtotal(cart.subtotal);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not update cart';
+      Alert.alert('Cart', message);
+    }
+  };
+
+  const formatQuantity = (value: number) => value.toString().padStart(2, '0');
+  const grandTotal = subtotal + (cartItems.length ? DELIVERY_CHARGE : 0);
+
+  const renderCartLine = (item: CartItem) => {
+    const product = item.vendorProductId
+      ? productById.get(item.vendorProductId)
+      : undefined;
+    const lineTotal = Number(item.unitPrice) * item.quantity;
+    const listTotal = product ? productListPrice(product) * item.quantity : null;
+    const pct = product ? discountPercent(product) : null;
+
+    return (
+      <View key={item.id} style={styles.itemRow}>
+        <ProductImage
+          imageUrl={product?.imageUrl ?? item.vendorProduct?.imageUrl}
+          style={styles.itemThumb}
+        />
+        <View style={styles.itemBody}>
+          <View style={styles.itemTopRow}>
+            <Text style={styles.itemName} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={styles.itemPrice}>{formatBdt(lineTotal)}</Text>
+          </View>
+          <View style={styles.itemMetaRow}>
+            <Text style={styles.itemUnitPrice}>
+              {formatBdt(Number(item.unitPrice))}
+            </Text>
+            {listTotal != null && pct != null ? (
+              <>
+                <Text style={styles.itemOldPrice}>{formatBdt(listTotal)}</Text>
+                <Text style={styles.itemDiscount}>{pct}% off</Text>
+              </>
+            ) : null}
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerContainer, {paddingTop: insets.top + 8}]}>
@@ -128,43 +215,129 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
       <View style={[styles.dimmedBackdropFilm, {bottom: 74 + insets.bottom}]} />
 
       <View style={[styles.cartBottomSheetContainer, {bottom: 74 + insets.bottom}]}>
-        <View style={styles.dragNotchIndicator} />
-        <Text style={styles.cartSheetTitleText}>Cart</Text>
+        {/* Handle and title are one block so the sheet's 24px gap only falls
+            between header, list and button. */}
+        <View style={styles.sheetTopBlock}>
+          <View style={styles.dragHandle} />
+          <View style={styles.sheetHeaderRow}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => navigation.goBack()}>
+              <Feather name="chevron-left" size={24} color="#212121" />
+            </TouchableOpacity>
+            <Text style={styles.sheetTitleText}>Cart</Text>
+          </View>
+        </View>
 
         {loading ? (
           <ActivityIndicator color="#45A096" style={styles.loader} />
         ) : (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.cartItemsScrollContainer}>
-            {cartItems.length === 0 ? (
-              <Text style={styles.emptyCartText}>Cart is empty</Text>
-            ) : (
-              cartItems.map(item => (
-                <View key={item.id} style={styles.cartItemRowLine}>
-                  <View style={styles.cartItemLeftInfo}>
-                    <Text style={styles.cartItemNameText}>{item.name}</Text>
-                    <Text style={styles.cartItemQtyLabelText}>Qty: {item.quantity}</Text>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.sheetScrollContent}>
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryHeaderRow}>
+                <MaterialCommunityIcons
+                  name="clipboard-text-outline"
+                  size={18}
+                  color="#4E929D"
+                />
+                <Text style={styles.summaryHeaderText}>Order Summary</Text>
+              </View>
+
+              {VARIANT_ROWS.map(variant => {
+                const qty = variantQuantity(variant.key);
+                return (
+                  <View key={variant.key} style={styles.variantRow}>
+                    <View style={styles.radioRow}>
+                      <View
+                        style={[
+                          styles.radioCircle,
+                          qty > 0 && styles.radioCircleActive,
+                        ]}>
+                        {qty > 0 ? <View style={styles.radioInnerCircle} /> : null}
+                      </View>
+                      <Text style={styles.variantLabel}>{variant.label}</Text>
+                    </View>
+
+                    <View style={styles.counterRow}>
+                      <TouchableOpacity
+                        style={styles.counterBtn}
+                        activeOpacity={0.7}
+                        onPress={() => handleVariantStep(variant.key, -1)}>
+                        <Feather name="minus" size={15} color="#9E9E9E" />
+                      </TouchableOpacity>
+                      <Text style={styles.counterValue}>
+                        {formatQuantity(qty)}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.counterBtn}
+                        activeOpacity={0.7}
+                        onPress={() => handleVariantStep(variant.key, 1)}>
+                        <Feather name="plus" size={15} color="#212121" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                  <Text style={styles.cartItemPriceText}>
-                    {formatBdt(Number(item.unitPrice) * item.quantity)}
+                );
+              })}
+
+              <View style={styles.cardDivider} />
+
+              {cartItems.length === 0 ? (
+                <Text style={styles.emptyCartText}>Cart is empty</Text>
+              ) : (
+                cartItems.map(item => renderCartLine(item))
+              )}
+
+              <View style={styles.totalsBlock}>
+                <View style={styles.totalsRow}>
+                  <Text style={styles.totalsLabel}>Items Total</Text>
+                  <Text style={styles.totalsValue}>{formatBdt(subtotal)}</Text>
+                </View>
+                <View style={styles.totalsRow}>
+                  <Text style={styles.totalsLabel}>Delivery Charge</Text>
+                  <Text style={styles.totalsValue}>
+                    {formatBdt(cartItems.length ? DELIVERY_CHARGE : 0)}
                   </Text>
                 </View>
-              ))
-            )}
+              </View>
 
-            <View style={styles.horizontalDivider} />
-            <View style={styles.totalBillSummaryRow}>
-              <Text style={styles.totalLabelText}>Total</Text>
-              <Text style={styles.totalValueText}>{formatBdt(subtotal)}</Text>
+              <View style={styles.cardDivider} />
+
+              <Text style={styles.grandTotalText}>
+                Grand Total:{' '}
+                <Text style={styles.grandTotalValue}>
+                  {formatBdt(grandTotal)}
+                </Text>
+              </Text>
+
+              <View style={styles.trustRow}>
+                <View style={styles.trustItem}>
+                  <MaterialCommunityIcons
+                    name="check-decagram"
+                    size={16}
+                    color="#34C759"
+                  />
+                  <Text style={styles.trustText}>Verified Purchase Badge</Text>
+                </View>
+                <View style={styles.trustDivider} />
+                <View style={styles.trustItem}>
+                  <Feather name="corner-up-left" size={16} color="#7E8B97" />
+                  <Text style={styles.trustText}>
+                    Free 1-Day Returns &1-Year warranty
+                  </Text>
+                </View>
+              </View>
             </View>
           </ScrollView>
         )}
 
         <TouchableOpacity
-          style={[styles.checkoutPrimaryButton, !cartItems.length && styles.disabledBtn]}
+          style={[styles.continueButton, !cartItems.length && styles.disabledBtn]}
           activeOpacity={0.9}
           disabled={!cartItems.length}
           onPress={handleCheckout}>
-          <Text style={styles.checkoutButtonText}>Checkout</Text>
+          <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
 
@@ -251,58 +424,246 @@ const styles = StyleSheet.create({
     top: 0,
     backgroundColor: 'rgba(0,0,0,0.15)',
   },
+  // Figma: 24px top radius, 12/16/40/16 padding, 24px gap, #F4F3FC.
   cartBottomSheetContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F3FC',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    maxHeight: '55%',
+    borderWidth: 1,
+    borderColor: '#E3E5E8',
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+    gap: 24,
+    maxHeight: '82%',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: -4},
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 8,
   },
-  dragNotchIndicator: {
-    width: 40,
+  sheetTopBlock: {
+    gap: 12,
+  },
+  dragHandle: {
+    width: 50,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E0E4EA',
+    backgroundColor: '#D1D9E0',
     alignSelf: 'center',
-    marginBottom: 8,
   },
-  cartSheetTitleText: {fontSize: 18, fontWeight: '700', color: '#333', marginBottom: 8},
+  sheetHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  // Figma H4/bold: Proxima Nova 24px / 600 / 120%, Greyscale-900.
+  sheetTitleText: {
+    fontSize: 24,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 29,
+    color: '#212121',
+  },
+  sheetScrollContent: {paddingBottom: 4},
   loader: {marginVertical: 16},
-  emptyCartText: {textAlign: 'center', color: '#9AA6B2', paddingVertical: 16},
-  cartItemsScrollContainer: {paddingBottom: 8},
-  cartItemRowLine: {
+  emptyCartText: {
+    textAlign: 'center',
+    color: '#9AA6B2',
+    fontSize: 12,
+    paddingVertical: 16,
+  },
+  summaryCard: {
+    backgroundColor: '#F0EFF8',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#ECEFF3',
+  },
+  summaryHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  // Figma H6/bold: Proxima Nova 18px / 600 / 120%, Greyscale-800.
+  summaryHeaderText: {
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#424242',
+  },
+  variantRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
-  cartItemLeftInfo: {flex: 1, paddingRight: 12},
-  cartItemNameText: {fontSize: 14, fontWeight: '600', color: '#333'},
-  cartItemQtyLabelText: {fontSize: 12, color: '#7E8B97', marginTop: 2},
-  cartItemPriceText: {fontSize: 14, fontWeight: '700', color: '#45A096'},
-  horizontalDivider: {height: 1, backgroundColor: '#ECEFF3', marginVertical: 8},
-  totalBillSummaryRow: {flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12},
-  totalLabelText: {fontSize: 16, fontWeight: '700', color: '#333'},
-  totalValueText: {fontSize: 16, fontWeight: '700', color: '#45A096'},
-  checkoutPrimaryButton: {
-    backgroundColor: '#45A096',
-    borderRadius: 28,
-    height: 52,
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+    paddingRight: 12,
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#C8D1DB',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  radioCircleActive: {borderColor: '#47B39D'},
+  radioInnerCircle: {
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
+    backgroundColor: '#47B39D',
+  },
+  variantLabel: {
+    fontSize: 14,
+    fontFamily: FONT.medium,
+    fontWeight: '500',
+    color: '#424242',
+    flexShrink: 1,
+  },
+  counterRow: {flexDirection: 'row', alignItems: 'center', gap: 12},
+  // Outline only — a near-white fill read as solid circles on the lavender card.
+  counterBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: '#D6D3E4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  counterValue: {
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
+    minWidth: 18,
+    textAlign: 'center',
+  },
+  cardDivider: {height: 1, backgroundColor: '#ECEFF3', marginVertical: 12},
+  itemRow: {flexDirection: 'row', gap: 12, marginBottom: 12},
+  itemThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: 10,
+    backgroundColor: '#F5F4FD',
+    resizeMode: 'cover',
+  },
+  itemBody: {flex: 1, minWidth: 0},
+  itemTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  itemName: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
+  },
+  itemPrice: {
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
+  },
+  itemMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  itemUnitPrice: {fontSize: 12, fontFamily: FONT.regular, color: '#616161'},
+  itemOldPrice: {
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: '#9AA6B2',
+    textDecorationLine: 'line-through',
+  },
+  itemDiscount: {
+    fontSize: 12,
+    fontFamily: FONT.medium,
+    color: '#4DA69F',
+    fontWeight: '500',
+  },
+  totalsBlock: {gap: 6},
+  totalsRow: {flexDirection: 'row', justifyContent: 'space-between'},
+  totalsLabel: {fontSize: 12, fontFamily: FONT.regular, color: '#616161'},
+  totalsValue: {
+    fontSize: 12,
+    fontFamily: FONT.medium,
+    color: '#212121',
+    fontWeight: '500',
+  },
+  grandTotalText: {
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
+    textAlign: 'right',
+  },
+  grandTotalValue: {
+    fontSize: 14,
+    fontFamily: FONT.bold,
+    fontWeight: '700',
+    color: '#212121',
+  },
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#ECEFF3',
+    marginTop: 12,
+    paddingTop: 12,
+  },
+  trustItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+  },
+  trustDivider: {width: 1, alignSelf: 'stretch', backgroundColor: '#ECEFF3'},
+  trustText: {
+    flex: 1,
+    fontSize: 11,
+    fontFamily: FONT.regular,
+    color: '#616161',
+    lineHeight: 15,
+  },
+  // Figma: 10px 24px padding, 100px radius, Primary/500.
+  continueButton: {
+    backgroundColor: '#4DA69F',
+    borderRadius: 100,
+    minHeight: 52,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
   },
   disabledBtn: {opacity: 0.5},
-  checkoutButtonText: {color: '#FFF', fontSize: 16, fontWeight: '700'},
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+  },
   bottomTabBar: {
     flexDirection: 'row',
     minHeight: 74,

@@ -74,7 +74,15 @@ import { PharmacyPrescriptionMenuScreen } from '../screens/home/PharmacyPrescrip
 import { ChooseFromPharmacyGalleryScreen } from '../screens/home/ChooseFromPharmacyGalleryScreen';
 import { DoctorListScreen } from '../screens/home/DoctorListScreen';
 import { ReportsListScreen } from '../screens/home/ReportsListScreen';
-import { AiSymptomHome } from '../screens/aisymptom/screens/AiSymptomHome';
+import { AiSymptomHome } from '../screens/aisymptom/screens/AiSymptomHome/AiSymptomHome';
+import { SymptomDurationScreen } from '../screens/aisymptom/screens/SymptomDurationScreen/SymptomDurationScreen';
+import { PainStatusScreen } from '../screens/aisymptom/screens/PainStatusScreen/PainStatusScreen';
+import { PreviousHistoryCheck } from '../screens/aisymptom/screens/PreviousHistoryCheck/PreviousHistoryCheck';
+import { IdeationScreen } from '../screens/aisymptom/screens/IdeationScreen/IdeationScreen';
+import { SymptomResultScreen } from '../screens/aisymptom/screens/SymptomResultScreen/SymptomResultScreen';
+import { IdeationNext } from '../screens/aisymptom/screens/IdeationNext/IdeationNext';
+import { AiSymptomSelected } from '../screens/aisymptom/screens/AiSymptomSelected/AiSymptomSelected';
+import { DocScanner } from '../screens/aisymptom/screens/DocScanner/DocScanner';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -465,6 +473,46 @@ export function RootNavigator({
       <Stack.Screen
         name="AiSymptomHome"
         component={AiSymptomHome}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="SymptomDuration"
+        component={SymptomDurationScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PainStatus"
+        component={PainStatusScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PreviousHistoryCheck"
+        component={PreviousHistoryCheck}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="Ideation"
+        component={IdeationScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="SymptomResult"
+        component={SymptomResultScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="IdeationNext"
+        component={IdeationNext}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="AiSymptomSelected"
+        component={AiSymptomSelected}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="DocScanner"
+        component={DocScanner}
         options={{ animation: 'slide_from_right' }}
       />
     </Stack.Navigator>

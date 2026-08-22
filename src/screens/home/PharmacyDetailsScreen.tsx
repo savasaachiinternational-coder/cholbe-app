@@ -1,8 +1,9 @@
-import {useCallback, useEffect, useState, type ReactNode} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +21,7 @@ import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
 import {cartApi} from '../../api/cart';
 import {ApiError} from '../../api/client';
 import {ProductImage} from '../../components/ProductImage';
+import {WaveTitleBand} from '../../components/WaveTitleBand';
 import {
   discountPercent,
   formatBdt,
@@ -42,6 +44,83 @@ const VARIANTS: {key: VariantKey; label: string}[] = [
   {key: 'Box', label: '1 Box = 10 Stripes'},
 ];
 
+type InfoBlock = {text: string; bullet?: boolean; bold?: boolean};
+
+// Dummy copy standing in for the medicine monograph until the API returns it.
+const MEDICINE_INFO_SECTIONS: {title: string; blocks: InfoBlock[]}[] = [
+  {
+    title: 'Indications',
+    blocks: [
+      {
+        text: 'Cetirizine is indicated for the relief of symptoms associated with seasonal & perennial allergic rhinitis. It is also indicated for the treatment of the uncomplicated skin manifestations of chronic idiopathic urticaria and allergen induced asthma.',
+      },
+      {
+        text: 'Take medication as per the advice of a registered doctor.',
+        bullet: true,
+        bold: true,
+      },
+    ],
+  },
+  {
+    title: 'Dosage & Administration',
+    blocks: [
+      {text: 'Cetirizine oral dosage form:'},
+      {
+        text: 'Adults and Children 6 years and older: 1 tablet or 2 teaspoonfuls daily (or 1 teaspoonful twice daily).',
+        bullet: true,
+      },
+      {
+        text: 'Children 2-6 years: 1 teaspoonful once daily or 1/2 teaspoonful twice daily.',
+        bullet: true,
+      },
+      {
+        text: 'Children 6 months to 2 years : 1/2 teaspoonful once daily. The dose in children 12-23 months of age can be increased to a maximum dose as 1/2 teaspoonful every 12 hours.',
+        bullet: true,
+      },
+      {
+        text: 'Cetirizine injectable dosage form: Cetirizine is a single use injectable product for intravenous administration only. The recommended dosage regimen is once every 24 hours as needed for treatment of acute urticaria. Administer Cetirizine as an intravenous push over a period of 1 to 2 minutes. Cetirizine is not recommended in pediatric patients less than 6 years of age with impaired renal or hepatic function.',
+      },
+      {
+        text: 'Adults and adolescents 12 years of age and older: The recommended dosage is 10 mg administered by intravenous injection.',
+        bullet: true,
+      },
+      {
+        text: 'Children 6 to 11 years of age: The recommended dosage is 5 mg or 10 mg depending on symptom severity administered by intravenous injection.',
+        bullet: true,
+      },
+      {
+        text: 'Children 6 months to 5 years of age: The recommended dosage is 2.5 mg administered by intravenous injection.',
+        bullet: true,
+      },
+    ],
+  },
+  {
+    title: 'Interaction',
+    blocks: [
+      {
+        text: 'No clinically significant drug interactions have been found with Theophylline, Azithromycin, Pseudoephedrine, Ketoconazole or Erythromycin and with other drugs.',
+      },
+      {text: 'Contraindications'},
+    ],
+  },
+  {
+    title: 'Side Effects',
+    blocks: [
+      {
+        text: 'The most common side effects that occurred more frequently on Cetirizine is somnolence',
+      },
+    ],
+  },
+  {
+    title: 'Storage Conditions',
+    blocks: [
+      {
+        text: 'Keep in a dry place away from light and heat. Keep out of the reach of children.',
+      },
+    ],
+  },
+];
+
 function variantLabel(product: PharmacyProduct, key: VariantKey) {
   if (key === 'PC') {
     return product.unitType ? `1 ${product.unitType}` : '1 PC';
@@ -61,6 +140,7 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('Summary');
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<VariantKey>('Box');
   const [quantities, setQuantities] = useState<Record<VariantKey, number>>({
     PC: 0,
@@ -144,41 +224,35 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
 
   const formatQuantity = (value: number) => value.toString().padStart(2, '0');
 
-  const renderBulletRow = (children: ReactNode) => (
-    <View style={styles.bulletRow}>
-      <Text style={styles.bullet}>•</Text>
-      <Text style={styles.contentText}>{children}</Text>
-    </View>
-  );
+  // Placeholder gallery: the product only carries one image today, so it is
+  // repeated to exercise the thumbnail strip and the dots.
+  const galleryImages = [product.imageUrl, product.imageUrl, product.imageUrl];
+  const activeImage = galleryImages[activeImageIndex] ?? product.imageUrl;
 
   const renderMedicineInfoContent = () => (
     <View style={styles.infoContentContainer}>
-      <Text style={styles.contentHeading}>About this medicine</Text>
-      <Text style={styles.contentText}>{medicineDescription}</Text>
-      {product?.medicine?.medicineType ? (
-        <>
-          <Text style={styles.contentHeading}>Type</Text>
-          <Text style={styles.contentText}>{product.medicine.medicineType}</Text>
-        </>
-      ) : null}
-      {product?.brand || product?.medicine?.brand ? (
-        <>
-          <Text style={styles.contentHeading}>Brand</Text>
-          <Text style={styles.contentText}>
-            {product.brand ?? product.medicine?.brand}
-          </Text>
-        </>
-      ) : null}
-      {product?.prescriptionRequired ? (
-        <>
-          <Text style={styles.contentHeading}>Prescription</Text>
-          {renderBulletRow(
-            <Text style={styles.boldText}>
-              Prescription is required for this product.
-            </Text>,
+      {MEDICINE_INFO_SECTIONS.map(section => (
+        <View key={section.title}>
+          <Text style={styles.contentHeading}>{section.title}</Text>
+          {section.blocks.map((block, index) =>
+            block.bullet ? (
+              <View key={`${section.title}-${index}`} style={styles.bulletRow}>
+                <Text style={styles.bullet}>•</Text>
+                <Text
+                  style={[styles.contentText, block.bold && styles.boldText]}>
+                  {block.text}
+                </Text>
+              </View>
+            ) : (
+              <Text
+                key={`${section.title}-${index}`}
+                style={[styles.paragraph, block.bold && styles.boldText]}>
+                {block.text}
+              </Text>
+            ),
           )}
-        </>
-      ) : null}
+        </View>
+      ))}
     </View>
   );
 
@@ -306,6 +380,8 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
         </View>
       </View>
 
+      <WaveTitleBand title="" color="#F4F3FC"/>
+
       <View style={styles.body}>
         <ScrollView
           style={styles.scrollView}
@@ -313,26 +389,41 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
           contentContainerStyle={styles.scrollContent}>
           <View style={styles.mainImageCard}>
             <ProductImage
-              imageUrl={product.imageUrl}
+              imageUrl={activeImage}
               style={styles.mainProductImage}
               resizeMode="contain"
             />
           </View>
 
           <View style={styles.thumbnailRow}>
-            <TouchableOpacity
-              style={[styles.thumbnailWrapper, styles.activeThumbnailBorder]}
-              activeOpacity={0.8}>
-              <ProductImage
-                imageUrl={product.imageUrl}
-                style={styles.thumbnailImage}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
+            {galleryImages.map((image, index) => (
+              <TouchableOpacity
+                key={`thumb-${index}`}
+                style={[
+                  styles.thumbnailWrapper,
+                  index === activeImageIndex && styles.activeThumbnailBorder,
+                ]}
+                activeOpacity={0.8}
+                onPress={() => setActiveImageIndex(index)}>
+                <ProductImage
+                  imageUrl={image}
+                  style={styles.thumbnailImage}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            ))}
           </View>
 
           <View style={styles.dotsContainer}>
-            <View style={[styles.dot, styles.activeDot]} />
+            {galleryImages.map((_, index) => (
+              <View
+                key={`dot-${index}`}
+                style={[
+                  styles.dot,
+                  index === activeImageIndex && styles.activeDot,
+                ]}
+              />
+            ))}
           </View>
 
           <View style={styles.tabsContainer}>
@@ -356,7 +447,7 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
                 <Text style={styles.subTitleText}>{productType}</Text>
               </View>
               <View style={styles.categoryBadge}>
-                <FontAwesome5 name="capsules" size={12} color="#FFFFFF" />
+                <FontAwesome5 name="capsules" size={12} color="#EDF7F6" />
                 <Text style={styles.categoryBadgeText}>
                   {product.category ?? 'Medicines'}
                 </Text>
@@ -389,7 +480,9 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
           style={styles.fab}
           activeOpacity={0.85}
           onPress={() => navigation.navigate('PharmacyPrescriptionMenu')}>
-          <MaterialCommunityIcons name="file-document-scan-outline" size={24} color="#FFFFFF" />
+          {/* <MaterialCommunityIcons name="file-document-scan-outline" size={24} color="#FFFFFF" />
+           */}
+           <Image source={require('../../assets/syaiicon.png')}/>
         </TouchableOpacity>
       </View>
 
@@ -462,15 +555,20 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F4F3FC',
   },
   centered: {
     justifyContent: 'center',
     alignItems: 'center',
   },
+  waveStyle:{
+    marginTop:-10,
+  },
   body: {
     flex: 1,
+    marginTop:-48,
     position: 'relative',
+    
   },
   scrollView: {
     flex: 1,
@@ -483,7 +581,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 12,
   },
   headerTitle: {
     fontSize: 18,
@@ -510,13 +607,14 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   mainImageCard: {
-    backgroundColor: '#F2F4F7',
-    borderRadius: 24,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 16,
     marginHorizontal: 16,
-    height: 220,
+    height: 240,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    elevation:1,
   },
   mainProductImage: {
     width: '90%',
@@ -605,13 +703,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mainTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#091B27',
   },
   subTitleText: {
     fontSize: 14,
-    color: '#7E8B97',
+    color: '#454F5B',
+    fontWeight: '400',
     marginTop: 2,
   },
   categoryBadge: {
@@ -624,8 +723,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   categoryBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+    color: '#EDF7F6',
+    fontSize: 16,
     fontWeight: '600',
   },
   detailsBlock: {
@@ -645,19 +744,27 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   contentHeading: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#3F444D',
-    marginTop: 18,
-    marginBottom: 8,
+    color: '#2B2F36',
+    marginTop: 20,
+    marginBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ECEFF3',
-    paddingBottom: 6,
+    paddingBottom: 8,
+  },
+  // Standalone paragraph; contentText keeps flex:1 for the bullet rows.
+  paragraph: {
+    fontSize: 12,
+    color: '#616161',
+    lineHeight: 18,
+    textAlign: 'justify',
+    marginBottom: 8,
   },
   contentText: {
-    fontSize: 13,
-    color: '#5C6470',
-    lineHeight: 19,
+    fontSize: 12,
+    color: '#616161',
+    lineHeight: 18,
     textAlign: 'justify',
     flex: 1,
   },
@@ -677,12 +784,12 @@ const styles = StyleSheet.create({
   bulletRow: {
     flexDirection: 'row',
     paddingLeft: 4,
-    paddingRight: 12,
-    marginTop: 6,
+    paddingRight: 4,
+    marginBottom: 8,
   },
   bullet: {
-    fontSize: 14,
-    color: '#5C6470',
+    fontSize: 13,
+    color: '#616161',
     marginRight: 8,
     lineHeight: 18,
   },
@@ -695,11 +802,14 @@ const styles = StyleSheet.create({
     color: '#3F444D',
   },
   deliveryBox: {
-    backgroundColor: '#EDF2F7',
+    backgroundColor: '#F4F3FC',
     marginHorizontal: 16,
     borderRadius: 12,
     padding: 14,
+    borderWidth:1,
+    borderColor:'#C5D3E1',
     marginVertical: 16,
+    elevation:2,
   },
   deliveryRow: {
     flexDirection: 'row',
@@ -726,12 +836,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontWeight: '600',
+    color: '#424242',
   },
   sectionSubtitle: {
-    fontSize: 12,
-    color: '#7E8B97',
+    fontSize: 10,
+    color: '#616161',
+    fontWeight: '400',
   },
   viewAllRow: {
     flexDirection: 'row',
@@ -832,14 +943,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   disclaimerTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1A1C1E',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#091B27',
+    marginBottom: 8,
   },
   disclaimerText: {
     fontSize: 12,
-    color: '#7E8B97',
+    color: '#454F5B',
     lineHeight: 18,
   },
   fab: {

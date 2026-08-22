@@ -20,7 +20,7 @@ import {PasswordChangeSuccessModal} from './PasswordChangeSuccessModal';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
 
-const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
+const AUTH_GRADIENT = ['#F8FAFC', '#E4F2F4', '#C9E7EA', '#E9F4F6'] as const;
 
 type Props = {
   contact: string;
@@ -121,6 +121,11 @@ export function CreateNewPasswordScreen({
             </View>
 
             <View style={styles.formSection}>
+               <Image
+                source={require('../../assets/medicine_cardbg.png')}
+                style={styles.formBackgroundWave}
+                resizeMode="cover"
+              />
               <Text style={styles.inputLabel}>New Password</Text>
               <View style={styles.inputContainer}>
                 <Feather
@@ -272,6 +277,17 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 24,
   },
+    formBackgroundWave: {
+    position: 'absolute',
+    marginLeft:-66,
+    top: 0,
+    left: 0,
+    width: '130%',
+    height: '100%',
+    opacity: .1,
+    transform: [{rotate: '-20deg'}],
+
+  },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
@@ -282,7 +298,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: 'transparent',
     borderWidth: 1.2,
     borderColor: '#82C3D1',
     borderRadius: 28,

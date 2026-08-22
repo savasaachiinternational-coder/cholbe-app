@@ -30,6 +30,7 @@ build/
 local.properties
 android/secrets.properties
 src/config/googleMaps.ts
+src/config/gemini.ts
 *.iml
 *.hprof
 .cxx/
@@ -77,3 +78,6 @@ nasir/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# DocScanner (all locations)
+**/DocScanner/

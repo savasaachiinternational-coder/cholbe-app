@@ -26,6 +26,15 @@ import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AVendors'>;
 
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
 type ApiVendor = {
   id: string;
   pharmacyName: string;
@@ -186,18 +195,28 @@ function VendorCard({
 
       <View style={styles.cardBodyRow}>
         <Image
-          source={{uri: item.user.avatarUrl ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.fullName)}&background=4E929D&color=fff`}}
+          source={{uri: item.user.avatarUrl ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(item.user.fullName)}&background=4DA69F&color=fff`}}
           style={styles.vendorAvatar}
         />
         <View style={styles.metaInfoColumn}>
-          <Text style={styles.vendorNameText}>{item.user.fullName}</Text>
+          <Text style={styles.vendorNameText} numberOfLines={1}>
+            {item.user.fullName}
+          </Text>
           <View style={styles.subRowItem}>
-            <MaterialCommunityIcons name="hospital-box" size={13} color="#7E8B97" />
-            <Text style={styles.subRowText}>{item.pharmacyName}</Text>
+            <MaterialCommunityIcons
+              name="map-marker-outline"
+              size={16}
+              color="#9E9E9E"
+            />
+            <Text style={styles.subRowText} numberOfLines={1}>
+              {item.pharmacyName}
+            </Text>
           </View>
           <View style={styles.subRowItem}>
-            <Feather name="phone" size={12} color="#7E8B97" />
-            <Text style={styles.subRowText}>{item.user.phone ?? item.phone ?? '—'}</Text>
+            <Feather name="phone" size={14} color="#4DA69F" />
+            <Text style={styles.subRowText} numberOfLines={1}>
+              {item.user.phone ?? item.phone ?? '—'}
+            </Text>
           </View>
           {item.approvalStatus !== 'PENDING' && (
             <View style={[styles.statusChip, {backgroundColor: approvalColor(item.approvalStatus) + '20', marginTop: 4}]}>
@@ -206,29 +225,29 @@ function VendorCard({
               </Text>
             </View>
           )}
+
+          {showActions && (
+            <View style={styles.actionButtonsRow}>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.btnApprove]}
+                activeOpacity={0.85}
+                disabled={updating}
+                onPress={e => {e.stopPropagation?.(); onApprove();}}>
+                <Feather name="check-circle" size={18} color="#FFFFFF" />
+                <Text style={styles.actionBtnText}>Approve</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.btnReject]}
+                activeOpacity={0.85}
+                disabled={updating}
+                onPress={e => {e.stopPropagation?.(); onReject();}}>
+                <Feather name="x-circle" size={18} color="#FFFFFF" />
+                <Text style={styles.actionBtnText}>Reject</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
-
-      {showActions && (
-        <View style={styles.actionButtonsRow}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.btnApprove]}
-            activeOpacity={0.85}
-            disabled={updating}
-            onPress={e => {e.stopPropagation?.(); onApprove();}}>
-            <Feather name="check-circle" size={14} color="#FFFFFF" />
-            <Text style={styles.actionBtnText}>Approve</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.btnReject]}
-            activeOpacity={0.85}
-            disabled={updating}
-            onPress={e => {e.stopPropagation?.(); onReject();}}>
-            <Feather name="x-circle" size={14} color="#FFFFFF" />
-            <Text style={styles.actionBtnText}>Reject</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </TouchableOpacity>
   );
 }
@@ -339,16 +358,16 @@ export function AdminVendorsScreen({navigation}: Props) {
           {paddingBottom: 85 + insets.bottom},
         ]}>
         <View style={styles.searchContainer}>
-          <Feather name="search" size={20} color="#9AA6B2" />
+          <Feather name="search" size={24} color="#9E9E9E" />
           <TextInput
             placeholder="Search"
-            placeholderTextColor="#9AA6B2"
+            placeholderTextColor="#9E9E9E"
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
-            <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
+            <MaterialCommunityIcons name="tune" size={22} color="#4DA69F" />
           </TouchableOpacity>
         </View>
 
@@ -409,7 +428,7 @@ export function AdminVendorsScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F0EFF8',
   },
   scrollContent: {
     paddingTop: 4,
@@ -420,12 +439,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F0EFF8',
   },
+  // Figma H6/bold: Proxima Nova 18px / 600 / 120%, Greyscale-800.
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#424242',
     flex: 1,
     marginLeft: 12,
   },
@@ -436,46 +458,51 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#ECEFF3',
-    gap: 8,
+    borderRadius: 100,
+    paddingHorizontal: 20,
+    height: 56,
+    gap: 12,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily: FONT.regular,
     padding: 0,
-    color: '#1A1C1E',
+    color: '#212121',
   },
   filtersContent: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    gap: 8,
+    gap: 4,
   },
+  // Figma: 10px 20px padding, 40px radius, 1px Greyscale-300 border.
   chipItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 18,
-    backgroundColor: '#F0F3F6',
-    marginRight: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 40,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginRight: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
   chipItemActive: {
-    backgroundColor: '#4E929D',
+    backgroundColor: '#4DA69F',
+    borderColor: '#4DA69F',
   },
   chipItemText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#7E8B97',
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#424242',
   },
   chipItemActiveText: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontFamily: FONT.medium,
+    fontWeight: '500',
   },
   cardsVerticalStack: {
     gap: 12,
@@ -483,46 +510,59 @@ const styles = StyleSheet.create({
   loader: {marginVertical: 32},
   emptyText: {
     textAlign: 'center',
-    color: '#9AA6B2',
+    fontFamily: FONT.regular,
+    color: '#9E9E9E',
     fontSize: 14,
     paddingVertical: 32,
   },
+  // Figma: 16px padding, column with 8px gap, 8px radius, #F3F2FB,
+  // Card/Shadow 1 = 0 4px 60px rgba(4, 6, 32, .06).
   vendorCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
+    backgroundColor: '#F3F2FB',
+    borderRadius: 8,
+    padding: 16,
+    gap: 8,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E7E5F2',
     position: 'relative',
+    shadowColor: '#040620',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.06,
+    shadowRadius: 30,
+    elevation: 2,
   },
   timeAgoText: {
     position: 'absolute',
-    top: 14,
-    right: 14,
-    fontSize: 10,
-    color: '#9AA6B2',
-    fontWeight: '500',
+    top: 16,
+    right: 16,
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: '#9E9E9E',
+    fontWeight: '400',
+    zIndex: 2,
   },
   cardBodyRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: 56,
+    alignItems: 'flex-start',
   },
   vendorAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     marginRight: 14,
+    backgroundColor: '#E7E5F2',
   },
   metaInfoColumn: {
     flex: 1,
-    gap: 2,
+    gap: 4,
+    paddingRight: 56,
   },
   vendorNameText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
   },
   subRowItem: {
     flexDirection: 'row',
@@ -530,9 +570,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   subRowText: {
-    fontSize: 11,
-    color: '#7E8B97',
-    fontWeight: '500',
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    color: '#616161',
+    fontWeight: '400',
+    flexShrink: 1,
   },
   statusChip: {
     alignSelf: 'flex-start',
@@ -544,30 +586,32 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
   },
+  // Content-sized pills sitting under the text column, as in the mockup.
   actionButtonsRow: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 14,
+    marginTop: 10,
   },
   actionBtn: {
-    flex: 1,
-    height: 34,
-    borderRadius: 17,
+    height: 40,
+    paddingHorizontal: 20,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   btnApprove: {
-    backgroundColor: '#47B39D',
+    backgroundColor: '#4DA69F',
   },
   btnReject: {
-    backgroundColor: '#E26D6D',
+    backgroundColor: '#E4696B',
   },
   actionBtnText: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 15,
+    fontFamily: FONT.medium,
+    fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,

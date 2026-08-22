@@ -20,6 +20,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {authApi} from '../../api/auth';
@@ -32,6 +33,8 @@ const AUTH = {
   inkSoft: '#555555',
   inkMuted: '#666666',
   placeholder: '#A0A0A0',
+  field: '#3EA08F',
+  fieldIcon: '#2E9E8F',
   white: '#FFFFFF',
 } as const;
 
@@ -156,9 +159,14 @@ export function CreateHealthProfileScreenUpdated({
             </View>
 
             <View style={styles.formSection}>
+               <Image
+                source={require('../../assets/medicine_cardbg.png')}
+                style={styles.formBackgroundWave}
+                resizeMode="cover"
+              />
               <AuthField
                 label="Full Name"
-                icon="user"
+                icon="account"
                 value={fullName}
                 onChangeText={setFullName}
                 placeholder="Enter full name"
@@ -171,7 +179,7 @@ export function CreateHealthProfileScreenUpdated({
               <AuthField
                 inputRef={emailRef}
                 label="Email Address"
-                icon="mail"
+                icon="email"
                 value={email}
                 onChangeText={setEmail}
                 placeholder="Enter email address"
@@ -283,10 +291,10 @@ const AuthField = memo(function AuthField({
     <>
       <Text style={styles.inputLabel}>{label}</Text>
       <View style={styles.inputContainer}>
-        <Feather
+        <MaterialCommunityIcons
           name={icon}
-          size={20}
-          color={AUTH.accent}
+          size={22}
+          color={AUTH.fieldIcon}
           style={styles.inputIcon}
         />
         <TextInput
@@ -304,10 +312,10 @@ const AuthField = memo(function AuthField({
             accessibilityLabel={
               secureTextEntry ? 'Show password' : 'Hide password'
             }>
-            <Feather
+            <MaterialCommunityIcons
               name={secureTextEntry ? 'eye-off' : 'eye'}
-              size={20}
-              color={AUTH.accent}
+              size={22}
+              color={AUTH.fieldIcon}
             />
           </TouchableOpacity>
         )}
@@ -413,31 +421,44 @@ const styles = StyleSheet.create({
   formSection: {
     marginBottom: 20,
   },
+  
+  formBackgroundWave: {
+    position: 'absolute',
+    marginLeft:-66,
+    top: 0,
+    left: 0,
+    width: '130%',
+    height: '100%',
+    opacity: .1,
+    transform: [{rotate: '-20deg'}],
+
+  },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: AUTH.inkSoft,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#424242',
     marginBottom: 10,
     marginTop: 14,
   },
+  // Transparent so the wave reads through, with the design's teal outline.
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderWidth: 1.2,
-    borderColor: '#82C3D1',
-    borderRadius: 28,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: AUTH.field,
+    borderRadius: 30,
     paddingHorizontal: 18,
-    height: 56,
+    height: 58,
   },
   inputIcon: {
     marginRight: 12,
   },
   input: {
     flex: 1,
-    color: AUTH.ink,
-    fontSize: 15,
-    fontWeight: '500',
+    color: '#212121',
+    fontSize: 16,
+    fontWeight: '400',
   },
   checkboxContainer: {
     flexDirection: 'row',

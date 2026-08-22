@@ -1,3 +1,4 @@
+import type {SymptomIntake} from '../screens/aisymptom/data/shared/symptomIntake';
 export type RootStackParamList = {
   Home: undefined;
   AHome: undefined;
@@ -185,4 +186,12 @@ export type RootStackParamList = {
   //AiSymptom
 
   AiSymptomHome:undefined;
+  SymptomDuration:{title: string; body: string};
+  PainStatus:{intake: SymptomIntake};
+  PreviousHistoryCheck:{intake: SymptomIntake};
+  Ideation:{intake: SymptomIntake};
+  SymptomResult:{intake: SymptomIntake};
+  IdeationNext:undefined;
+  AiSymptomSelected:{intake: SymptomIntake} | undefined;
+  DocScanner:undefined;
 };

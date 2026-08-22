@@ -24,6 +24,15 @@ import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'APayments'>;
 
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
 type PaymentStatus = 'Paid' | 'failed';
 
 type ApiPayment = {
@@ -162,16 +171,16 @@ export function AdminPaymentsScreen({navigation}: Props) {
           {paddingBottom: 85 + insets.bottom},
         ]}>
         <View style={styles.searchContainer}>
-          <Feather name="search" size={20} color="#9AA6B2" />
+          <Feather name="search" size={24} color="#9E9E9E" />
           <TextInput
             placeholder="Search"
-            placeholderTextColor="#9AA6B2"
+            placeholderTextColor="#9E9E9E"
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
-            <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
+            <MaterialCommunityIcons name="tune" size={22} color="#4DA69F" />
           </TouchableOpacity>
         </View>
 
@@ -200,7 +209,7 @@ export function AdminPaymentsScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F3F0FC',
   },
   scrollContent: {
     paddingTop: 4,
@@ -211,12 +220,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F3F0FC',
   },
+  // Figma H6/bold: Proxima Nova 18px / 600 / 120%, Greyscale-800.
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#424242',
     flex: 1,
     marginLeft: 12,
   },
@@ -227,31 +239,40 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    height: 48,
+    borderRadius: 40,
+    paddingHorizontal: 20,
+    height: 56,
     borderWidth: 1,
     borderColor: '#ECEFF3',
-    marginBottom: 20,
-    gap: 8,
+    marginBottom: 24,
+    gap: 12,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily: FONT.regular,
     padding: 0,
-    color: '#1A1C1E',
+    color: '#212121',
   },
+  // Figma: 24px 16px padding, 12px gap, 8px radius, 1px #E6E3EE,
+  // Card/Shadow 1 = 0 4px 60px rgba(4, 6, 15, .08).
   recordsContainerCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: '#F3F2FB',
+    borderRadius: 8,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
-    paddingTop: 4,
-    paddingBottom: 4,
+    borderColor: '#E6E3EE',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    gap: 12,
     minHeight: 120,
+    shadowColor: '#04060F',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.08,
+    shadowRadius: 30,
+    elevation: 2,
   },
   loader: {marginVertical: 32},
   emptyText: {
@@ -261,12 +282,12 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   invoiceRowItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E0E0E0',
   },
   invoiceRowItemLast: {
+    paddingBottom: 0,
     borderBottomWidth: 0,
   },
   invoiceMetaHeaderRow: {
@@ -274,15 +295,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  // Figma body/small/medium: 12px / 600, 0.2px tracking, Greyscale-800.
   orderIdText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#333D47',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    color: '#424242',
   },
   amountText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#333D47',
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#424242',
   },
   cardBodyRow: {
     flexDirection: 'row',
@@ -299,15 +324,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  // Figma H6/bold: 18px / 600 / 120%, Greyscale-800.
   userNameText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#424242',
   },
+  // Figma body/small/regular: 12px / 400, 0.2px tracking, Greyscale-700.
   dateText: {
     fontSize: 12,
-    color: '#7E8B97',
-    fontWeight: '500',
+    fontFamily: FONT.regular,
+    color: '#616161',
+    fontWeight: '400',
+    letterSpacing: 0.2,
     marginTop: 2,
   },
   statusBadge: {
@@ -323,10 +354,15 @@ const styles = StyleSheet.create({
   badgeFailed: {
     backgroundColor: '#FF9800',
   },
+  // Figma: 10px / 600 / 110%, 0.2px tracking, Primary-100.
   statusBadgeText: {
-    color: '#FFFFFF',
+    color: '#EDF7F6',
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    textAlign: 'center',
     textTransform: 'capitalize',
   },
 });

@@ -893,7 +893,8 @@ export function MyProfileScreen({navigation}: Props) {
 
       <TouchableOpacity
         style={[styles.floatingScanButton, {bottom: insets.bottom + 90}]}
-        activeOpacity={0.85}>
+        activeOpacity={0.85} 
+        onPress={() => navigation.navigate('AiSymptomHome')}>
          <Image source={require('../../assets/syaiicon.png')} />
       </TouchableOpacity>
 
@@ -1003,7 +1004,7 @@ function CustomerChangePasswordModal({visible, onClose}: {visible: boolean; onCl
 const cpStyles = StyleSheet.create({
   overlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
   modal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -1019,7 +1020,7 @@ const cpStyles = StyleSheet.create({
   field: {marginBottom: 14},
   label: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569', marginBottom: 6},
   input: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F2F1FB',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#EEF0F6',

@@ -24,7 +24,8 @@ import {ApiError} from '../../api/client';
 
 const {width} = Dimensions.get('window');
 
-const AUTH_GRADIENT = ['#F5F8FC', '#EFF7FA', '#E2F3F9'] as const;
+const AUTH_GRADIENT = ['#F8FAFC', '#E4F2F4', '#C9E7EA', '#E9F4F6'] as const;
+const AUTH_GRADIENT_STOPS = [0, 0.35, 0.62, 1];
 const OTP_LENGTH = 5;
 const OTP_GAP = 10;
 const PIN_SIZE = (width - 48 - OTP_GAP * (OTP_LENGTH - 1)) / OTP_LENGTH;
@@ -113,13 +114,14 @@ export function VerificationScreen({
     <View style={styles.root}>
       <LinearGradient
         colors={[...AUTH_GRADIENT]}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
+        locations={AUTH_GRADIENT_STOPS}
+        start={{x: 0.15, y: 0}}
+        end={{x: 0.85, y: 1}}
         style={StyleSheet.absoluteFill}
       />
 
-      <View style={styles.waveLayerOne} />
-      <View style={styles.waveLayerTwo} />
+      {/* <View style={styles.waveLayerOne} />
+      <View style={styles.waveLayerTwo} /> */}
 
       <View style={[styles.screen, {paddingTop: insets.top}]}>
         <View style={styles.headerBar}>
@@ -154,6 +156,11 @@ export function VerificationScreen({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled">
             <View style={styles.textSection}>
+               <Image
+                              source={require('../../assets/medicine_cardbg.png')}
+                              style={styles.formBackgroundWave}
+                              resizeMode="cover"
+                            />
               <Text style={styles.title}>Verification Code</Text>
               <Text style={styles.subtitle}>
                 We have sent a code to{' '}
@@ -276,6 +283,18 @@ const styles = StyleSheet.create({
   textSection: {
     marginBottom: 44,
   },
+    formBackgroundWave: {
+    position: 'absolute',
+    marginTop:130,
+    marginLeft:-66,
+    top: 0,
+    left: 0,
+    width: '130%',
+    height: '100%',
+    opacity: .1,
+    transform: [{rotate: '-10deg'}],
+
+  },
   title: {
     fontSize: 32,
     fontWeight: '700',
@@ -305,16 +324,11 @@ const styles = StyleSheet.create({
   },
   pinCircleContainer: {
     borderRadius: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: 'transparent',
     borderWidth: 1.2,
     borderColor: '#81C1CE',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#81C1CE',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
   },
   pinInputField: {
     width: '100%',

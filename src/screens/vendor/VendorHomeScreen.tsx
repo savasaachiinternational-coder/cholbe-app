@@ -14,7 +14,6 @@ import {
 import {useFocusEffect} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {vendorApi} from '../../api/vendor';
@@ -26,8 +25,28 @@ import {formatBdt} from '../../utils/pharmacyHelpers';
 import {VendorBottomNav} from './VendorBottomNav';
 import type {VendorOrderStatus} from './vendorNav';
 import {NotificationBell} from '../../components/NotificationBell';
+import {RoleMenuDrawer} from '../../components/RoleMenuDrawer';
+import {WaveWithChild} from '../../components/WaveWithChild';
 
-const CHART_WIDTH = Dimensions.get('window').width - 64;
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
+// Figma "Card/Shadow 1": 0 4px 60px 0 rgba(4, 6, 15, 0.08).
+const CARD_SHADOW = {
+  shadowColor: '#04060F',
+  shadowOffset: {width: 0, height: 4},
+  shadowOpacity: 0.08,
+  shadowRadius: 30,
+  elevation: 2,
+} as const;
+
+const CHART_WIDTH = Dimensions.get('window').width - 56;
 const CHART_PLOT_HEIGHT = 120;
 
 function buildRevenueChartPoints(data: {revenue: number}[]): {x: number; y: number}[] {
@@ -131,6 +150,13 @@ function mapOrderStatus(status: string): VendorOrderStatus {
   return 'Pending';
 }
 
+function paymentMethodLabel(method: string) {
+  if (method === 'BKASH') return 'bKash';
+  if (method === 'NAGAD') return 'Nagad';
+  if (method === 'CARD') return 'Credit Card';
+  return 'Cash on Delivery';
+}
+
 function orderLocation(order: VendorOrder) {
   const snap = order.addressSnapshot;
   if (!snap) return '—';
@@ -141,6 +167,7 @@ export function VendorHomeScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [monthlyRevenue, setMonthlyRevenue] = useState<{month: string; revenue: number}[]>([]);
   const [search, setSearch] = useState('');
@@ -213,10 +240,13 @@ export function VendorHomeScreen({navigation}: Props) {
     const discount = discountLabel(product);
     return (
       <View key={product.id} style={styles.inventoryCard}>
-        <ProductImage
-          imageUrl={product.imageUrl}
-          style={styles.inventoryImage}
-        />
+        <View style={styles.inventoryImageBox}>
+          <ProductImage
+            imageUrl={product.imageUrl}
+            style={styles.inventoryImage}
+            resizeMode="contain"
+          />
+        </View>
         <View style={styles.inventoryDetails}>
           <Text style={styles.itemTitle}>{product.name}</Text>
           {product.genericName ? (
@@ -225,22 +255,28 @@ export function VendorHomeScreen({navigation}: Props) {
           <Text style={styles.itemMetaText}>
             In Stock: {product.stockQuantity} {product.unitType ?? 'units'}
           </Text>
-          <Text style={styles.itemPriceText}>
+          <Text style={styles.itemMetaText}>
             Price: {formatTk(product.discountPrice ?? product.unitPrice)}
             {product.unitType ? `/${product.unitType.toLowerCase()}` : ''}
             {discount ? <Text style={styles.discountText}> {discount}</Text> : null}
           </Text>
 
           {product.category ? (
-            <View style={styles.tagBadge}>
-              <FontAwesome5 name="capsules" size={10} color="#7E8B97" />
-              <Text style={styles.tagBadgeText}>{product.category}</Text>
+            <View style={styles.categoryPill}>
+              <Feather name="edit-2" size={12} color="#616161" />
+              <Text style={styles.categoryPillText}>{product.category}</Text>
             </View>
           ) : null}
         </View>
 
-        <View style={product.isActive ? styles.statusToggleActive : styles.statusToggleInactive}>
-          {product.isActive ? <View style={styles.statusToggleInner} /> : null}
+        <View
+          style={[
+            styles.statusToggleTrack,
+            product.isActive
+              ? styles.statusToggleTrackOn
+              : styles.statusToggleTrackOff,
+          ]}>
+          <View style={styles.statusToggleKnob} />
         </View>
       </View>
     );
@@ -256,65 +292,100 @@ export function VendorHomeScreen({navigation}: Props) {
         <Text style={styles.customerName}>
           Customer : {order.customer?.fullName ?? '—'}
         </Text>
-        <Text style={styles.orderMetaText}>Order ID: {order.orderNumber}</Text>
-        <Text style={styles.orderMetaText}>Phone: {order.customer?.phone ?? '—'}</Text>
-        <Text style={styles.orderMetaText}>Delivery Location : {orderLocation(order)}</Text>
+        <Text style={styles.orderMetaText}>
+          <Text style={styles.orderMetaLabel}>Order ID: </Text>
+          {order.orderNumber}
+        </Text>
+        <Text style={styles.orderMetaText}>
+          <Text style={styles.orderMetaLabel}>Phone: </Text>
+          {order.customer?.phone ?? '—'}
+        </Text>
+        <Text style={styles.orderMetaText}>
+          <Text style={styles.orderMetaLabel}>Delivery Location : </Text>
+          {orderLocation(order)}
+        </Text>
 
         {firstItem ? (
           <View style={styles.orderProductRow}>
-            <Image
-              source={{uri: 'https://via.placeholder.com/60/ECEFF3'}}
-              style={styles.orderProductImage}
-            />
+            <View style={styles.orderProductImageBox}>
+              <Image
+                source={{uri: 'https://via.placeholder.com/60/ECEFF3'}}
+                style={styles.orderProductImage}
+              />
+            </View>
             <View style={styles.orderProductInfo}>
               <Text style={styles.orderProductTitle}>{firstItem.name}</Text>
               {firstItem.genericName ? (
-                <Text style={styles.itemMetaText}>Generic: {firstItem.genericName}</Text>
+                <Text style={styles.orderMetaText}>
+                  <Text style={styles.orderMetaLabel}>Generic: </Text>
+                  {firstItem.genericName}
+                </Text>
               ) : null}
-              <Text
-                style={
-                  uiStatus === 'Pending'
-                    ? styles.statusLabelPending
-                    : uiStatus === 'Accepted'
-                      ? styles.statusLabelAccepted
-                      : styles.statusLabelPending
-                }>
-                Status: {uiStatus}
+              <Text style={styles.orderMetaText}>
+                <Text style={styles.orderMetaLabel}>Status: </Text>
+                {uiStatus}
               </Text>
+              <Text style={styles.orderMetaText}>
+                <Text style={styles.orderMetaLabel}>Payment: </Text>
+                {paymentMethodLabel(order.paymentMethod)}
+              </Text>
+
+              {uiStatus === 'Pending' ? (
+                <View style={styles.actionButtonsRow}>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.btnAccept]}
+                    activeOpacity={0.85}
+                    disabled={isUpdating}
+                    onPress={() => updateOrderStatus(order.id, 'CONFIRMED')}>
+                    <MaterialCommunityIcons
+                      name="check-circle"
+                      size={18}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.actionBtnText}>Accept</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.btnDecline]}
+                    activeOpacity={0.85}
+                    disabled={isUpdating}
+                    onPress={() => updateOrderStatus(order.id, 'CANCELLED')}>
+                    <MaterialCommunityIcons
+                      name="close-circle"
+                      size={18}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.actionBtnText}>Declined</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
+              {uiStatus === 'Accepted' && order.status !== 'ON_THE_WAY' ? (
+                <TouchableOpacity
+                  style={styles.readyPickupBtn}
+                  activeOpacity={0.85}
+                  disabled={isUpdating}
+                  onPress={() => updateOrderStatus(order.id, 'ON_THE_WAY')}>
+                  <MaterialCommunityIcons
+                    name="truck-check-outline"
+                    size={20}
+                    color="#4DA69F"
+                  />
+                  <Text style={styles.outlinePillText}>Ready for Pickup</Text>
+                </TouchableOpacity>
+              ) : null}
+
+              {uiStatus === 'Delivered' ? (
+                <View style={styles.successPill}>
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={20}
+                    color="#4DA69F"
+                  />
+                  <Text style={styles.outlinePillText}>Successful</Text>
+                </View>
+              ) : null}
             </View>
           </View>
-        ) : null}
-
-        {uiStatus === 'Pending' ? (
-          <View style={styles.actionButtonsRow}>
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.btnAccept]}
-              activeOpacity={0.85}
-              disabled={isUpdating}
-              onPress={() => updateOrderStatus(order.id, 'CONFIRMED')}>
-              <Feather name="check-circle" size={14} color="#FFFFFF" />
-              <Text style={styles.actionBtnText}>Accept</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.btnDecline]}
-              activeOpacity={0.85}
-              disabled={isUpdating}
-              onPress={() => updateOrderStatus(order.id, 'CANCELLED')}>
-              <Feather name="x-circle" size={14} color="#FFFFFF" />
-              <Text style={styles.actionBtnText}>Declined</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        {uiStatus === 'Accepted' && order.status !== 'ON_THE_WAY' ? (
-          <TouchableOpacity
-            style={styles.readyPickupBtn}
-            activeOpacity={0.85}
-            disabled={isUpdating}
-            onPress={() => updateOrderStatus(order.id, 'ON_THE_WAY')}>
-            <MaterialCommunityIcons name="hammer-wrench" size={14} color="#4E929D" />
-            <Text style={styles.readyPickupBtnText}>Ready for Pickup</Text>
-          </TouchableOpacity>
         ) : null}
       </View>
     );
@@ -325,20 +396,26 @@ export function VendorHomeScreen({navigation}: Props) {
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('Home')}>
+          onPress={() => setMenuOpen(true)}>
           <Feather name="menu" size={24} color="#1A1C1E" />
         </TouchableOpacity>
-        <View style={styles.logoContainer}>
+        {/* <View style={styles.logoContainer}>
           <Text style={styles.logoTextMain}>+ Cholbe</Text>
           <Text style={styles.logoTextSub}>PHARMACY</Text>
-        </View>
+        </View> */}
+
+         <Image
+                    source={require('../../assets/logoImage.png')}
+                    style={styles.iconImage}
+                  />
+         
         <NotificationBell
           onPress={() => navigation.navigate('Notifications')}
         />
       </View>
 
       {loading && !dashboard ? (
-        <ActivityIndicator color="#4E929D" style={styles.loader} />
+        <ActivityIndicator color="#4DA69F" style={styles.loader} />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -346,34 +423,49 @@ export function VendorHomeScreen({navigation}: Props) {
             styles.scrollContent,
             {paddingBottom: 80 + insets.bottom},
           ]}>
-          <View style={styles.merchantHeaderCard}>
-            <View style={styles.merchantIconContainer}>
-              <MaterialCommunityIcons name="storefront-outline" size={28} color="#4E929D" />
-            </View>
-            <View style={styles.merchantInfoText}>
-              <Text style={styles.merchantName}>
-                {dashboard?.vendor.pharmacyName ?? '—'}
-              </Text>
-              <Text style={styles.merchantMeta}>
-                Merchant ID: {dashboard?.vendor.id?.slice(0, 8).toUpperCase() ?? '—'}
-              </Text>
-              {dashboard?.vendor.address ? (
-                <Text style={styles.merchantMeta}>{dashboard.vendor.address}</Text>
-              ) : null}
-            </View>
+          <View style={styles.waveHost}>
+            <WaveWithChild color="#F4F1FD" style={styles.waveContent}>
+              <View style={styles.merchantHeaderCard}>
+                <View style={styles.merchantIconContainer}>
+                  <MaterialCommunityIcons
+                    name="storefront-outline"
+                    size={32}
+                    color="#4DA69F"
+                  />
+                </View>
+                <View style={styles.merchantInfoText}>
+                  <Text style={styles.merchantName} numberOfLines={2}>
+                    {dashboard?.vendor.pharmacyName ?? '—'}
+                  </Text>
+                  <Text style={styles.merchantMetaStrong}>
+                    Merchant ID: {dashboard?.vendor.id?.slice(0, 8).toUpperCase() ?? '—'}
+                  </Text>
+                  {/* {dashboard?.vendor.address ? (
+                    <Text style={styles.merchantMeta}>{dashboard.vendor.address}</Text>
+                  ) : null} */}
+                  <Text style={styles.merchantMeta}>Opening Hours: 09:00AM - 11:00PM</Text>
+                </View>
+              </View>
+            </WaveWithChild>
           </View>
 
           <View style={styles.metricsGrid}>
             <View style={styles.metricBox}>
-              <Text style={[styles.metricLabel, styles.metricLabelRevenue]}>Total Revenue Today</Text>
-              <Text style={styles.metricValue}>
+              <Text style={[styles.metricLabel, styles.metricLabelRevenue]}>
+                Total Revenue Today
+              </Text>
+              <Text style={styles.metricValue} numberOfLines={1} adjustsFontSizeToFit>
                 {formatTk(dashboard?.stats.totalRevenue ?? 0)}
               </Text>
               <Text style={[styles.metricSub, styles.metricSubPositive]}>(0%)</Text>
             </View>
             <View style={styles.metricBox}>
-              <Text style={[styles.metricLabel, styles.metricLabelOrders]}>Total Orders Today</Text>
-              <Text style={styles.metricValue}>{dashboard?.stats.orderCount ?? 0}</Text>
+              <Text style={[styles.metricLabel, styles.metricLabelOrders]}>
+                Total Orders Today
+              </Text>
+              <Text style={styles.metricValue} numberOfLines={1} adjustsFontSizeToFit>
+                {dashboard?.stats.orderCount ?? 0}
+              </Text>
               <Text style={styles.metricSub}>
                 ({dashboard?.stats.pendingOrders ?? 0} pending)
               </Text>
@@ -382,13 +474,23 @@ export function VendorHomeScreen({navigation}: Props) {
 
           <View style={[styles.metricsGrid, styles.metricsGridSpaced]}>
             <View style={styles.metricBox}>
-              <Text style={[styles.metricLabel, styles.metricLabelLowStock]}>Low Stock Items</Text>
-              <Text style={styles.metricValue}>{lowStockCount}</Text>
-              <Text style={[styles.metricSub, styles.metricLabelLowStock]}>Need Attention</Text>
+              <Text style={[styles.metricLabel, styles.metricLabelLowStock]}>
+                Low Stock Items
+              </Text>
+              <Text style={styles.metricValue} numberOfLines={1} adjustsFontSizeToFit>
+                {lowStockCount}
+              </Text>
+              <Text style={[styles.metricSub, styles.metricSubAlert]}>
+                (Need Attention)
+              </Text>
             </View>
             <View style={styles.metricBox}>
-              <Text style={[styles.metricLabel, styles.metricLabelOutStock]}>Out of Stock Items</Text>
-              <Text style={styles.metricValue}>{outOfStockCount}</Text>
+              <Text style={[styles.metricLabel, styles.metricLabelOutStock]}>
+                Out of Stock Items
+              </Text>
+              <Text style={styles.metricValue} numberOfLines={1} adjustsFontSizeToFit>
+                {outOfStockCount}
+              </Text>
               <Text style={styles.metricSub}> </Text>
             </View>
           </View>
@@ -463,7 +565,7 @@ export function VendorHomeScreen({navigation}: Props) {
             style={styles.addProductBtn}
             activeOpacity={0.9}
             onPress={() => navigation.navigate('VAddProduct')}>
-            <Feather name="plus" size={20} color="#FFFFFF" />
+            <Feather name="plus" size={24} color="#FFFFFF" />
             <Text style={styles.addProductBtnText}>Add New Product</Text>
           </TouchableOpacity>
 
@@ -474,20 +576,20 @@ export function VendorHomeScreen({navigation}: Props) {
               activeOpacity={0.7}
               onPress={() => navigation.navigate('VInventory')}>
               <Text style={styles.viewAllText}>View All</Text>
-              <Feather name="chevron-right" size={14} color="#7E8B97" />
+              <Feather name="chevron-right" size={18} color="#616161" />
             </TouchableOpacity>
           </View>
 
           <View style={styles.searchContainer}>
-            <Feather name="search" size={18} color="#9AA6B2" />
+            <Feather name="search" size={20} color="#9E9E9E" />
             <TextInput
               placeholder="Search"
-              placeholderTextColor="#9AA6B2"
+              placeholderTextColor="#9E9E9E"
               style={styles.searchInput}
               value={search}
               onChangeText={setSearch}
             />
-            <MaterialCommunityIcons name="tune" size={18} color="#4E929D" />
+            <MaterialCommunityIcons name="tune-variant" size={22} color="#4DA69F" />
           </View>
 
           {filteredProducts.length === 0 ? (
@@ -503,7 +605,7 @@ export function VendorHomeScreen({navigation}: Props) {
               activeOpacity={0.7}
               onPress={() => navigation.navigate('VOrders')}>
               <Text style={styles.viewAllText}>View All</Text>
-              <Feather name="chevron-right" size={14} color="#7E8B97" />
+              <Feather name="chevron-right" size={18} color="#616161" />
             </TouchableOpacity>
           </View>
 
@@ -516,6 +618,12 @@ export function VendorHomeScreen({navigation}: Props) {
       )}
 
       <VendorBottomNav activeTab="home" bottomInset={insets.bottom} navigation={navigation} />
+
+      <RoleMenuDrawer
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        navigation={navigation}
+      />
     </View>
   );
 }
@@ -523,100 +631,145 @@ export function VendorHomeScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F4F1FD',
+  },
+  iconImage: {
+    height: 48,
+    width: 150,
+    resizeMode: 'cover',
   },
   loader: {
     marginTop: 40,
   },
+  // Figma body/medium/regular: 14px / 400, Greyscale-700.
   emptyText: {
     textAlign: 'center',
-    color: '#7E8B97',
-    fontSize: 13,
-    marginVertical: 12,
+    color: '#616161',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    marginVertical: 16,
   },
   scrollContent: {
-    paddingTop: 4,
+    paddingTop: 0,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderColor: '#ECEFF3',
+    backgroundColor: '#F4F1FD',
   },
   logoContainer: {
     alignItems: 'center',
   },
   logoTextMain: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: FONT.bold,
+    fontWeight: '700',
     color: '#3F8694',
   },
   logoTextSub: {
     fontSize: 8,
     letterSpacing: 2,
-    color: '#7E8B97',
-    fontWeight: '600',
+    color: '#616161',
+    fontFamily: FONT.medium,
+    fontWeight: '500',
     marginTop: -2,
+  },
+
+  // ---- Profile band (wave background) ----
+  waveHost: {
+    paddingHorizontal: 16,
+    backgroundColor: '#F4F1FD',
+  },
+  waveContent: {
+    marginTop: -10,
+    paddingTop:20,
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+    
   },
   merchantHeaderCard: {
     flexDirection: 'row',
-    backgroundColor: '#E6F3F5',
-    margin: 16,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: 'transparent',
     alignItems: 'center',
+    gap: 16,
+    paddingVertical: 4,
   },
   merchantIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   merchantInfoText: {
     flex: 1,
   },
+  // Figma H6/bold: Proxima Nova 18px / 600 / 120%, Greyscale-900.
   merchantName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#212121',
   },
+  // Figma body/small/medium: 12px / 500, 0.2px tracking, Greyscale-800.
+  merchantMetaStrong: {
+    fontSize: 12,
+    fontFamily: FONT.medium,
+    fontWeight: '500',
+    color: '#424242',
+    letterSpacing: 0.2,
+    marginTop: 4,
+  },
+  // Figma body/small/regular: 12px / 400, 0.2px tracking, Greyscale-700.
   merchantMeta: {
-    fontSize: 11,
-    color: '#5C6470',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
+    letterSpacing: 0.2,
     marginTop: 2,
   },
+
+  // ---- Metric cards ----
+  // Figma Frame 424: 167.5 x 110, 8px column gap inside a 16px gutter.
   metricsGrid: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 8,
   },
   metricsGridSpaced: {
-    marginTop: 12,
+    marginTop: 8,
   },
+  // Figma: 12px padding, 6px gap, 12px radius, 1px Greyscale-300 border,
+  // #F5F4FD fill, Card/Shadow 1.
   metricBox: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    minHeight: 110,
+    backgroundColor: '#F5F4FD',
     borderRadius: 12,
-    padding: 12,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
+    padding: 12,
+    gap: 6,
+    alignItems: 'flex-start',
+    ...CARD_SHADOW,
   },
+  // Figma body/large/regular: 16px / 400.
   metricLabel: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   metricLabelRevenue: {
-    color: '#4E929D',
+    color: '#4DA69F',
   },
   metricLabelOrders: {
-    color: '#8B4F4F',
+    color: '#424242',
   },
   metricLabelLowStock: {
     color: '#E26D6D',
@@ -624,37 +777,51 @@ const styles = StyleSheet.create({
   metricLabelOutStock: {
     color: '#F37021',
   },
+  // Figma H4/bold: 32px / 700 / 120%, Greyscale-900.
   metricValue: {
-    fontSize: 22,
+    fontSize: 32,
+    lineHeight: 38,
+    fontFamily: FONT.bold,
     fontWeight: '700',
-    color: '#1A1C1E',
-    marginTop: 6,
+    color: '#212121',
+    alignSelf: 'stretch',
   },
   metricSub: {
-    fontSize: 10,
-    color: '#7E8B97',
-    marginTop: 2,
-    fontWeight: '500',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
+    letterSpacing: 0.2,
   },
   metricSubPositive: {
-    color: '#00A884',
+    color: '#00A651',
   },
+  metricSubAlert: {
+    color: '#E26D6D',
+  },
+
+  // ---- Primary action ----
+  // Figma: 12px 16px padding, 10px gap, 100px radius, Primary-500.
   addProductBtn: {
-    backgroundColor: '#4E929D',
+    backgroundColor: '#4DA69F',
     flexDirection: 'row',
     marginHorizontal: 16,
-    marginVertical: 18,
-    height: 44,
-    borderRadius: 22,
+    marginVertical: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
   },
   addProductBtnText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
+
+  // ---- Section headers ----
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -666,231 +833,282 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
   },
   viewAllRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
   },
   viewAllText: {
-    fontSize: 12,
-    color: '#7E8B97',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
   },
+
+  // ---- Search ----
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    height: 40,
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    height: 48,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
-    marginBottom: 14,
-    gap: 8,
+    borderColor: '#E0E0E0',
+    marginBottom: 12,
+    gap: 10,
+    ...CARD_SHADOW,
   },
   searchInput: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     padding: 0,
-    color: '#1A1C1E',
+    color: '#212121',
   },
+
+  // ---- Inventory list ----
   inventoryCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 12,
     borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
+    padding: 12,
+    gap: 12,
+    alignItems: 'flex-start',
+    ...CARD_SHADOW,
+  },
+  inventoryImageBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   inventoryImage: {
-    width: 70,
-    height: 60,
-    borderRadius: 6,
-    resizeMode: 'contain',
-    marginRight: 12,
+    width: 72,
+    height: 72,
   },
   inventoryDetails: {
     flex: 1,
+    gap: 2,
   },
   itemTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
   },
   itemMetaText: {
-    fontSize: 11,
-    color: '#7E8B97',
-    marginTop: 1,
-  },
-  itemPriceText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#1A1C1E',
-    marginTop: 2,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
+    letterSpacing: 0.2,
   },
   discountText: {
     color: '#E26D6D',
   },
-  tagBadge: {
+  // Figma: 100px radius pill, white fill, 1px Greyscale-300 border.
+  categoryPill: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#F0F3F6',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginTop: 6,
-    gap: 4,
-  },
-  tagBadgeText: {
-    fontSize: 10,
-    color: '#7E8B97',
-    fontWeight: '500',
-  },
-  statusToggleActive: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1.5,
-    borderColor: '#47B39D',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 2,
-  },
-  statusToggleInactive: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 2,
-  },
-  statusToggleInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#47B39D',
-  },
-  orderRequestCard: {
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
+    borderRadius: 100,
+    paddingHorizontal: 12,
+    height: 32,
+    marginTop: 8,
+    gap: 6,
   },
+  categoryPillText: {
+    fontSize: 12,
+    fontFamily: FONT.medium,
+    fontWeight: '500',
+    color: '#424242',
+  },
+  statusToggleTrack: {
+    width: 40,
+    height: 22,
+    borderRadius: 11,
+    padding: 3,
+    justifyContent: 'center',
+    alignSelf: 'flex-end',
+  },
+  statusToggleTrackOn: {
+    backgroundColor: '#4DA69F',
+    alignItems: 'flex-end',
+  },
+  statusToggleTrackOff: {
+    backgroundColor: '#E0E0E0',
+    alignItems: 'flex-start',
+  },
+  statusToggleKnob: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+  },
+
+  // ---- Recent order requests ----
+  orderRequestCard: {
+    backgroundColor: '#F5F4FD',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    padding: 12,
+    marginBottom: 12,
+    ...CARD_SHADOW,
+  },
+  // Figma H6/bold at Greyscale-800.
   customerName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#333D47',
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#424242',
     marginBottom: 4,
   },
   orderMetaText: {
-    fontSize: 11,
-    color: '#5C6470',
-    lineHeight: 15,
-    marginTop: 1,
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
+    letterSpacing: 0.2,
+    lineHeight: 18,
   },
+  orderMetaLabel: {
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#424242',
+  },
+  // Figma: 8px padding, 8px gap, 8px radius, #F3F2FB, Card/Shadow 1.
   orderProductRow: {
     flexDirection: 'row',
-    marginTop: 10,
-    backgroundColor: '#F7F9FC',
+    marginTop: 8,
+    backgroundColor: '#F3F2FB',
     borderRadius: 8,
-    padding: 10,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    padding: 8,
+    gap: 8,
+    alignItems: 'flex-start',
+    ...CARD_SHADOW,
+    elevation:0,
+  },
+  orderProductImageBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   orderProductImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 4,
+    width: 72,
+    height: 72,
     resizeMode: 'contain',
-    marginRight: 10,
   },
   orderProductInfo: {
     flex: 1,
+    gap: 2,
   },
   orderProductTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1A1C1E',
-  },
-  statusLabelPending: {
-    fontSize: 11,
+    fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#F37021',
-    marginTop: 2,
-  },
-  statusLabelAccepted: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#00A884',
-    marginTop: 2,
+    color: '#212121',
   },
   actionButtonsRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
+    gap: 8,
+    marginTop: 8,
   },
   actionBtn: {
     flex: 1,
-    height: 34,
-    borderRadius: 17,
+    height: 40,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   btnAccept: {
-    backgroundColor: '#47B39D',
+    backgroundColor: '#4DA69F',
   },
   btnDecline: {
     backgroundColor: '#E26D6D',
   },
   actionBtnText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
+  // Figma: 40px outline pill, 100px radius, white fill, Primary-500 border.
   readyPickupBtn: {
     borderWidth: 1,
-    borderColor: '#4E929D',
-    height: 34,
-    borderRadius: 17,
+    borderColor: '#4DA69F',
+    height: 40,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
-    backgroundColor: '#E6F3F5',
-    gap: 6,
+    marginTop: 8,
+    backgroundColor: '#FFFFFF',
+    gap: 8,
   },
-  readyPickupBtnText: {
-    color: '#4E929D',
-    fontSize: 12,
+  successPill: {
+    borderWidth: 1,
+    borderColor: '#4DA69F',
+    height: 40,
+    borderRadius: 100,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    backgroundColor: '#FFFFFF',
+    gap: 8,
+  },
+  outlinePillText: {
+    color: '#424242',
+    fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
+
+  // ---- Revenue overview card ----
   revenueChartCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 12,
     marginHorizontal: 16,
     marginTop: 16,
-    padding: 16,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
+    ...CARD_SHADOW,
   },
   revenueChartTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
     marginBottom: 16,
   },
   revenueGraphBody: {
@@ -905,9 +1123,10 @@ const styles = StyleSheet.create({
     width: 36,
   },
   revenueYAxisLabel: {
-    fontSize: 10,
-    color: '#9AA6B2',
-    fontWeight: '500',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
   },
   revenueChartCanvas: {
     flex: 1,
@@ -919,7 +1138,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: '#ECEFF3',
+    backgroundColor: '#E4E2EF',
     top: 0,
   },
   revenueGridLineMid: {
@@ -935,23 +1154,25 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   revenueChartEmpty: {
-    color: '#9AA6B2',
+    color: '#9E9E9E',
     fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   vChartLineSegment: {
     position: 'absolute',
     height: 2.5,
-    backgroundColor: '#4E929D',
+    backgroundColor: '#4DA69F',
     transformOrigin: 'left center',
   },
   revenueChartDot: {
     position: 'absolute',
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#4E929D',
+    borderWidth: 2,
+    borderColor: '#4DA69F',
     zIndex: 6,
   },
   revenueXAxisRow: {
@@ -962,9 +1183,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   revenueXAxisLabel: {
-    fontSize: 10,
-    color: '#9AA6B2',
-    fontWeight: '500',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
     minWidth: 20,
     textAlign: 'center',
   },

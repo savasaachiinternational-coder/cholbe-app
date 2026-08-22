@@ -226,33 +226,33 @@ export function VendorInventoryScreen({navigation}: Props) {
             {discount ? <Text style={styles.discountText}> {discount}</Text> : null}
           </Text>
 
-          {product.category ? (
-            <View style={styles.tagBadge}>
-              <Feather name="edit-2" size={10} color="#1A1C1E" />
-              <Text style={styles.tagBadgeText}>{product.category}</Text>
-            </View>
-          ) : null}
+          <TouchableOpacity
+            style={styles.editPill}
+            activeOpacity={0.7}
+            onPress={() => openEdit(product)}>
+            <Feather name="edit-2" size={12} color="#616161" />
+            <Text style={styles.editPillText}>{product.category ?? 'Edit'}</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.cardActions}>
           <TouchableOpacity
             style={styles.actionBtn}
             activeOpacity={0.7}
-            onPress={() => openEdit(product)}>
-            <Feather name="edit-2" size={14} color="#4E929D" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            activeOpacity={0.7}
             onPress={() => handleDelete(product)}>
-            <Feather name="trash-2" size={14} color="#E26D6D" />
+            <Feather name="trash-2" size={16} color="#E26D6D" />
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={0.7}
             disabled={isToggling}
             onPress={() => toggleActive(product)}
-            style={product.isActive ? styles.statusToggleActive : styles.statusToggleInactive}>
-            {product.isActive ? <View style={styles.statusToggleInner} /> : null}
+            style={[
+              styles.statusToggleTrack,
+              product.isActive
+                ? styles.statusToggleTrackOn
+                : styles.statusToggleTrackOff,
+            ]}>
+            <View style={styles.statusToggleKnob} />
           </TouchableOpacity>
         </View>
       </View>
@@ -420,7 +420,7 @@ export function VendorInventoryScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F4F1FD',
   },
   scrollContent: {
     paddingTop: 4,
@@ -440,12 +440,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F4F1FD',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontWeight: '600',
+    color: '#424242',
     flex: 1,
     marginLeft: 12,
   },
@@ -453,37 +453,36 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   addProductBtn: {
-    backgroundColor: '#4E929D',
+    backgroundColor: '#4DA69F',
     flexDirection: 'row',
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 16,
     height: 46,
-    borderRadius: 23,
+    borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
   },
   addProductBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+    color: '#FFF',
+    fontSize: 16,
     fontWeight: '600',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: 40,
     paddingHorizontal: 16,
-    height: 48,
+    height: 56,
     borderWidth: 1,
     borderColor: '#ECEFF3',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.02,
     shadowRadius: 2,
-    elevation: 1,
     gap: 8,
   },
   searchInput: {
@@ -502,38 +501,40 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 18,
-    backgroundColor: '#F0F3F6',
+    paddingVertical: 12,
+    borderRadius: 40,
+    backgroundColor: '#F3F2FB',
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth:1,
+    borderColor:'#E0E0E0'
   },
   activeChip: {
     backgroundColor: '#E26D6D',
   },
   chipText: {
-    color: '#4F5E6D',
-    fontWeight: '500',
-    fontSize: 12,
+    color: '#424242',
+    fontWeight: '400',
+    fontSize: 10,
   },
   activeChipText: {
     color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 12,
+    fontWeight: '400',
+    fontSize: 10,
   },
   listStack: {
     gap: 10,
   },
   inventoryCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     marginHorizontal: 16,
-    borderRadius: 14,
+    borderRadius: 8,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E6E3EE',
   },
   inventoryImage: {
     width: 75,
@@ -564,54 +565,57 @@ const styles = StyleSheet.create({
   discountText: {
     color: '#E26D6D',
   },
-  tagBadge: {
+  // Figma: pencil + category pill, 100px radius, white fill, 1px Greyscale-300.
+  // Doubles as the edit control for the row.
+  editPill: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 100,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    height: 32,
     marginTop: 8,
-    gap: 4,
+    gap: 6,
   },
-  tagBadgeText: {
-    fontSize: 11,
-    color: '#1A1C1E',
+  editPillText: {
+    fontSize: 12,
+    color: '#424242',
     fontWeight: '500',
   },
-  statusToggleActive: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1.5,
-    borderColor: '#47B39D',
+  // Figma: 40 x 22 track, 16px knob, Primary-500 on / Greyscale-300 off.
+  statusToggleTrack: {
+    width: 40,
+    height: 22,
+    borderRadius: 11,
+    padding: 3,
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  statusToggleInactive: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    justifyContent: 'center',
-    alignItems: 'center',
+  statusToggleTrackOn: {
+    backgroundColor: '#4DA69F',
+    alignItems: 'flex-end',
   },
-  statusToggleInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#47B39D',
+  statusToggleTrackOff: {
+    backgroundColor: '#E0E0E0',
+    alignItems: 'flex-start',
   },
+  statusToggleKnob: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  // Delete sits on the same last row as the toggle.
   cardActions: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    alignSelf: 'flex-end',
+    gap: 12,
   },
   actionBtn: {
-    padding: 6,
+    padding: 2,
   },
   modalOverlay: {
     flex: 1,

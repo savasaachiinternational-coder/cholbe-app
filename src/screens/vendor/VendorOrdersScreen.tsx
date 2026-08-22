@@ -27,6 +27,24 @@ import {NotificationBell} from '../../components/NotificationBell';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VOrders'>;
 
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
+// Figma "Card/Shadow 1": 0 4px 60px 0 rgba(4, 6, 15, 0.08).
+const CARD_SHADOW = {
+  shadowColor: '#04060F',
+  shadowOffset: {width: 0, height: 4},
+  shadowOpacity: 0.08,
+  shadowRadius: 30,
+  elevation: 2,
+} as const;
+
 type ApiOrderItem = {
   id: string;
   name: string;
@@ -319,64 +337,98 @@ function OrderCard({order, onTap, updating, onAccept, onDecline, onReadyPickup}:
   return (
     <TouchableOpacity style={styles.orderCardContainer} activeOpacity={0.9} onPress={() => onTap(order)}>
       <Text style={styles.customerText}>Customer : {order.customer}</Text>
-      <Text style={styles.metaSubtext}>Order ID: {order.orderId}</Text>
-      <Text style={styles.metaSubtext}>Phone: {order.phone}</Text>
-      <Text style={styles.metaSubtext}>Delivery Location : {order.location}</Text>
+      <Text style={styles.metaSubtext}>
+        <Text style={styles.metaLabel}>Order ID: </Text>
+        {order.orderId}
+      </Text>
+      <Text style={styles.metaSubtext}>
+        <Text style={styles.metaLabel}>Phone: </Text>
+        {order.phone}
+      </Text>
+      <Text style={styles.metaSubtext}>
+        <Text style={styles.metaLabel}>Delivery Location : </Text>
+        {order.location}
+      </Text>
+      <Text style={styles.metaSubtext}>
+        <Text style={styles.metaLabel}>Total: </Text>
+        <Text style={styles.totalText}>{order.total}</Text>
+      </Text>
 
       <View style={styles.productRow}>
-        <View style={[styles.productImage, styles.productImageFallback]}>
-          <MaterialCommunityIcons name="pill" size={22} color="#47B39D" />
+        <View style={styles.productImage}>
+          <MaterialCommunityIcons name="pill" size={28} color="#4DA69F" />
         </View>
         <View style={styles.productInfo}>
           <Text style={styles.productTitle}>{order.productTitle}</Text>
-          <Text style={styles.statusText}>Status: {order.status}</Text>
-          <Text style={styles.paymentText}>Payment: {order.paymentMethod}</Text>
+          <Text style={styles.metaSubtext}>
+            <Text style={styles.metaLabel}>Status: </Text>
+            {order.status}
+          </Text>
+          <Text style={styles.metaSubtext}>
+            <Text style={styles.metaLabel}>Payment: </Text>
+            {order.paymentMethod}
+          </Text>
+
+          {order.status === 'Pending' ? (
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.btnAccept]}
+                activeOpacity={0.85}
+                disabled={updating}
+                onPress={() => onAccept(order.id)}>
+                <MaterialCommunityIcons
+                  name="check-circle"
+                  size={18}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.btnTextWhite}>Accept</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.btnDecline]}
+                activeOpacity={0.85}
+                disabled={updating}
+                onPress={() => onDecline(order.id)}>
+                <MaterialCommunityIcons
+                  name="close-circle"
+                  size={18}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.btnTextWhite}>Declined</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {order.status === 'Accepted' && order.rawStatus !== 'ON_THE_WAY' ? (
+            <TouchableOpacity
+              style={styles.readyPickupBtn}
+              activeOpacity={0.85}
+              disabled={updating}
+              onPress={() => onReadyPickup(order.id)}>
+              <MaterialCommunityIcons
+                name="truck-check-outline"
+                size={20}
+                color="#4DA69F"
+              />
+              <Text style={styles.outlinePillText}>Ready for Pickup</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {order.status === 'Delivered' ? (
+            <View style={styles.successStatusRow}>
+              <MaterialCommunityIcons
+                name="check-circle"
+                size={20}
+                color="#4DA69F"
+              />
+              <Text style={styles.outlinePillText}>Successful</Text>
+            </View>
+          ) : null}
         </View>
-        <Text style={styles.totalText}>{order.total}</Text>
       </View>
-
-      {order.status === 'Pending' ? (
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.btnAccept]}
-            activeOpacity={0.85}
-            disabled={updating}
-            onPress={() => onAccept(order.id)}>
-            <Feather name="check-circle" size={14} color="#FFFFFF" />
-            <Text style={styles.btnTextWhite}>Accept</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.btnDecline]}
-            activeOpacity={0.85}
-            disabled={updating}
-            onPress={() => onDecline(order.id)}>
-            <Feather name="x-circle" size={14} color="#FFFFFF" />
-            <Text style={styles.btnTextWhite}>Declined</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
-      {order.status === 'Accepted' && order.rawStatus !== 'ON_THE_WAY' ? (
-        <TouchableOpacity
-          style={styles.readyPickupBtn}
-          activeOpacity={0.85}
-          disabled={updating}
-          onPress={() => onReadyPickup(order.id)}>
-          <MaterialCommunityIcons name="hammer-wrench" size={14} color="#4E929D" />
-          <Text style={styles.readyPickupText}>Ready for Pickup</Text>
-        </TouchableOpacity>
-      ) : null}
-
-      {order.status === 'Delivered' ? (
-        <View style={styles.successStatusRow}>
-          <Feather name="check-circle" size={14} color="#00A884" />
-          <Text style={styles.successStatusText}>Successful</Text>
-        </View>
-      ) : null}
 
       <View style={styles.tapHintRow}>
         <Text style={styles.tapHint}>Tap for full details</Text>
-        <Feather name="chevron-right" size={12} color="#B0B8C4" />
+        <Feather name="chevron-right" size={14} color="#9E9E9E" />
       </View>
     </TouchableOpacity>
   );
@@ -475,13 +527,16 @@ export function VendorOrdersScreen({navigation}: Props) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+        <View style={{flexDirection:'row', alignItems:'center'}}> 
         <TouchableOpacity
           style={styles.headerIconBtn}
           activeOpacity={0.7}
           onPress={() => navigation.goBack()}>
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
+        
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Order History</Text>
+        </View>
         <NotificationBell
           style={styles.headerIconBtn}
           onPress={() => navigation.navigate('Notifications')}
@@ -629,115 +684,182 @@ export function VendorOrdersScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F6F8FB'},
+  container: {flex: 1, backgroundColor: '#F4F3FC'},
   scrollContent: {paddingTop: 4},
   loader: {marginVertical: 24},
-  emptyText: {textAlign: 'center', color: '#7E8B97', fontSize: 13, marginVertical: 12},
+  emptyText: {textAlign: 'center', color: '#7E8B97', fontSize: 13, fontFamily: FONT.regular, marginVertical: 12},
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F4F3FC',
   },
-  headerTitle: {fontSize: 18, fontWeight: '700', color: '#1A1C1E', flex: 1, textAlign: 'center'},
+  headerTitle: {fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#424242'},
   headerIconBtn: {padding: 2, width: 32},
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: 40,
     paddingHorizontal: 16,
-    height: 48,
+    height: 56,
     borderWidth: 1,
     borderColor: '#ECEFF3',
     gap: 8,
   },
-  searchInput: {flex: 1, fontSize: 14, padding: 0, color: '#1A1C1E'},
+  searchInput: {flex: 1, fontSize: 14, fontFamily: FONT.regular, padding: 0, color: '#1A1C1E'},
   chipsContent: {paddingHorizontal: 16, paddingVertical: 16, gap: 8},
   chipItem: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 18,
-    backgroundColor: '#F0F3F6',
+    paddingVertical: 12,
+    borderRadius: 40,
+    backgroundColor: '#F2F1FA',
     marginRight: 8,
+    borderWidth:1,
+    borderColor:'#E0E0E0',
     justifyContent: 'center',
     alignItems: 'center',
+    
   },
   chipItemActive: {backgroundColor: '#E26D6D'},
-  chipText: {fontSize: 12, fontWeight: '500', color: '#4F5E6D'},
-  chipTextActive: {color: '#FFFFFF', fontWeight: '600'},
-  sectionHeaderRow: {paddingHorizontal: 16, marginTop: 12, marginBottom: 10},
-  sectionTitle: {fontSize: 14, fontWeight: '700', color: '#333D47'},
+  chipText: {fontSize: 12, fontFamily: FONT.medium, fontWeight: '500', color: '#4F5E6D'},
+  chipTextActive: {color: '#FFFFFF', fontWeight: '600', fontFamily: FONT.semibold},
+  sectionHeaderRow: {paddingHorizontal: 16, marginTop: 12, marginBottom: 12},
+  sectionTitle: {
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
+  },
+  // Figma: 12px padding, 12px radius, 1px Greyscale-300, #F5F4FD, Card/Shadow 1.
   orderCardContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 12,
+    padding: 12,
     marginHorizontal: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
+    ...CARD_SHADOW,
   },
-  customerText: {fontSize: 14, fontWeight: '700', color: '#333D47', marginBottom: 4},
-  metaSubtext: {fontSize: 11, color: '#5C6470', lineHeight: 15, marginTop: 1},
+  // Figma H6/bold: 18px / 600 / 120%, Greyscale-800.
+  customerText: {
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#424242',
+    marginBottom: 4,
+  },
+  // Figma body/small/regular: 12px / 400, 0.2px tracking, Greyscale-700.
+  metaSubtext: {
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
+    letterSpacing: 0.2,
+    lineHeight: 18,
+  },
+  metaLabel: {
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#424242',
+  },
+  // Figma: 8px padding, 8px gap, 8px radius, #F3F2FB, Card/Shadow 1.
   productRow: {
     flexDirection: 'row',
-    marginTop: 10,
-    backgroundColor: '#F7F9FC',
+    marginTop: 8,
+    backgroundColor: '#F3F2FB',
     borderRadius: 8,
-    padding: 10,
-    alignItems: 'center',
+    padding: 8,
+    gap: 8,
+    alignItems: 'flex-start',
+    ...CARD_SHADOW,
+    elevation:0,
   },
-  productImage: {width: 55, height: 55, borderRadius: 6, marginRight: 12},
-  productImageFallback: {backgroundColor: '#E8F4F6', alignItems: 'center', justifyContent: 'center'},
-  productInfo: {flex: 1},
-  productTitle: {fontSize: 13, fontWeight: '700', color: '#1A1C1E'},
-  statusText: {fontSize: 11, fontWeight: '600', color: '#7E8B97', marginTop: 1},
-  paymentText: {fontSize: 11, fontWeight: '500', color: '#7E8B97'},
-  totalText: {fontSize: 14, fontWeight: '700', color: '#4E929D'},
-  actionsRow: {flexDirection: 'row', gap: 12, marginTop: 12},
+  productImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  productInfo: {flex: 1, gap: 2},
+  productTitle: {
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
+  },
+  totalText: {
+    fontSize: 12,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#4DA69F',
+  },
+  actionsRow: {flexDirection: 'row', gap: 8, marginTop: 8},
+  // Figma: 100px radius pill, 40px tall.
   actionBtn: {
     flex: 1,
-    height: 34,
-    borderRadius: 17,
+    height: 40,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  btnAccept: {backgroundColor: '#47B39D'},
+  btnAccept: {backgroundColor: '#4DA69F'},
   btnDecline: {backgroundColor: '#E26D6D'},
-  btnTextWhite: {color: '#FFFFFF', fontSize: 12, fontWeight: '600'},
+  btnTextWhite: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+  },
   readyPickupBtn: {
     borderWidth: 1,
-    borderColor: '#4E929D',
-    height: 34,
-    borderRadius: 17,
+    borderColor: '#4DA69F',
+    height: 40,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
-    backgroundColor: '#E6F3F5',
-    gap: 6,
+    marginTop: 8,
+    backgroundColor: '#FFFFFF',
+    gap: 8,
   },
-  readyPickupText: {color: '#4E929D', fontSize: 12, fontWeight: '600'},
   successStatusRow: {
     borderWidth: 1,
-    borderColor: '#EAEFF5',
-    height: 34,
-    borderRadius: 17,
+    borderColor: '#4DA69F',
+    height: 40,
+    borderRadius: 100,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
-    backgroundColor: '#F4F7F6',
-    gap: 6,
+    marginTop: 8,
+    backgroundColor: '#FFFFFF',
+    gap: 8,
   },
-  successStatusText: {color: '#1A1C1E', fontSize: 12, fontWeight: '600'},
-  tapHintRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 8, gap: 2},
-  tapHint: {fontSize: 10, color: '#B0B8C4'},
+  // Shared label for both outline pills: Greyscale-800 text, teal icon.
+  outlinePillText: {
+    color: '#424242',
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+  },
+  tapHintRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 8, gap: 4},
+  tapHint: {
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#9E9E9E',
+    letterSpacing: 0.2,
+  },
 });
 
 const detailStyles = StyleSheet.create({
@@ -775,7 +897,7 @@ const detailStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ECEFF3',
   },
-  sheetTitle: {fontSize: 17, fontWeight: '700', color: '#1A1C1E'},
+  sheetTitle: {fontSize: 17, fontFamily: FONT.bold, fontWeight: '700', color: '#1A1C1E'},
   sheetScroll: {paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8},
   orderIdRow: {
     flexDirection: 'row',
@@ -784,10 +906,10 @@ const detailStyles = StyleSheet.create({
     marginBottom: 16,
     marginTop: 8,
   },
-  orderIdText: {fontSize: 16, fontWeight: '800', color: '#1A1C1E'},
+  orderIdText: {fontSize: 16, fontFamily: FONT.bold, fontWeight: '800', color: '#1A1C1E'},
   statusChip: {backgroundColor: '#E8F4F6', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4},
   statusChipRed: {backgroundColor: '#FEE2E2'},
-  statusChipText: {fontSize: 12, fontWeight: '700', color: '#4E929D'},
+  statusChipText: {fontSize: 12, fontFamily: FONT.bold, fontWeight: '700', color: '#4E929D'},
   statusChipTextRed: {color: '#DC2626'},
   section: {
     marginBottom: 16,
@@ -797,6 +919,7 @@ const detailStyles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 12,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#9AA6B2',
     textTransform: 'uppercase',
@@ -804,7 +927,7 @@ const detailStyles = StyleSheet.create({
     marginBottom: 10,
   },
   infoRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6},
-  infoText: {fontSize: 13, color: '#333D47', flex: 1},
+  infoText: {fontSize: 13, fontFamily: FONT.regular, color: '#333D47', flex: 1},
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -816,13 +939,13 @@ const detailStyles = StyleSheet.create({
   itemImage: {width: 44, height: 44, borderRadius: 8, marginRight: 12},
   itemImageFallback: {backgroundColor: '#E8F4F6', alignItems: 'center', justifyContent: 'center'},
   itemInfo: {flex: 1},
-  itemName: {fontSize: 13, fontWeight: '700', color: '#1A1C1E'},
-  itemQty: {fontSize: 11, color: '#7E8B97', marginTop: 2},
-  itemPrice: {fontSize: 13, fontWeight: '700', color: '#4E929D'},
+  itemName: {fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: '#1A1C1E'},
+  itemQty: {fontSize: 11, fontFamily: FONT.regular, color: '#7E8B97', marginTop: 2},
+  itemPrice: {fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: '#4E929D'},
   payRow: {flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8},
-  payLabel: {fontSize: 13, color: '#7E8B97'},
-  payValue: {fontSize: 13, fontWeight: '600', color: '#333D47'},
-  payTotal: {fontSize: 15, fontWeight: '800', color: '#1A1C1E'},
+  payLabel: {fontSize: 13, fontFamily: FONT.regular, color: '#7E8B97'},
+  payValue: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#333D47'},
+  payTotal: {fontSize: 15, fontFamily: FONT.bold, fontWeight: '800', color: '#1A1C1E'},
   paidText: {color: '#16A34A'},
   timelineRow: {
     flexDirection: 'row',
@@ -850,8 +973,8 @@ const detailStyles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
   },
   timelineLineActive: {backgroundColor: '#4E929D'},
-  timelineLabel: {fontSize: 13, color: '#9AA6B2', marginBottom: 16},
-  timelineLabelActive: {color: '#333D47', fontWeight: '600'},
+  timelineLabel: {fontSize: 13, fontFamily: FONT.regular, color: '#9AA6B2', marginBottom: 16},
+  timelineLabelActive: {color: '#333D47', fontWeight: '600', fontFamily: FONT.semibold},
   actionsRow: {flexDirection: 'row', gap: 12, marginTop: 8, marginBottom: 8},
   actionBtn: {
     flex: 1,
@@ -876,7 +999,7 @@ const detailStyles = StyleSheet.create({
     borderColor: '#4E929D',
     backgroundColor: '#E6F3F5',
   },
-  btnPickupText: {color: '#4E929D', fontSize: 13, fontWeight: '700'},
+  btnPickupText: {color: '#4E929D', fontSize: 13, fontFamily: FONT.bold, fontWeight: '700'},
   btnDeliver: {backgroundColor: '#16A34A'},
-  btnTextWhite: {color: '#FFFFFF', fontSize: 13, fontWeight: '700'},
+  btnTextWhite: {color: '#FFFFFF', fontSize: 13, fontFamily: FONT.bold, fontWeight: '700'},
 });

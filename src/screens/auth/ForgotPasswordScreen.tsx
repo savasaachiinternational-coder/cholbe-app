@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,11 +13,11 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import {authApi} from '../../api/auth';
-import {ApiError} from '../../api/client';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import { authApi } from '../../api/auth';
+import { ApiError } from '../../api/client';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -26,7 +26,7 @@ type Props = {
   onContinue: (contact: string) => void;
 };
 
-export function ForgotPasswordScreen({onBack, onContinue}: Props) {
+export function ForgotPasswordScreen({ onBack, onContinue }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [emailOrPhone, setEmailOrPhone] = useState('');
@@ -45,7 +45,8 @@ export function ForgotPasswordScreen({onBack, onContinue}: Props) {
       }
       onContinue(emailOrPhone.trim());
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not send OTP';
+      const message =
+        err instanceof ApiError ? err.message : 'Could not send OTP';
       Alert.alert('Error', message);
     } finally {
       setLoading(false);
@@ -56,38 +57,41 @@ export function ForgotPasswordScreen({onBack, onContinue}: Props) {
     <View style={styles.root}>
       <LinearGradient
         colors={[...AUTH_GRADIENT]}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
-      <View style={[styles.screen, {paddingTop: insets.top}]}>
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
         <View style={styles.headerBar}>
           <TouchableOpacity
             style={styles.backButton}
             activeOpacity={0.6}
             onPress={onBack}
-            accessibilityLabel="Go back">
+            accessibilityLabel="Go back"
+          >
             <Feather name="chevron-left" size={28} color="#333333" />
           </TouchableOpacity>
           <Image
-            source={require('../../assets/logo.png')}
+            source={require('../../assets/logoImage.png')}
             style={styles.headerLogo}
-            resizeMode="contain"
+            resizeMode="cover"
           />
           <View style={styles.headerPlaceholder} />
         </View>
 
         <KeyboardAvoidingView
           style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
           <ScrollView
             contentContainerStyle={[
               styles.scrollContent,
-              {paddingBottom: insets.bottom + 24},
+              { paddingBottom: insets.bottom + 24 },
             ]}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled">
+            keyboardShouldPersistTaps="handled"
+          >
             <View style={styles.headerSection}>
               <Text style={styles.title}>Forget Password</Text>
               <Text style={styles.subtitle}>
@@ -96,6 +100,11 @@ export function ForgotPasswordScreen({onBack, onContinue}: Props) {
             </View>
 
             <View style={styles.formSection}>
+              <Image
+                source={require('../../assets/medicine_cardbg.png')}
+                style={styles.formBackgroundWave}
+                resizeMode="cover"
+              />
               <Text style={styles.inputLabel}>Email or Phone Number</Text>
               <View style={styles.inputContainer}>
                 <Feather
@@ -118,10 +127,14 @@ export function ForgotPasswordScreen({onBack, onContinue}: Props) {
 
             <View style={styles.footerSection}>
               <TouchableOpacity
-                style={[styles.continueButton, loading && styles.buttonDisabled]}
+                style={[
+                  styles.continueButton,
+                  loading && styles.buttonDisabled,
+                ]}
                 activeOpacity={0.85}
                 disabled={loading}
-                onPress={handleContinue}>
+                onPress={handleContinue}
+              >
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
@@ -132,7 +145,8 @@ export function ForgotPasswordScreen({onBack, onContinue}: Props) {
               <TouchableOpacity
                 style={styles.cancelButton}
                 activeOpacity={0.85}
-                onPress={onBack}>
+                onPress={onBack}
+              >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -163,7 +177,7 @@ const styles = StyleSheet.create({
   },
   headerLogo: {
     width: 120,
-    height: 40,
+    height: 56,
   },
   headerPlaceholder: {
     width: 36,
@@ -181,18 +195,29 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
-    color: '#3B3B3B',
+    fontWeight: '600',
+    color: '#424242',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 15,
-    color: '#707070',
+    fontSize: 14,
+    color: '#616161',
     lineHeight: 22,
   },
   formSection: {
     flex: 1,
     marginBottom: 24,
+  },
+  formBackgroundWave: {
+    position: 'absolute',
+    marginTop:-109,
+    marginLeft: -66,
+    top: 0,
+    left: 0,
+    width: '130%',
+    height: '100%',
+    opacity: 0.1,
+    transform: [{ rotate: '-20deg' }],
   },
   inputLabel: {
     fontSize: 14,
@@ -203,7 +228,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: 'transparent',
     borderWidth: 1.2,
     borderColor: '#82C3D1',
     borderRadius: 28,
@@ -231,7 +256,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
     shadowColor: '#4A8B95',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,

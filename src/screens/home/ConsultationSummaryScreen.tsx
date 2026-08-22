@@ -262,6 +262,7 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
        <TouchableOpacity
               style={[styles.floatingScanButton, { bottom: insets.bottom + 100 }]}
               activeOpacity={0.85}
+              onPress={() => navigation.navigate('AiSymptomHome')}
             >
               <Image source={require('../../assets/syaiicon.png')} />
             </TouchableOpacity>
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 14,
     gap:10,
-    backgroundColor: '#F5F4FD',
+    backgroundColor: '#F4F3FC',
   },
   backButton: {padding: 4, width: 32},
   headerTitle: {fontSize: 18, fontWeight: '600', color: '#424242', flex: 1,},

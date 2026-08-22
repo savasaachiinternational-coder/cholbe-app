@@ -88,9 +88,11 @@ function UserCard({
   return (
     <View style={[styles.userCardRow, isLast && styles.userCardRowLast]}>
       <Image
-        source={{
-          uri: item.avatarUrl ?? 'https://via.placeholder.com/52/E2E8F0/000000?text=User',
-        }}
+        source={
+          item.avatarUrl
+            ? {uri: item.avatarUrl}
+            : require('../../assets/profile.png')
+        }
         style={styles.userAvatar}
       />
       <View style={styles.metaInfoColumn}>
@@ -602,6 +604,7 @@ export function AdminUsersScreen({navigation, route}: Props) {
                       onPress={() => removeSpecialty(item.id)}>
                       <Feather name="trash-2" size={14} color="#DC2626" />
                     </TouchableOpacity>
+                  
                   </View>
                 ))
               )}
@@ -637,7 +640,7 @@ export function AdminUsersScreen({navigation, route}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F3F0FC',
   },
   scrollContent: {
     paddingTop: 4,
@@ -648,12 +651,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F3F0FC',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontWeight: '600',
+    color: '#424242',
     flex: 1,
     marginLeft: 12,
   },
@@ -664,11 +667,11 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: 40,
     paddingHorizontal: 16,
-    height: 48,
+    height: 56,
     borderWidth: 1,
     borderColor: '#ECEFF3',
     gap: 8,
@@ -693,29 +696,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 18,
-    backgroundColor: '#F0F3F6',
+    backgroundColor: '#F2F1FA',
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation:1,
   },
   chipItemActive: {
     backgroundColor: '#4E929D',
   },
   chipItemText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#7E8B97',
+    fontSize: 10,
+    fontWeight: '400',
+    color: '#424242',
   },
   chipItemActiveText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: '#FFF',
+    fontWeight: '400',
   },
   directoryContainerCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     borderRadius: 14,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E6E3EE',
     paddingTop: 8,
     paddingBottom: 4,
     minHeight: 120,
@@ -787,7 +791,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E0E0E0',
     position: 'relative',
     minHeight: 88,
   },
@@ -795,7 +799,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E0E0E0',
   },
   specialtyRow: {
     flexDirection: 'row',
@@ -803,7 +807,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E0E0E0',
     gap: 8,
   },
   userCardRowLast: {

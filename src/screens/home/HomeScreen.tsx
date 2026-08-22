@@ -28,6 +28,7 @@ import {
   type ScheduleTab,
 } from './homeData';
 import { ProductImage } from '../../components/ProductImage';
+import { RoleMenuDrawer } from '../../components/RoleMenuDrawer';
 import { UpdateHealthVitalsModal } from '../../components/UpdateHealthVitalsModal';
 import { formatBdt, productUnitPrice } from '../../utils/pharmacyHelpers';
 import { homeApi, type PatientHomeDashboard } from '../../api/home';
@@ -67,6 +68,7 @@ export function HomeScreen() {
   const [scheduleTab, setScheduleTab] = useState<ScheduleTab>('upcoming');
   const [dashboard, setDashboard] = useState<PatientHomeDashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [vitalsModalOpen, setVitalsModalOpen] = useState(false);
   const [savingVitals, setSavingVitals] = useState(false);
 
@@ -233,7 +235,7 @@ export function HomeScreen() {
         <TouchableOpacity
           style={styles.iconButton}
           activeOpacity={0.7}
-          onPress={() => {}}
+          onPress={() => setMenuOpen(true)}
         >
           <Feather name="menu" size={24} color="#1E293B" />
         </TouchableOpacity>
@@ -719,6 +721,12 @@ export function HomeScreen() {
           onTabPress={handleTabPress}
         />
       </View>
+
+      <RoleMenuDrawer
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        navigation={navigation}
+      />
     </View>
   );
 }
@@ -808,6 +816,7 @@ const styles = StyleSheet.create({
   },
   loadingWrap: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
   },

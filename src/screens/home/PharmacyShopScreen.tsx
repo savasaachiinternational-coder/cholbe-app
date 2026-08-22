@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -32,11 +33,12 @@ import {
   productVolumeLabel,
   unitTypeToVariant,
 } from '../../utils/pharmacyHelpers';
+import { WaveTitleBand } from '../../components/WaveTitleBand';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyShop'>;
 
 const {width} = Dimensions.get('window');
-const CARD_SPACING = 12;
+const CARD_SPACING = 10;
 const CARD_WIDTH = (width - 32 - CARD_SPACING) / 2;
 
 const FILTER_CATEGORIES = ['All Items', 'Medicines', "Women's Care", 'Body Care'];
@@ -108,6 +110,7 @@ export function PharmacyShopScreen({navigation}: Props) {
     return (
       <View key={product.id} style={styles.card}>
         <TouchableOpacity
+          style={styles.cardTop}
           activeOpacity={0.85}
           onPress={() => navigation.navigate('PharmacyDetails', {productId: product.id})}>
           {pct != null && (
@@ -174,13 +177,15 @@ export function PharmacyShopScreen({navigation}: Props) {
   return (
     <View style={styles.container}>
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+        <View style={styles.titleBack}> 
         <TouchableOpacity
           style={styles.headerButton}
           activeOpacity={0.7}
           onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={24} color="#1A1C1E" />
+          <Feather name="chevron-left" size={24} color="#171717" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pharmacy</Text>
+        </View>
         <View style={styles.headerRightIcons}>
           <TouchableOpacity
             style={styles.headerButton}
@@ -201,7 +206,7 @@ export function PharmacyShopScreen({navigation}: Props) {
         />
         </View>
       </View>
-
+      
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
@@ -209,6 +214,7 @@ export function PharmacyShopScreen({navigation}: Props) {
           {paddingBottom: 100 + insets.bottom},
         ]}>
         <View style={styles.searchContainer}>
+          
           <Feather name="search" size={20} color="#9AA6B2" style={styles.searchIcon} />
           <TextInput
             placeholder="Search"
@@ -256,8 +262,9 @@ export function PharmacyShopScreen({navigation}: Props) {
       <TouchableOpacity
         style={[styles.fab, {bottom: 90 + insets.bottom}]}
         activeOpacity={0.85}
-        onPress={() => navigation.navigate('PharmacyPrescriptionMenu')}>
-        <MaterialCommunityIcons name="file-document-scan-outline" size={24} color="#FFFFFF" />
+        onPress={() => navigation.navigate('AiSymptomHome')}>
+          <Image source={require('../../assets/syaiicon.png')} style={styles.fabIcon}/>
+        {/* <MaterialCommunityIcons name="search" size={24} color="#FFFFFF" /> */}
       </TouchableOpacity>
 
       <View style={[styles.bottomNav, {paddingBottom: 12 + insets.bottom}]}>
@@ -305,15 +312,16 @@ export function PharmacyShopScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F4F3FC',
   },
+  titleBack:{flexDirection:'row', justifyContent:'flex-start', gap:10, alignItems:'center'},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F4F3FC',
   },
   headerButton: {
     padding: 4,
@@ -321,9 +329,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
-    flex: 1,
+    fontWeight: '600',
+    color: '#424242',
     textAlign: 'center',
   },
   headerRightIcons: {
@@ -354,11 +361,11 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: 40,
     paddingHorizontal: 16,
-    height: 48,
+    height: 56,
     borderWidth: 1,
     borderColor: '#ECEFF3',
     marginBottom: 12,
@@ -382,25 +389,26 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    borderRadius: 40,
+    backgroundColor: '#F3F2FB',
     borderWidth: 1,
     borderColor: '#ECEFF3',
     marginRight: 8,
+    elevation:1,
   },
   activeChip: {
     backgroundColor: '#DC6468',
     borderColor: '#DC6468',
   },
   chipText: {
-    fontSize: 13,
-    color: '#7E8B97',
-    fontWeight: '500',
+    fontSize: 10,
+    color: '#424242',
+    fontWeight: '400',
   },
   activeChipText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: '#FFF',
+    fontWeight: '400',
   },
   loader: {marginVertical: 40},
   emptyText: {
@@ -420,17 +428,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#616161',
   },
   viewAllRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   viewAllText: {
-    fontSize: 13,
-    color: '#7E8B97',
+    fontSize: 12,
+    color: '#424242',
+    fontWeight:'400',
     marginRight: 2,
   },
   grid: {
@@ -439,14 +448,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: CARD_SPACING,
   },
+  // Figma: 8px padding, 8px column gap, 10px radius, #F5F4FD, no border.
   card: {
     width: CARD_WIDTH,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 10,
-    marginBottom: CARD_SPACING,
-    borderWidth: 1,
-    borderColor: '#ECEFF3',
+    backgroundColor: '#F5F4FD',
+    borderRadius: 10,
+    padding: 8,
+    gap: 8,
+  },
+  cardTop: {
+    gap: 8,
   },
   badge: {
     position: 'absolute',
@@ -463,31 +474,31 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
+  // Proportional rather than a fixed 103px so the tile keeps the mockup's
+  // ratio while the card width stays responsive.
   productImage: {
     width: '100%',
-    height: 100,
-    borderRadius: 12,
-    marginBottom: 8,
+    aspectRatio: 1.32,
+    borderRadius: 8,
     backgroundColor: '#F0F3F6',
   },
-  infoContainer: {
-    marginBottom: 8,
-  },
+  infoContainer: {},
   productTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#424242',
   },
   productSubtitle: {
-    fontSize: 11,
-    color: '#7E8B97',
+    fontSize: 12,
+    color: '#616161',
+    fontWeight:'400',
     marginTop: 2,
   },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 8,
   },
   sizeContainer: {
     flexDirection: 'row',
@@ -495,8 +506,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sizeText: {
-    fontSize: 10,
-    color: '#7E8B97',
+    fontSize: 12,
+    fontWeight:'400',
+    color: '#424242',
   },
   priceContainer: {
     flexDirection: 'row',
@@ -504,27 +516,27 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   oldPrice: {
-    fontSize: 10,
-    color: '#9AA6B2',
+    fontSize: 12,
+    color: '#9E9E9E',
+    fontWeight:'400',
     textDecorationLine: 'line-through',
   },
   newPrice: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#424242',
   },
   addToCartBtn: {
     borderWidth: 1.5,
-    borderColor: '#00A884',
-    borderRadius: 20,
+    borderColor: '#4DA69F',
+    borderRadius: 40,
     paddingVertical: 8,
     alignItems: 'center',
-    minHeight: 36,
     justifyContent: 'center',
   },
   addToCartText: {
-    color: '#00A884',
-    fontSize: 12,
+    color: '#4DA69F',
+    fontSize: 16,
     fontWeight: '600',
   },
   fab: {
@@ -541,6 +553,9 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
     shadowRadius: 4,
+  },
+  fabIcon:{
+    resizeMode:'cover'
   },
   bottomNav: {
     flexDirection: 'row',

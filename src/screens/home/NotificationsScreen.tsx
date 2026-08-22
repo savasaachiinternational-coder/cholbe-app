@@ -16,9 +16,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import { useRole } from '../../hooks/useRole';
 import type { RootStackParamList } from '../../navigation/types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { HomeBottomNav } from './HomeBottomNav';
+import { RoleBottomNav } from '../../components/RoleBottomNav';
 import type { BottomTabKey } from './homeData';
 import {
   matchesNotificationTab,
@@ -130,6 +131,7 @@ export function NotificationsScreen({ navigation }: Props) {
   const [alarmOn, setAlarmOn] = useState<Record<string, boolean>>({});
   const addButtonTitle = SEGMENTS.find(s => s.key === selectedScreen)?.addLabel;
   const [loading, setLoading] = useState(true);
+  const role = useRole();
   const { refresh: refreshBadge } = useNotificationBadge();
   const filterScrollRef = useRef<ScrollView>(null);
   const [filterScrollX, setFilterScrollX] = useState(0);
@@ -478,17 +480,20 @@ export function NotificationsScreen({ navigation }: Props) {
         </ScrollView>
       )}
 
-      <TouchableOpacity
-        style={[styles.floatingScanButton, { bottom: insets.bottom + 90 }]}
-        activeOpacity={0.85}
-      >
-        <Image source={require('../../assets/syaiicon.png')} />
-      </TouchableOpacity>
+      {role === 'CUSTOMER' && (
+        <TouchableOpacity
+          style={[styles.floatingScanButton, { bottom: insets.bottom + 90 }]}
+          activeOpacity={0.85}
+        >
+          <Image source={require('../../assets/syaiicon.png')} />
+        </TouchableOpacity>
+      )}
 
       <View style={styles.bottomNavWrap}>
-        <HomeBottomNav
+        <RoleBottomNav
           activeTab="home"
           bottomInset={insets.bottom}
+          navigation={navigation}
           onTabPress={handleTabPress}
         />
       </View>

@@ -10,6 +10,13 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 };
 
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  semibold: 'ProximaNova-Semibold',
+} as const;
+
 export function VendorBottomNav({activeTab, bottomInset, navigation}: Props) {
   const handlePress = (tab: VendorTabKey) => {
     if (tab === activeTab) {
@@ -47,7 +54,7 @@ export function VendorBottomNav({activeTab, bottomInset, navigation}: Props) {
             style={styles.navItem}
             activeOpacity={0.7}
             onPress={() => handlePress(tab.key)}>
-            <Feather name={tab.icon} size={20} color={active ? '#4E929D' : '#9AA6B2'} />
+            <Feather name={tab.icon} size={24} color={active ? '#3EA08F' : '#9E9E9E'} />
             <Text style={[styles.navText, active && styles.activeNavText]}>{tab.label}</Text>
           </TouchableOpacity>
         );
@@ -57,31 +64,39 @@ export function VendorBottomNav({activeTab, bottomInset, navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
+  // Rounded top corners with a soft lift instead of a hairline border.
   bottomNav: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    minHeight: 60,
+    minHeight: 72,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#ECEFF3',
-    paddingTop: 6,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    shadowColor: '#040620',
+    shadowOffset: {width: 0, height: -4},
+    shadowOpacity: 0.06,
+    shadowRadius: 30,
+    elevation: 12,
   },
   navItem: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 6,
   },
   navText: {
-    fontSize: 10,
-    color: '#9AA6B2',
-    marginTop: 3,
-    fontWeight: '500',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: '#9E9E9E',
+    fontWeight: '400',
   },
   activeNavText: {
-    color: '#4E929D',
+    color: '#3EA08F',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

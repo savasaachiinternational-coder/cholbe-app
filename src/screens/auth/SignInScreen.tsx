@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,12 +13,12 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import {authApi} from '../../api/auth';
-import {ApiError} from '../../api/client';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import { authApi } from '../../api/auth';
+import { ApiError } from '../../api/client';
 
 const SIGN_IN_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -62,14 +62,15 @@ export function SignInScreen({
     <View style={styles.root}>
       <LinearGradient
         colors={[...SIGN_IN_GRADIENT]}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
@@ -79,7 +80,8 @@ export function SignInScreen({
             },
           ]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.logoSection}>
             <Image
               source={require('../../assets/logo.png')}
@@ -94,6 +96,11 @@ export function SignInScreen({
           </View>
 
           <View style={styles.formSection}>
+            <Image
+              source={require('../../assets/medicine_cardbg.png')}
+              style={styles.formBackgroundWave}
+              resizeMode="cover"
+            />
             <Text style={styles.inputLabel}>Email or Phone Number</Text>
             <View style={styles.inputContainer}>
               <Feather
@@ -132,10 +139,11 @@ export function SignInScreen({
               />
               <TouchableOpacity
                 onPress={() => setSecureTextEntry(prev => !prev)}
-                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityLabel={
                   secureTextEntry ? 'Show password' : 'Hide password'
-                }>
+                }
+              >
                 <Feather
                   name={secureTextEntry ? 'eye-off' : 'eye'}
                   size={20}
@@ -147,7 +155,8 @@ export function SignInScreen({
             <TouchableOpacity
               style={styles.forgotPasswordButton}
               activeOpacity={0.6}
-              onPress={onForgotPassword}>
+              onPress={onForgotPassword}
+            >
               <Text style={styles.forgotPasswordText}>Forgot Password</Text>
             </TouchableOpacity>
           </View>
@@ -156,7 +165,8 @@ export function SignInScreen({
             style={[styles.signInButton, loading && styles.buttonDisabled]}
             activeOpacity={0.85}
             disabled={loading}
-            onPress={handleSignIn}>
+            onPress={handleSignIn}
+          >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
@@ -167,7 +177,8 @@ export function SignInScreen({
           <TouchableOpacity
             style={styles.signUpLink}
             activeOpacity={0.6}
-            onPress={onCreateAccount}>
+            onPress={onCreateAccount}
+          >
             <Text style={styles.signUpText}>
               Don&apos;t have an account?{' '}
               <Text style={styles.signUpHighlight}>Create Account</Text>
@@ -185,7 +196,7 @@ export function SignInScreen({
               <FontAwesome name="apple" size={24} color="#000000" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-              <Text style={[styles.socialTextFallback, {color: '#EA4335'}]}>
+              <Text style={[styles.socialTextFallback, { color: '#EA4335' }]}>
                 G
               </Text>
             </TouchableOpacity>
@@ -248,6 +259,16 @@ const styles = StyleSheet.create({
   formSection: {
     marginBottom: 24,
   },
+    formBackgroundWave: {
+    position: 'absolute',
+    marginLeft:-26,
+    top: 0,
+    left: 0,
+    width: '160%',
+    height: '100%',
+    opacity: .1,
+    transform: [{rotate: '-15deg'}],
+  },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
@@ -258,7 +279,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: 'transparent',
     borderWidth: 1.2,
     borderColor: '#82C3D1',
     borderRadius: 28,
@@ -293,7 +314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     shadowColor: '#4A8B95',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
@@ -351,7 +372,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 10,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
