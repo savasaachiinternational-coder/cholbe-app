@@ -1,17 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
-import {setCrashReportingUser} from '../monitoring/sentry';
+import { setCrashReportingUser } from '../monitoring/sentry';
 
-const TOKEN_SERVICE = 'com.cholbe.session.token';
-const USER_SERVICE = 'com.cholbe.session.user';
-
-// Pre-encryption keys, read once so existing installs stay logged in.
-const LEGACY_TOKEN_KEY = '@cholbe/access_token';
-const LEGACY_USER_KEY = '@cholbe/user';
-
-const SECURE_OPTIONS = {
-  accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-} satisfies Keychain.SetOptions;
+const TOKEN_KEY = '@cholbe/access_token';
+const USER_KEY = '@cholbe/user';
+const IS_FIRST_TIME = '@cholbe/isfirsttime';
 
 export type StoredUser = {
   id: string;
@@ -34,7 +27,7 @@ async function writeSecure(service: string, value: string) {
 
 async function readSecure(service: string): Promise<string | null> {
   try {
-    const creds = await Keychain.getGenericPassword({service});
+    const creds = await Keychain.getGenericPassword({ service });
     return creds ? creds.password : null;
   } catch {
     return null;
@@ -43,7 +36,7 @@ async function readSecure(service: string): Promise<string | null> {
 
 async function clearSecure(service: string) {
   try {
-    await Keychain.resetGenericPassword({service});
+    await Keychain.resetGenericPassword({ service });
   } catch {
     // Nothing stored for this service.
   }
@@ -69,7 +62,7 @@ async function migrateLegacySession() {
     await AsyncStorage.removeMany([LEGACY_TOKEN_KEY, LEGACY_USER_KEY]);
   }
 
-  return {legacyToken, legacyUser};
+  return { legacyToken, legacyUser };
 }
 
 export async function saveSession(accessToken: string, user: StoredUser) {
@@ -78,7 +71,7 @@ export async function saveSession(accessToken: string, user: StoredUser) {
   await writeSecure(USER_SERVICE, serializedUser);
   tokenCache = accessToken;
   userCache = user;
-  setCrashReportingUser({id: user.id, role: user.role});
+  setCrashReportingUser({ id: user.id, role: user.role });
 }
 
 export async function getAccessToken() {
@@ -93,6 +86,12 @@ export async function getAccessToken() {
 
   tokenCache = token;
   return token;
+}
+export async function getIsFirtTime(): Promise<boolean> {
+  return (await AsyncStorage.getItem(IS_FIRST_TIME)) !== 'No';
+}
+export async function setIsFirtTime() {
+  return await AsyncStorage.setItem(IS_FIRST_TIME, 'No');
 }
 
 export async function getStoredUser(): Promise<StoredUser | null> {

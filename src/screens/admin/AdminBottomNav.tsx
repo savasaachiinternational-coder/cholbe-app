@@ -5,6 +5,13 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../navigation/types';
 import {ADMIN_TABS, type AdminTabKey} from './adminNav';
 
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  semibold: 'ProximaNova-Semibold',
+} as const;
+
 type Props = {
   activeTab: AdminTabKey;
   bottomInset: number;
@@ -54,7 +61,7 @@ export function AdminBottomNav({activeTab, bottomInset, navigation}: Props) {
     <View style={[styles.bottomNav, {paddingBottom: Math.max(bottomInset, 4)}]}>
       {ADMIN_TABS.map(tab => {
         const active = tab.key === activeTab;
-        const color = active ? '#4E929D' : '#9AA6B2';
+        const color = active ? '#3EA08F' : '#9E9E9E';
 
         return (
           <TouchableOpacity
@@ -63,7 +70,7 @@ export function AdminBottomNav({activeTab, bottomInset, navigation}: Props) {
             activeOpacity={0.7}
             onPress={() => handlePress(tab.key)}>
             {tab.materialIcon ? (
-              <MaterialIcons name={tab.materialIcon} size={18} color={color} />
+              <MaterialIcons name={tab.materialIcon} size={24} color={color} />
             ) : (
               <Feather name={tab.icon} size={18} color={color} />
             )}
@@ -82,33 +89,44 @@ export function AdminBottomNav({activeTab, bottomInset, navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
+  // Same chrome as the vendor bar; icon and label sizes stay compact because
+  // this bar carries nine tabs rather than five.
   bottomNav: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    minHeight: 60,
+    minHeight: 64,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#ECEFF3',
-    paddingTop: 6,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 10,
+    paddingBottom:10,
+    shadowColor: '#040620',
+    shadowOffset: {width: 0, height: -4},
+    shadowOpacity: 0.06,
+    shadowRadius: 30,
+    elevation: 12,
   },
   navItem: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 1,
+    paddingBottom:10,
+    gap: 4,
   },
   navText: {
-    fontSize: 8,
-    color: '#9AA6B2',
-    marginTop: 2,
-    fontWeight: '500',
+    fontSize: 9,
+    fontFamily: FONT.regular,
+    color: '#9E9E9E',
+    fontWeight: '400',
     textAlign: 'center',
   },
   activeNavText: {
-    color: '#4E929D',
+    color: '#3EA08F',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

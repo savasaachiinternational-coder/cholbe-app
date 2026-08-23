@@ -93,7 +93,7 @@ export function ReportsListScreen({navigation}: Props) {
                 )
               }
               onPressAction={() =>
-                navigation.navigate('ViewReportDetails', {reportId: item.id})
+                navigation.navigate('ReportDetailsView', {reportId: item.id})
               }
             />
           ))

@@ -6,10 +6,27 @@ import {
   FrequencyPicker,
   InventoryPicker,
   MinuteChipRow,
+  StrengthPicker,
   TimePickerField,
   formatTimeLabel,
 } from './MedicationPickers';
 import {useMedicationDraft} from '../context/MedicationDraftContext';
+
+// Android resolves a weight by the exact font file name, so each weight is
+// referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
+// Follow-up Check offers only these two presets plus Custom, so all three fit on
+// one row. The reminder card above still uses the full REMINDER_MINUTE_OPTIONS.
+const FOLLOW_UP_MINUTE_OPTIONS = [
+  {value: 10, label: '10 min before'},
+  {value: 30, label: '30 min before'},
+];
 
 const INSTRUCTION_SEGMENTS = [
   {key: 'morning', label: 'Morning'},
@@ -50,8 +67,8 @@ export function MedicationFormFields() {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Dose</Text>
-        <View style={styles.textInputWrapper}>
+        <Text style={styles.inputLabel}>Strength</Text>
+        {/* <View style={styles.textInputWrapper}>
           <TextInput
             style={styles.textInput}
             value={draft.dose}
@@ -59,7 +76,10 @@ export function MedicationFormFields() {
             placeholder="e.g. 1 tablet"
             placeholderTextColor="#A0A5BA"
           />
-        </View>
+         
+        </View> */}
+         <StrengthPicker   value={draft.dose}
+          onChange={frequency => patchDraft({dose:frequency})}/>
       </View>
 
       <View style={styles.inputGroup}>
@@ -161,6 +181,7 @@ export function MedicationFormFields() {
             <Text style={styles.sectionTitleText}>Show reminder before eating</Text>
           </View>
           <Switch
+            style={styles.sectionSwitch}
             trackColor={{false: '#E2E6EE', true: '#45A096'}}
             thumbColor="#FFFFFF"
             value={draft.reminderEnabled}
@@ -183,6 +204,7 @@ export function MedicationFormFields() {
             <Text style={styles.sectionTitleText}>Follow-up Check</Text>
           </View>
           <Switch
+            style={styles.sectionSwitch}
             trackColor={{false: '#E2E6EE', true: '#45A096'}}
             thumbColor="#FFFFFF"
             value={draft.followUpEnabled}
@@ -195,6 +217,8 @@ export function MedicationFormFields() {
               value={draft.followUpMinutes}
               onChange={followUpMinutes => patchDraft({followUpMinutes})}
               allowCustom
+              options={FOLLOW_UP_MINUTE_OPTIONS}
+              variant="inline"
             />
             <TimePickerField
               value={draft.followUpTime}
@@ -216,8 +240,9 @@ export function MedicationFormFields() {
             <Text style={styles.sectionTitleText}>Reminder to refill Inventory</Text>
           </View>
           <Switch
+            style={styles.sectionSwitch}
             trackColor={{false: '#E2E6EE', true: '#45A096'}}
-            thumbColor="#FFFFFF"
+            thumbColor="#F5F4FD"
             value={draft.refillEnabled}
             onValueChange={refillEnabled => patchDraft({refillEnabled})}
           />
@@ -272,13 +297,15 @@ const styles = StyleSheet.create({
   halfWidth: {flex: 1},
   halfLeft: {marginRight: 12},
   inputLabel: {
-    fontSize: 14,
-    color: '#8A94A6',
-    fontWeight: '500',
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: '#616161',
+    fontWeight: '400',
     marginBottom: 8,
   },
   subInputLabel: {
     fontSize: 13,
+    fontFamily: FONT.regular,
     color: '#8A94A6',
     fontWeight: '400',
     marginBottom: 6,
@@ -286,14 +313,14 @@ const styles = StyleSheet.create({
   textInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F2F7',
+    backgroundColor: '#F5F2FE',
     borderRadius: 12,
     height: 50,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#E6E9F0',
+    borderColor: '#E6E3EE',
   },
-  textInput: {flex: 1, fontSize: 15, color: '#495057', fontWeight: '500'},
+  textInput: {flex: 1, fontSize: 15, fontFamily: FONT.medium, color: '#495057', fontWeight: '500'},
   searchIcon: {paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: '#E2E6EE'},
   segmentContainer: {
     flexDirection: 'row',
@@ -303,48 +330,69 @@ const styles = StyleSheet.create({
   },
   segmentButton: {
     flex: 1,
-    height: 38,
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
   },
   activeSegmentButton: {backgroundColor: '#45A096'},
-  segmentButtonText: {fontSize: 13, color: '#7D8797', fontWeight: '500'},
-  activeSegmentText: {color: '#FFFFFF', fontWeight: '600'},
+  segmentButtonText: {fontSize: 13, fontFamily: FONT.medium, color: '#7D8797', fontWeight: '500'},
+  activeSegmentText: {
+    color: '#FFFFFF',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+  },
   mealSegmentContainer: {flexDirection: 'row'},
   mealButton: {
     flex: 1,
-    height: 46,
-    backgroundColor: '#FFF',
+    height: 32,
+    backgroundColor: '#F5F2FE',
     borderWidth: 1,
     borderColor: '#E6E9F0',
-    borderRadius: 23,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
   },
   activeMealButton: {backgroundColor: '#45A096', borderColor: '#45A096'},
-  mealButtonText: {fontSize: 14, color: '#7D8797', fontWeight: '500'},
-  activeMealButtonText: {color: '#FFFFFF', fontWeight: '600'},
+  mealButtonText: {fontSize: 14, fontFamily: FONT.medium, color: '#7D8797', fontWeight: '500'},
+  activeMealButtonText: {
+    color: '#FFFFFF',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+  },
   rowContainer: {flexDirection: 'row', alignItems: 'center'},
   dateSelectorSmallLeft: {marginRight: 6, flex: 1},
   subCardSection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 10,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#F0F2F7',
+    elevation:1,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  sectionHeaderTitleGroup: {flexDirection: 'row', alignItems: 'center'},
+
+  sectionHeaderTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+  },
   sectionIcon: {marginRight: 8},
+  sectionSwitch: {
+    transform: [{scaleX: 0.75}, {scaleY: 0.75}],
+    marginVertical: -4,
+    marginRight: -6,
+  },
   sectionTitleText: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#495057',
     flex: 1,
@@ -365,5 +413,5 @@ const styles = StyleSheet.create({
     borderColor: '#E6E9F0',
   },
   caregiverPlusIcon: {marginRight: 8},
-  caregiverCustomText: {fontSize: 15, color: '#495057', fontWeight: '500'},
+  caregiverCustomText: {fontSize: 15, fontFamily: FONT.medium, color: '#495057', fontWeight: '500'},
 });

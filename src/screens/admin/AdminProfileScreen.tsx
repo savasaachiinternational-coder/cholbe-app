@@ -315,7 +315,7 @@ export function AdminProfileScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F5F3FE',
   },
   scrollContent: {
     paddingTop: 4,
@@ -326,12 +326,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F5F3FE',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontWeight: '600',
+    color: '#424242',
     flex: 1,
     marginLeft: 12,
   },
@@ -341,15 +341,16 @@ const styles = StyleSheet.create({
   },
   profileHeroCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     borderRadius: 14,
     padding: 16,
     marginHorizontal: 16,
     marginTop: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E6E3EE',
     minHeight: 80,
+    elevation:1,
   },
   profileLoader: {
     flex: 1,
@@ -359,15 +360,17 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     marginRight: 14,
+    borderColor:'#F5F3FE',
+    zIndex:11
   },
   adminMetaDetails: {
     flex: 1,
     justifyContent: 'center',
   },
   adminNameText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#424242',
   },
   adminRoleText: {
     fontSize: 12,
@@ -376,13 +379,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   menuContainerCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F3FE',
     borderRadius: 14,
     marginHorizontal: 16,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E6E3EE',
     paddingVertical: 6,
+    elevation:1
   },
   settingRow: {
     flexDirection: 'row',
@@ -408,10 +412,10 @@ const styles = StyleSheet.create({
   },
   logoutButtonBox: {
     flexDirection: 'row',
-    backgroundColor: '#FCECEC',
+    backgroundColor: '#FBE9E9',
     borderWidth: 1,
-    borderColor: '#F9D5D5',
-    borderRadius: 12,
+    borderColor: '#EFAAA9',
+    borderRadius: 10,
     height: 48,
     marginHorizontal: 16,
     marginTop: 18,

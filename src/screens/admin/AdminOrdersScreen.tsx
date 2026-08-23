@@ -2,6 +2,7 @@ import {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -483,10 +484,13 @@ export function AdminOrdersScreen({navigation}: Props) {
 
                 <View style={styles.cardBodyRow}>
                   <View style={styles.metaTextInfo}>
+                    <Image source={require('../../assets/profile.png')} style={styles.profileImage}/>
+                    <View>
                     <Text style={styles.customerNameText}>{recordItem.customerName}</Text>
                     <View style={styles.pharmacyRow}>
                       <MaterialCommunityIcons name="hospital-box" size={12} color="#7E8B97" />
                       <Text style={styles.pharmacyNameText}>{recordItem.pharmacyName}</Text>
+                    </View>
                     </View>
                   </View>
                   <Text style={styles.totalText}>{formatNum(recordItem.total)}</Text>
@@ -526,7 +530,7 @@ export function AdminOrdersScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F6F8FB'},
+  container: {flex: 1, backgroundColor: '#F4F3FC'},
   scrollContent: {paddingTop: 4},
   header: {
     flexDirection: 'row',
@@ -534,18 +538,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F4F3FC',
   },
-  headerTitle: {fontSize: 18, fontWeight: '700', color: '#1A1C1E', flex: 1, marginLeft: 12},
+  headerTitle: {fontSize: 18, fontWeight: '600', color: '#424242', flex: 1, marginLeft: 12},
   headerButton: {padding: 2, width: 32},
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: 40,
     paddingHorizontal: 16,
-    height: 48,
+    height: 56,
     borderWidth: 1,
     borderColor: '#ECEFF3',
     gap: 8,
@@ -555,15 +559,15 @@ const styles = StyleSheet.create({
   chipItem: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 40,
+    backgroundColor: '#F3F2FB',
     marginRight: 8,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
   },
-  chipItemActive: {backgroundColor: '#4E929D', borderColor: '#4E929D'},
+  chipItemActive: {backgroundColor: '#4DA69F', borderColor: '#4E929D'},
   chipItemText: {fontSize: 12, fontWeight: '500', color: '#7E8B97'},
-  chipItemActiveText: {color: '#FFFFFF', fontWeight: '600'},
+  chipItemActiveText: {color: '#FFF', fontWeight: '600'},
   sectionHeaderLineRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -571,22 +575,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 12,
   },
-  sectionHeadingText: {fontSize: 14, fontWeight: '700', color: '#333D47'},
+  sectionHeadingText: {fontSize: 14, fontWeight: '600', color: '#616161'},
   countText: {fontSize: 11, color: '#9AA6B2'},
   itemsVerticalStack: {gap: 12},
   loader: {marginVertical: 32},
   emptyText: {textAlign: 'center', color: '#9AA6B2', fontSize: 14, paddingVertical: 32},
   orderCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    elevation:1,
+    borderColor: '#E6E3EE',
   },
   cardHeaderRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
-  orderIdText: {fontSize: 12, fontWeight: '700', color: '#1A1C1E'},
+  orderIdText: {fontSize: 12, fontWeight: '600', color: '#424242'},
   timeAgoText: {fontSize: 10, color: '#9AA6B2', fontWeight: '500'},
   cardBodyRow: {
     flexDirection: 'row',
@@ -594,13 +599,17 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F3F6',
-    paddingBottom: 10,
     justifyContent: 'space-between',
   },
-  metaTextInfo: {flex: 1},
-  customerNameText: {fontSize: 14, fontWeight: '700', color: '#1A1C1E'},
+  metaTextInfo: {flex: 1, flexDirection:'row', gap:10,alignItems:'center'},
+  profileImage:{
+    height:60,
+    width:60,
+    borderRadius:30,
+  },
+  customerNameText: {fontSize: 18, fontWeight: '600', color: '#424242'},
   pharmacyRow: {flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2},
-  pharmacyNameText: {fontSize: 11, color: '#7E8B97', fontWeight: '500'},
+  pharmacyNameText: {fontSize: 12, color: '#616161', fontWeight: '400'},
   totalText: {fontSize: 13, fontWeight: '700', color: '#4E929D'},
   cardFooterRow: {
     flexDirection: 'row',
@@ -626,7 +635,7 @@ const styles = StyleSheet.create({
   // Modal
   modalOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
   detailModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F3FC',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -643,21 +652,23 @@ const styles = StyleSheet.create({
   invoiceBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E6F3F5',
+    backgroundColor: '#F3F2FB',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
+    elevation:1,
     gap: 4,
   },
   invoiceBtnText: {fontSize: 12, color: '#4E929D', fontWeight: '600'},
   backText: {fontSize: 13, color: '#4E929D', fontWeight: '600'},
   closeBtn: {marginLeft: 4},
   orderInfoCard: {
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F3F2FB',
     borderRadius: 12,
     padding: 14,
     marginBottom: 16,
     borderWidth: 1,
+    elevation:1,
     borderColor: '#ECEFF3',
   },
   orderInfoRow: {
@@ -671,9 +682,10 @@ const styles = StyleSheet.create({
   orderInfoValue: {fontSize: 12, color: '#1A1C1E', fontWeight: '600', maxWidth: '60%', textAlign: 'right'},
   sectionLabel: {fontSize: 13, fontWeight: '700', color: '#333D47', marginBottom: 8, marginTop: 4},
   itemsCard: {
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F3F2FB',
     borderRadius: 12,
     borderWidth: 1,
+    elevation:1,
     borderColor: '#ECEFF3',
     marginBottom: 16,
   },
@@ -691,11 +703,12 @@ const styles = StyleSheet.create({
   itemMeta: {fontSize: 11, color: '#7E8B97', marginTop: 2},
   itemLineTotal: {fontSize: 13, fontWeight: '700', color: '#1A1C1E'},
   timelineCard: {
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F3F2FB',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#ECEFF3',
     padding: 12,
+    elevation:1,
     marginBottom: 16,
   },
   timelineItem: {flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12},
@@ -717,8 +730,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: '#F0F3F6',
+    backgroundColor: '#F3F2FB',
     borderWidth: 1,
+    elevation:1,
     borderColor: '#ECEFF3',
     marginRight: 4,
   },

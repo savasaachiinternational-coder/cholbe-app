@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,22 +9,25 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../navigation/types';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {HomeBottomNav} from './HomeBottomNav';
-import type {BottomTabKey} from './homeData';
-import {appointmentsApi} from '../../api/appointments';
-import {ApiError} from '../../api/client';
-import {getStoredUser} from '../../api/tokenStorage';
-import {getAppointmentDateTime} from '../../api/utils/appointmentHelpers';
-import {requestCallPermissions} from '../../utils/callPermissions';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../navigation/types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { HomeBottomNav } from './HomeBottomNav';
+import type { BottomTabKey } from './homeData';
+import { appointmentsApi } from '../../api/appointments';
+import { ApiError } from '../../api/client';
+import { getStoredUser } from '../../api/tokenStorage';
+import { getAppointmentDateTime } from '../../api/utils/appointmentHelpers';
+import { requestCallPermissions } from '../../utils/callPermissions';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WaitingRoom'>;
 
 const DOCTOR_AVATAR = require('../../assets/b2.png');
+const JOIN_BUTTON_GRADIENT = ['#6BB9B4', '#0D9488'] as const;
+const JOIN_BUTTON_DISABLED_GRADIENT = ['#CBD5E1', '#94A3B8'] as const;
 
 function formatCountdown(target: Date): string {
   const diffMs = target.getTime() - Date.now();
@@ -37,16 +40,24 @@ function formatCountdown(target: Date): string {
   return `${min}:${sec}`;
 }
 
-export function WaitingRoomScreen({navigation, route}: Props) {
+export function WaitingRoomScreen({ navigation, route }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const appointmentId = route.params.appointmentId;
 
-  const [doctorName, setDoctorName] = useState(route.params?.doctorName ?? 'Doctor');
-  const [specialty, setSpecialty] = useState(route.params?.specialty ?? 'Specialist');
-  const [isDoctorViewer, setIsDoctorViewer] = useState(route.params?.viewerRole === 'DOCTOR');
+  const [doctorName, setDoctorName] = useState(
+    route.params?.doctorName ?? 'Doctor',
+  );
+  const [specialty, setSpecialty] = useState(
+    route.params?.specialty ?? 'Specialist',
+  );
+  const [isDoctorViewer, setIsDoctorViewer] = useState(
+    route.params?.viewerRole === 'DOCTOR',
+  );
   const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
-  const [consultationType, setConsultationType] = useState<'VIDEO' | 'CHAT' | 'AUDIO'>('VIDEO');
+  const [consultationType, setConsultationType] = useState<
+    'VIDEO' | 'CHAT' | 'AUDIO'
+  >('VIDEO');
   const [countdown, setCountdown] = useState('--:--');
   const [loading, setLoading] = useState(true);
 
@@ -60,17 +71,25 @@ export function WaitingRoomScreen({navigation, route}: Props) {
       try {
         const appt = await appointmentsApi.getById(appointmentId);
         if (!mounted) return;
-        if (stored?.role === 'DOCTOR' || route.params?.viewerRole === 'DOCTOR') {
-          setDoctorName(appt.patient?.fullName ?? route.params?.doctorName ?? 'Patient');
+        if (
+          stored?.role === 'DOCTOR' ||
+          route.params?.viewerRole === 'DOCTOR'
+        ) {
+          setDoctorName(
+            appt.patient?.fullName ?? route.params?.doctorName ?? 'Patient',
+          );
           setSpecialty('Patient consultation');
         } else {
           setDoctorName(appt.doctor.user.fullName);
           setSpecialty(appt.doctor.specialty);
         }
         setScheduledAt(getAppointmentDateTime(appt));
-        setConsultationType((appt.consultationType ?? 'VIDEO') as 'VIDEO' | 'CHAT' | 'AUDIO');
+        setConsultationType(
+          (appt.consultationType ?? 'VIDEO') as 'VIDEO' | 'CHAT' | 'AUDIO',
+        );
       } catch (err) {
-        const message = err instanceof ApiError ? err.message : 'Could not load appointment';
+        const message =
+          err instanceof ApiError ? err.message : 'Could not load appointment';
         Alert.alert('Waiting room', message);
       } finally {
         if (mounted) setLoading(false);
@@ -134,7 +153,9 @@ export function WaitingRoomScreen({navigation, route}: Props) {
         return;
       }
     }
-    await appointmentsApi.updateStatus(appointmentId, 'in_progress').catch(() => undefined);
+    await appointmentsApi
+      .updateStatus(appointmentId, 'in_progress')
+      .catch(() => undefined);
     if (consultationType === 'CHAT') {
       navigation.navigate('ConsultationChat', {
         doctorName,
@@ -162,20 +183,24 @@ export function WaitingRoomScreen({navigation, route}: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <View style={styles.headerBackTitle}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            activeOpacity={0.7}
+            onPress={() => navigation.goBack()}
+          >
+            <Feather name="chevron-left" size={24} color="#1E293B" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {isDoctorViewer ? 'Consultation Room' : 'Your Waiting Room'}
+          </Text>
+        </View>
         <TouchableOpacity
           style={styles.iconButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={24} color="#1E293B" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {isDoctorViewer ? 'Consultation Room' : 'Your Waiting Room'}
-        </Text>
-        <TouchableOpacity
-          style={styles.iconButton}
-          activeOpacity={0.7}
-          onPress={openChat}>
+          onPress={openChat}
+        >
           <Feather name="message-square" size={22} color="#1E293B" />
         </TouchableOpacity>
       </View>
@@ -184,14 +209,18 @@ export function WaitingRoomScreen({navigation, route}: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          {paddingBottom: insets.bottom + 120},
-        ]}>
+          { paddingBottom: insets.bottom + 120 },
+        ]}
+      >
         <View style={styles.countdownContainer}>
           <Text style={styles.countdownTitle}>
-            {isDoctorViewer ? 'Patient consultation scheduled' : 'Your consultation is scheduled'}
+            {isDoctorViewer
+              ? 'Patient consultation scheduled'
+              : 'Your consultation is scheduled'}
           </Text>
           <Text style={styles.countdownSubtitle}>
-            Call starts in <Text style={styles.countdownTimer}>{countdown} minutes</Text>
+            Call starts in{' '}
+            <Text style={styles.countdownTimer}>{countdown} minutes</Text>
           </Text>
         </View>
 
@@ -208,26 +237,88 @@ export function WaitingRoomScreen({navigation, route}: Props) {
           </View>
 
           <TouchableOpacity
-            style={[styles.joinCallButton, !canJoin && styles.joinCallDisabled]}
+            style={styles.joinCallButtonWrap}
             activeOpacity={0.9}
             disabled={!canJoin}
-            onPress={() => void joinConsultation()}>
-            <Text style={styles.joinCallButtonText}>
-              {canJoin
-                ? consultationType === 'CHAT'
-                  ? 'Open Chat Consultation'
-                  : 'Join Video Call'
-                : 'Available 1 hour before start'}
-            </Text>
+            onPress={() => void joinConsultation()}
+          >
+            <LinearGradient
+              colors={
+                canJoin
+                  ? [...JOIN_BUTTON_GRADIENT]
+                  : [...JOIN_BUTTON_DISABLED_GRADIENT]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.joinCallButton}
+            >
+              <Text style={styles.joinCallButtonText}>
+                {canJoin
+                  ? consultationType === 'CHAT'
+                    ? 'Open Chat Consultation'
+                    : 'Join Video Call'
+                  : 'Available 1 hour before start'}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
 
+          <View style={styles.cardDivider} />
+
           <View style={styles.diagnosticGridRow}>
-            <DiagnosticItem icon="camera" label="Camera" status="Ready" />
-            <DiagnosticItem icon="mic" label="Mic" status="Ready" withDivider />
-            <DiagnosticItem icon="wifi" label="Network" status="Good" withDivider />
+            <DiagnosticItem
+              icon="camera"
+              label="Camera"
+              status="Ready"
+              tone="solid"
+            />
+            <DiagnosticItem
+              icon="mic"
+              label="Mic"
+              status="Ready"
+              tone="muted"
+              withDivider
+            />
+            <DiagnosticItem
+              icon="wifi"
+              label="Network"
+              status="Good"
+              tone="plain"
+              withDivider
+            />
           </View>
+
+          <View style={styles.cardDivider} />
+
+          <Text style={styles.readyNote}>
+            Please be ready before the call starts.{'\n'}
+            Ensure a good internet connections.
+          </Text>
+
+          <View style={styles.cardDivider} />
+
+          <ConsultationActionRow
+            icon="headphones"
+            label="Switch to Audio Call"
+            onPress={() => void joinConsultation()}
+          />
+          <ConsultationActionRow
+            icon="message-circle"
+            label="Chat With Doctor"
+            onPress={openChat}
+          />
         </View>
+
+        <Text style={styles.paidNote}>
+          This is a paid consultation. By using this services,{'\n'}
+          you agree to Our Terms.
+        </Text>
       </ScrollView>
+      <TouchableOpacity
+        style={[styles.floatingScanButton, { bottom: insets.bottom + 100 }]}
+        activeOpacity={0.85}
+      >
+        <Image source={require('../../assets/syaiicon.png')} />
+      </TouchableOpacity>
 
       {!isDoctorViewer ? (
         <View style={styles.bottomNavWrap}>
@@ -246,26 +337,69 @@ function DiagnosticItem({
   icon,
   label,
   status,
+  tone = 'plain',
   withDivider,
 }: {
   icon: 'camera' | 'mic' | 'wifi';
   label: string;
   status: string;
+  tone?: 'solid' | 'muted' | 'plain';
   withDivider?: boolean;
 }) {
+  const iconColor =
+    tone === 'solid' ? '#FFFFFF' : tone === 'muted' ? '#64748B' : '#0D9488';
   return (
-    <View style={[styles.diagnosticItem, withDivider && styles.diagnosticDivider]}>
-      <Feather name={icon} size={18} color="#0D9488" />
-      <Text style={styles.diagnosticLabel}>{label}</Text>
-      <Text style={styles.diagnosticStatus}>{status}</Text>
+    <View
+      style={[styles.diagnosticItem, withDivider && styles.diagnosticDivider]}
+    >
+      <View style={styles.diagnosticHeadRow}>
+        <View
+          style={[
+            styles.diagnosticIconBadge,
+            tone === 'solid' && styles.diagnosticIconBadgeSolid,
+            tone === 'muted' && styles.diagnosticIconBadgeMuted,
+          ]}
+        >
+          <Feather name={icon} size={14} color={iconColor} />
+        </View>
+        <Text style={styles.diagnosticLabel}>{label}</Text>
+      </View>
+      <View style={styles.diagnosticStatusRow}>
+        <Feather name="check" size={13} color="#22C55E" />
+        <Text style={styles.diagnosticStatus}>{status}</Text>
+      </View>
     </View>
+  );
+}
+
+function ConsultationActionRow({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: 'headphones' | 'message-circle';
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={styles.actionRow}
+      activeOpacity={0.8}
+      onPress={onPress}
+    >
+      <View style={styles.actionIconCircle}>
+        <Feather name={icon} size={16} color="#0D9488" />
+      </View>
+      <Text style={styles.actionLabel}>{label}</Text>
+      <Feather name="chevron-right" size={20} color="#94A3B8" />
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F4F3FC',
   },
   centered: {
     justifyContent: 'center',
@@ -277,6 +411,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 14,
+    color:'#F5F4FD'
+  },
+  headerBackTitle:{
+    flexDirection:'row',
+    alignItems:'center',
+    gap:10,
   },
   iconButton: {
     width: 40,
@@ -286,8 +426,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontWeight: '600',
+    color: '#424242',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -349,20 +489,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748B',
   },
+  joinCallButtonWrap: {
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
   joinCallButton: {
-    backgroundColor: '#0D9488',
     borderRadius: 24,
     paddingVertical: 14,
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  joinCallDisabled: {
-    backgroundColor: '#94A3B8',
   },
   joinCallButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 14,
   },
   diagnosticGridRow: {
     flexDirection: 'row',
@@ -371,28 +515,104 @@ const styles = StyleSheet.create({
   diagnosticItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 2,
   },
   diagnosticDivider: {
     borderLeftWidth: 1,
-    borderRightWidth: 1,
     borderColor: '#E2E8F0',
   },
+  diagnosticHeadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  diagnosticIconBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  diagnosticIconBadgeSolid: {
+    backgroundColor: '#0D9488',
+  },
+  diagnosticIconBadgeMuted: {
+    backgroundColor: '#E2E8F0',
+  },
   diagnosticLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 4,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#334155',
+  },
+  diagnosticStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
   },
   diagnosticStatus: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginTop: 2,
+    fontWeight: '500',
+    color: '#22C55E',
+    marginLeft: 4,
+  },
+  readyNote: {
+    fontSize: 12,
+    fontWeight:'400',
+    color: '#616161',
+    lineHeight: 20,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  actionIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EEF2F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  actionLabel: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#616161',
+  },
+  paidNote: {
+    marginTop: 16,
+    paddingHorizontal: 4,
+    fontSize: 12,
+    fontWeight:'400',
+    color: '#616161',
+    lineHeight: 19,
   },
   bottomNavWrap: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  floatingScanButton: {
+    position: 'absolute',
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#A7F3D0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+    zIndex: 99,
   },
 });

@@ -30,6 +30,15 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CartCheckoutDetails'>;
 type VariantKey = 'PC' | 'Stripe' | 'Box';
 type AddressCategory = 'Home' | 'Office';
 
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
 const VARIANTS: { key: VariantKey; label: string }[] = [
   { key: 'PC', label: '1 PC' },
   { key: 'Stripe', label: '1 Stripe = 10 pcs' },
@@ -354,6 +363,8 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
         <View style={styles.headerSpacer} />
       </View>
 
+      <View style={styles.headerDivider} />
+
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -390,7 +401,7 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
               Order now as a guest.{' '}
               <Text style={styles.greenLink}>Enjoy Free Home Delivery</Text> on
               your first order after{' '}
-              <Text style={[styles.greenLink, styles.underlineText]}>Log in</Text>{' '}
+              <Text style={[styles.blueLink, styles.underlineText]}>Log in</Text>{' '}
               !
             </Text>
           </View>
@@ -593,7 +604,11 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
                   selectedVariant === variant.key &&
                     styles.summaryRadioFakeActive,
                 ]}
-              />
+              >
+                {selectedVariant === variant.key ? (
+                  <View style={styles.summaryRadioDot} />
+                ) : null}
+              </View>
               <Text style={styles.summaryUnitText}>{variant.label}</Text>
               <View style={styles.summaryControlRow}>
                 <TouchableOpacity
@@ -658,6 +673,33 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
             <Text style={styles.grandTotalValue}>{formatBdt(grandTotal)}</Text>
           </View>
         </View>
+
+        <View style={styles.trustCard}>
+          <View style={styles.trustBadgeItem}>
+            <VerifiedBadgeIcon />
+            <Text style={styles.trustBadgeText}>Verified Purchase Badge</Text>
+          </View>
+          <View style={styles.trustDivider} />
+          <View style={styles.trustBadgeItem}>
+            <Feather name="corner-up-left" size={18} color="#212121" />
+            <Text style={styles.trustBadgeText}>
+              Free 1-Day Returns &1-Year warranty
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.continueBtn, (loading || saving) && styles.disabledBtn]}
+          activeOpacity={0.9}
+          disabled={loading || saving}
+          onPress={handleContinue}
+        >
+          {loading || saving ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.continueBtnText}>Next</Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
 
       <View
@@ -666,21 +708,17 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
           { paddingBottom: Math.max(insets.bottom, 16) },
         ]}
       >
-        <TouchableOpacity
-          style={[
-            styles.continueBtn,
-            (loading || saving) && styles.disabledBtn,
-          ]}
-          activeOpacity={0.9}
-          disabled={loading || saving}
-          onPress={handleContinue}
-        >
-          {loading || saving ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.continueBtnText}>Continue to Payment</Text>
-          )}
-        </TouchableOpacity>
+        <View style={styles.footerHandle} />
+        <View style={styles.footerTotalRow}>
+          <View style={styles.footerTotalLabelBlock}>
+            <Text style={styles.footerTotalLabel}>Total</Text>
+            <Text style={styles.footerTotalCaption}>(incl.fees and tax)</Text>
+          </View>
+          <View style={styles.footerTotalValueBlock}>
+            <Text style={styles.footerTotalValue}>+{formatBdt(grandTotal)}</Text>
+            <Text style={styles.footerTotalStrike}>00</Text>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -689,26 +727,28 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
+    backgroundColor: '#F0EFF8',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 16,
+    paddingBottom: 24,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap:10,
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F0EFF8',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 24,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 29,
+    color: '#212121',
   },
   headerButton: {
     padding: 2,
@@ -716,20 +756,25 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 28,
   },
+  headerDivider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 16,
+  },
   timelineContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 36,
-    marginVertical: 18,
+    marginVertical: 20,
     position: 'relative',
   },
   timelineLine: {
     position: 'absolute',
-    top: 14,
+    top: 16,
     left: 55,
     right: 55,
-    height: 2,
-    backgroundColor: '#E2E8F0',
+    height: 1,
+    backgroundColor: '#BDBDBD',
     zIndex: 1,
   },
   stepWrapper: {
@@ -737,62 +782,72 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   stepCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   stepActive: {
-    backgroundColor: '#4E929D',
+    backgroundColor: '#4DA69F',
   },
   stepInactive: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#EDEDED',
   },
   stepTextActive: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   stepTextInactive: {
-    color: '#7E8B97',
-    fontSize: 13,
+    color: '#9E9E9E',
+    fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   stepLabel: {
-    fontSize: 11,
-    color: '#4F5E6D',
-    marginTop: 6,
-    fontWeight: '500',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#424242',
+    marginTop: 8,
+    fontWeight: '400',
   },
   guestBanner: {
-    backgroundColor: '#EDF9F6',
+    backgroundColor: '#EAF7F0',
     borderRadius: 12,
-    padding: 14,
+    padding: 16,
     marginHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   guestBannerText: {
-    fontSize: 13,
-    color: '#333D47',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#424242',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 22,
   },
   greenLink: {
-    color: '#00A884',
+    color: '#00A651',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+  },
+  blueLink: {
+    color: '#1A56DB',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   underlineText: {
     textDecorationLine: 'underline',
   },
   cardSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F3FC',
     borderRadius: 16,
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#EAEFF5',
+    borderColor: '#E0E0E0',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -801,57 +856,65 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sectionHeading: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#333D47',
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#424242',
   },
   inputLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#4F5E6D',
-    marginBottom: 6,
-    marginTop: 10,
+    fontSize: 14,
+    fontFamily: FONT.medium,
+    fontWeight: '500',
+    color: '#424242',
+    marginBottom: 8,
+    marginTop: 14,
   },
   inputFieldBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ECEFF3',
-    borderRadius: 10,
-    height: 44,
-    paddingHorizontal: 12,
+    backgroundColor: '#E6E4EF',
+    borderRadius: 12,
+    height: 48,
+    paddingHorizontal: 14,
   },
   fieldIcon: {
     marginRight: 10,
   },
   textInputStyle: {
     flex: 1,
-    fontSize: 13,
-    color: '#1A1C1E',
-    fontWeight: '500',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#212121',
+    fontWeight: '400',
     padding: 0,
   },
   chipsFormBlock: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    backgroundColor: '#ECEFF3',
-    borderRadius: 10,
-    padding: 10,
+    alignItems: 'center',
+    backgroundColor: '#E6E4EF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     gap: 12,
   },
   inlineChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   chipFormLabel: {
-    fontSize: 12,
-    color: '#333D47',
-    fontWeight: '500',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#212121',
+    fontWeight: '400',
   },
   chipInput: {
-    fontSize: 12,
-    color: '#333D47',
-    fontWeight: '500',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#212121',
+    fontWeight: '400',
     padding: 0,
     minWidth: 72,
   },
@@ -859,7 +922,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#ECEFF3',
+    backgroundColor: '#E6E4EF',
     marginTop: 4,
     position: 'relative',
   },
@@ -882,117 +945,133 @@ const styles = StyleSheet.create({
   addressInputRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#ECEFF3',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
+    backgroundColor: '#E6E4EF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
   },
   addressInput: {
     flex: 1,
-    fontSize: 13,
-    color: '#1A1C1E',
-    fontWeight: '500',
-    lineHeight: 18,
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#212121',
+    fontWeight: '400',
+    lineHeight: 20,
     padding: 0,
     minHeight: 36,
   },
   radioOptionGroup: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 16,
     alignSelf: 'flex-end',
   },
   radioClickItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   radioLabelText: {
-    fontSize: 13,
-    color: '#333D47',
-    fontWeight: '500',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#212121',
+    fontWeight: '400',
   },
   promoInputWrapper: {
     flexDirection: 'row',
-    backgroundColor: '#ECEFF3',
-    borderRadius: 24,
-    height: 46,
+    backgroundColor: '#E6E4EF',
+    borderRadius: 100,
+    height: 48,
     alignItems: 'center',
-    paddingLeft: 16,
+    paddingLeft: 18,
     paddingRight: 4,
-    marginTop: 12,
+    marginTop: 14,
   },
   promoInputField: {
     flex: 1,
     fontSize: 14,
-    fontWeight: '600',
-    color: '#4F5E6D',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
     padding: 0,
-    letterSpacing: 0.5,
   },
   applyPromoBtn: {
-    backgroundColor: '#4E929D',
-    height: 38,
-    paddingHorizontal: 22,
-    borderRadius: 20,
+    backgroundColor: '#4DA69F',
+    height: 40,
+    paddingHorizontal: 24,
+    borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
   },
   applyPromoBtnText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   orderSummaryTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-    gap: 6,
+    gap: 8,
   },
   orderSummaryTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#333D47',
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#424242',
   },
   summaryCounterItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
+  // Donut radio: teal ring with a teal centre, matching the mockup.
   summaryRadioFake: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#C8D1DB',
-    marginRight: 12,
+    borderColor: '#D6D3E4',
+    marginRight: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   summaryRadioFakeActive: {
-    borderColor: '#47B39D',
-    backgroundColor: '#47B39D',
+    borderColor: '#4DA69F',
+    borderWidth: 2,
+  },
+  summaryRadioDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#4DA69F',
   },
   summaryUnitText: {
     flex: 1,
-    fontSize: 13,
-    color: '#4F5E6D',
-    fontWeight: '500',
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    color: '#212121',
+    fontWeight: '400',
   },
   summaryControlRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   summaryCountVal: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1A1C1E',
-    minWidth: 16,
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#212121',
+    minWidth: 22,
     textAlign: 'center',
   },
   dividerLine: {
     height: 1,
-    backgroundColor: '#ECEFF3',
-    marginVertical: 12,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 14,
   },
   productInvoiceBlock: {
     flexDirection: 'row',
@@ -1039,9 +1118,10 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   invoiceLabelStandard: {
-    fontSize: 12,
-    color: '#4F5E6D',
-    fontWeight: '500',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#212121',
+    fontWeight: '400',
     marginTop: 3,
   },
   grandTotalContainer: {
@@ -1049,41 +1129,56 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 14,
+    marginBottom: 4,
   },
   grandTotalLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
   },
   grandTotalValue: {
-    fontSize: 15,
+    fontSize: 16,
+    fontFamily: FONT.bold,
     fontWeight: '700',
-    color: '#1A1C1E',
+    color: '#212121',
   },
-  trustBadgesRow: {
-    borderTopWidth: 1,
-    borderTopColor: '#ECEFF3',
-    paddingTop: 12,
-    gap: 6,
-  },
-  trustBadgeItem: {
+  trustCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  trustDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: '#E0E0E0',
+  },
+  trustBadgeItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 8,
   },
   badgeShieldIcon: {
-    backgroundColor: '#47B39D',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    backgroundColor: '#00A651',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   trustBadgeText: {
-    fontSize: 11,
-    color: '#7E8B97',
-    fontWeight: '500',
+    fontSize: 13,
+    fontFamily: FONT.regular,
+    color: '#212121',
+    fontWeight: '400',
+    lineHeight: 18,
     flex: 1,
   },
   primaryActionButton: {
@@ -1102,23 +1197,63 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   stickyFooterContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    backgroundColor: '#F7F9FC',
-    borderTopWidth: 1,
-    borderTopColor: '#ECEFF3',
+    backgroundColor: '#F7F7FA',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+  },
+  footerHandle: {
+    width: 50,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E0E0E0',
+    alignSelf: 'center',
+    marginBottom: 18,
+  },
+  footerTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  footerTotalLabelBlock: {
+    flex: 1,
+  },
+  footerTotalCaption: {
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#424242',
+    fontWeight: '400',
+    marginTop: 2,
+  },
+  footerTotalValueBlock: {
+    alignItems: 'flex-end',
+  },
+  footerTotalValue: {
+    fontSize: 24,
+    fontFamily: FONT.bold,
+    fontWeight: '700',
+    color: '#4DA69F',
+  },
+  footerTotalStrike: {
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    color: '#9E9E9E',
+    textDecorationLine: 'line-through',
   },
   continueBtn: {
-    backgroundColor: '#00A884',
-    borderRadius: 28,
-    height: 52,
+    backgroundColor: '#4DA69F',
+    borderRadius: 100,
+    height: 56,
+    marginHorizontal: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   continueBtnText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 20,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   disabledBtn: {
     opacity: 0.6,
@@ -1151,9 +1286,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footerTotalLabel: {
-    fontSize: 26,
+    fontSize: 28,
+    fontFamily: FONT.bold,
     fontWeight: '700',
-    color: '#1A1C1E',
+    color: '#212121',
   },
   footerTaxSubtitle: {
     fontSize: 13,

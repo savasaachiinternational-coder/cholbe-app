@@ -31,6 +31,15 @@ import {
 } from './vendorNav';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VPayments'>;
+
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
 type PickerField = 'date' | 'status' | null;
 
 type TransactionIconType = 'bkash' | 'nagad' | 'card' | 'cod' | 'fee';
@@ -291,6 +300,7 @@ export function VendorPaymentsScreen({navigation}: Props) {
           {paddingBottom: 90 + insets.bottom},
         ]}>
         <View style={styles.balanceCardContainer}>
+          <Image source={require('../../assets/medicine_cardbg.png')} style={styles.waveBackground}/>
           <Text style={styles.balanceLabel}>Current Balance</Text>
           <Text style={styles.mainBalanceValue}>
             Tk{earnings.balance.toLocaleString('en-BD', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -440,7 +450,7 @@ function OptionPickerModal<T extends string>({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F5F3FE',
   },
   scrollContent: {
     paddingTop: 4,
@@ -452,6 +462,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#7E8B97',
     fontSize: 13,
+    fontFamily: FONT.regular,
     marginVertical: 12,
   },
   header: {
@@ -460,12 +471,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F5F3FE',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#424242',
     flex: 1,
     marginLeft: 12,
   },
@@ -474,8 +486,8 @@ const styles = StyleSheet.create({
     width: 32,
   },
   balanceCardContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    backgroundColor: '#F3F2FB',
+    borderRadius: 12,
     marginHorizontal: 16,
     marginTop: 12,
     paddingVertical: 24,
@@ -488,19 +500,31 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 3,
   },
+   waveBackground: {
+    position: 'absolute',
+    marginLeft:0,
+    top: 40,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    opacity: .1,
+
+  },
   balanceLabel: {
     fontSize: 13,
+    fontFamily: FONT.medium,
     color: '#7E8B97',
     fontWeight: '500',
   },
   mainBalanceValue: {
     fontSize: 32,
+    fontFamily: FONT.bold,
     fontWeight: '800',
     color: '#3A3F47',
     marginVertical: 6,
   },
   payoutIndicatorBadge: {
-    backgroundColor: '#7CD1A1',
+    backgroundColor: '#8BC255',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -509,6 +533,7 @@ const styles = StyleSheet.create({
   payoutIndicatorText: {
     color: '#FFFFFF',
     fontSize: 11,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   withdrawButton: {
@@ -523,12 +548,14 @@ const styles = StyleSheet.create({
   withdrawButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   sectionHeadingTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#333D47',
+    fontSize: 12,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#616161',
     paddingHorizontal: 16,
     marginTop: 22,
     marginBottom: 12,
@@ -540,7 +567,7 @@ const styles = StyleSheet.create({
   },
   earningBox: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
@@ -548,17 +575,20 @@ const styles = StyleSheet.create({
   },
   earningBoxLabel: {
     fontSize: 11,
+    fontFamily: FONT.medium,
     color: '#7E8B97',
     fontWeight: '500',
   },
   earningBoxValue: {
     fontSize: 15,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1A1C1E',
     marginTop: 4,
   },
   earningBoxSub: {
     fontSize: 9,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -571,11 +601,11 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
     borderRadius: 24,
     paddingHorizontal: 16,
-    height: 48,
+    height: 56,
     borderWidth: 1,
     borderColor: '#ECEFF3',
     marginBottom: 14,
@@ -584,6 +614,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
+    fontFamily: FONT.regular,
     padding: 0,
     color: '#1A1C1E',
   },
@@ -598,7 +629,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F3F6',
+    backgroundColor: '#F0EEF9',
+    height:32,
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -607,6 +639,7 @@ const styles = StyleSheet.create({
   dropdownSelectorText: {
     flex: 1,
     fontSize: 12,
+    fontFamily: FONT.medium,
     color: '#4F5E6D',
     fontWeight: '500',
   },
@@ -615,13 +648,13 @@ const styles = StyleSheet.create({
   },
   transactionCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     marginHorizontal: 16,
-    borderRadius: 14,
+    borderRadius: 8,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E6E3EE',
   },
   avatarImage: {
     width: 44,
@@ -634,9 +667,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   transactionIdText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#2A3038',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#424242',
   },
   methodInlineRow: {
     flexDirection: 'row',
@@ -661,10 +695,12 @@ const styles = StyleSheet.create({
   miniBrandText: {
     color: '#FFFFFF',
     fontSize: 9,
+    fontFamily: FONT.bold,
     fontWeight: 'bold',
   },
   methodLabelText: {
     fontSize: 13,
+    fontFamily: FONT.medium,
     color: '#5C6470',
     fontWeight: '500',
   },
@@ -677,10 +713,12 @@ const styles = StyleSheet.create({
   feeBadgeText: {
     color: '#FFFFFF',
     fontSize: 9,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   dateText: {
     fontSize: 11,
+    fontFamily: FONT.regular,
     color: '#9AA6B2',
     marginTop: 2,
   },
@@ -698,25 +736,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#E6F7ED',
   },
   badgePending: {
-    backgroundColor: '#FFF3E0',
+    backgroundColor: '#FF981F',
   },
   statusBadgeText: {
     fontSize: 10,
+    fontFamily: FONT.bold,
     fontWeight: '700',
   },
   textPaid: {
     color: '#00A884',
   },
   textPending: {
-    color: '#F37021',
+    color: '#EDF7F6',
   },
   amountText: {
     fontSize: 14,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1A1C1E',
   },
   processingSubtext: {
     fontSize: 10,
+    fontFamily: FONT.medium,
     color: '#7E8B97',
     fontWeight: '500',
   },
@@ -734,6 +775,7 @@ const styles = StyleSheet.create({
   },
   pickerTitle: {
     fontSize: 16,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1A1C1E',
     paddingHorizontal: 16,
@@ -750,10 +792,12 @@ const styles = StyleSheet.create({
   },
   pickerOptionText: {
     fontSize: 14,
+    fontFamily: FONT.regular,
     color: '#4F5E6D',
   },
   pickerOptionTextSelected: {
     color: '#3F8694',
     fontWeight: '600',
+    fontFamily: FONT.semibold,
   },
 });

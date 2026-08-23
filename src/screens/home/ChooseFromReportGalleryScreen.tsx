@@ -21,6 +21,15 @@ import {pickedFileFromAsset} from '../../utils/fileAsset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseFromReportGallery'>;
 
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
 const {width} = Dimensions.get('window');
 const NUM_COLUMNS = 4;
 const GRID_SPACING = 8;
@@ -75,10 +84,18 @@ export function ChooseFromReportGalleryScreen({navigation}: Props) {
       Alert.alert('Gallery', 'Please select a report image to continue.');
       return;
     }
-    navigation.navigate('UploadReportDetails', {
+    // navigation.navigate('UploadReportDetails', {
+    //   fileUri: selected.uri,
+    //   fileName: selected.fileName,
+    //   mimeType: selected.mimeType,
+    // });
+
+    navigation.navigate('ReportPreview', {
       fileUri: selected.uri,
       fileName: selected.fileName,
       mimeType: selected.mimeType,
+      reportTitle: selected.fileName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+      totalPages: 1,
     });
   };
 
@@ -211,6 +228,7 @@ const styles = StyleSheet.create({
   },
   headerTitleText: {
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },
@@ -225,6 +243,7 @@ const styles = StyleSheet.create({
   dropdownFilterText: {
     fontSize: 13,
     color: '#FFFFFF',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   dropdownIcon: {marginLeft: 4},
@@ -255,7 +274,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   selectedOverlayBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 3,
     borderColor: '#45A096',
     borderRadius: 8,
@@ -268,6 +287,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
+    fontFamily: FONT.regular,
     color: '#7D8797',
   },
   footerActionContainer: {
@@ -289,6 +309,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bottomTabBar: {
@@ -313,10 +334,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {
     color: '#45A096',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

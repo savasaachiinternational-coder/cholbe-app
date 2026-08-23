@@ -1,24 +1,26 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import {
   Dimensions,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../navigation/types';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {HomeBottomNav} from './HomeBottomNav';
-import type {BottomTabKey} from './homeData';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../navigation/types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { HomeBottomNav } from './HomeBottomNav';
+import type { BottomTabKey } from './homeData';
+import { WaveTitleBand } from '../../components/WaveTitleBand';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UploadReport'>;
 type UploadOption = 'camera' | 'gallery' | 'saved';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 40 - 16) / 2;
 
 const UPLOAD_OPTIONS: {
@@ -49,7 +51,7 @@ const UPLOAD_OPTIONS: {
   },
 ];
 
-export function UploadReportScreen({navigation}: Props) {
+export function UploadReportScreen({ navigation }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [selectedOption, setSelectedOption] = useState<UploadOption>('camera');
@@ -93,15 +95,16 @@ export function UploadReportScreen({navigation}: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.headerContainer, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.headerIconButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
+          onPress={() => navigation.goBack()}
+        >
           <Feather name="chevron-left" size={28} color="#333333" />
         </TouchableOpacity>
 
-        <View style={styles.logoContainer}>
+        {/* <View style={styles.logoContainer}>
           <View style={styles.logoPlaceholder}>
             <MaterialCommunityIcons
               name="medical-bag"
@@ -111,25 +114,35 @@ export function UploadReportScreen({navigation}: Props) {
             <Text style={styles.logoTextMain}>Cholbe</Text>
           </View>
           <Text style={styles.logoTextSub}>PHARMACY</Text>
-        </View>
+        </View> */}
+        <Image
+          source={require('../../assets/logoImage.png')}
+          style={styles.iconImage}
+        />
 
         <TouchableOpacity
           style={styles.headerIconButton}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
+          onPress={() => navigation.navigate('Notifications')}
+        >
           <Feather name="bell" size={24} color="#333333" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.titleContainer}>
+      {/* <View style={styles.titleContainer}>
         <Text style={styles.screenTitle}>Upload Report</Text>
-      </View>
+      </View> */}
 
       <View
-        style={[
-          styles.contentCard,
-          {paddingBottom: bottomNavHeight + 88},
-        ]}>
+        style={{ marginTop: -16, justifyContent: 'center', marginBottom: 12 }}
+      >
+        <WaveTitleBand title={'Upload Documents'} color="#F4F1FD" />
+      </View>
+
+
+      <View
+        style={[styles.contentCard, { paddingBottom: bottomNavHeight + 88 }]}
+      >
         <View style={styles.gridContainer}>
           {UPLOAD_OPTIONS.map((opt, index) => {
             const active = selectedOption === opt.key;
@@ -144,10 +157,12 @@ export function UploadReportScreen({navigation}: Props) {
                   isLastInRow && styles.gridCardNoRight,
                 ]}
                 activeOpacity={0.8}
-                onPress={() => setSelectedOption(opt.key)}>
+                onPress={() => setSelectedOption(opt.key)}
+              >
                 {opt.icon()}
                 <Text
-                  style={[styles.cardText, active && styles.activeCardText]}>
+                  style={[styles.cardText, active && styles.activeCardText]}
+                >
                   {opt.label}
                 </Text>
               </TouchableOpacity>
@@ -156,11 +171,12 @@ export function UploadReportScreen({navigation}: Props) {
         </View>
       </View>
 
-      <View style={[styles.footerActionContainer, {bottom: bottomNavHeight}]}>
+      <View style={[styles.footerActionContainer, { bottom: bottomNavHeight }]}>
         <TouchableOpacity
           style={styles.continueButton}
           activeOpacity={0.9}
-          onPress={handleContinue}>
+          onPress={handleContinue}
+        >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
@@ -177,7 +193,7 @@ export function UploadReportScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F9F9FE'},
+  container: { flex: 1, backgroundColor: '#F4F1FD' },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -185,9 +201,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 8,
   },
-  headerIconButton: {padding: 4, width: 32},
-  logoContainer: {alignItems: 'center', justifyContent: 'center'},
-  logoPlaceholder: {flexDirection: 'row', alignItems: 'center'},
+   iconImage: {
+    height: 48,
+    width: 150,
+    resizeMode: 'cover',
+  },
+  headerIconButton: { padding: 4, width: 32 },
+  logoContainer: { alignItems: 'center', justifyContent: 'center' },
+  logoPlaceholder: { flexDirection: 'row', alignItems: 'center' },
   logoTextMain: {
     fontSize: 22,
     fontWeight: '700',
@@ -201,17 +222,17 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginTop: -2,
   },
-  titleContainer: {alignItems: 'center', marginTop: 24, marginBottom: 16},
-  screenTitle: {fontSize: 20, fontWeight: '600', color: '#333333'},
+  titleContainer: { alignItems: 'center', marginTop: 24, marginBottom: 16 },
+  screenTitle: { fontSize: 20, fontWeight: '600', color: '#333333' },
   contentCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F1FD',
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingHorizontal: 20,
     paddingTop: 36,
     shadowColor: '#E0E4F0',
-    shadowOffset: {width: 0, height: -10},
+    shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.4,
     shadowRadius: 15,
     elevation: 4,
@@ -231,7 +252,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     marginRight: 16,
   },
-  gridCardNoRight: {marginRight: 0},
+  gridCardNoRight: { marginRight: 0 },
   activeBorder: {
     borderWidth: 1.5,
     borderColor: '#45A096',
@@ -242,14 +263,14 @@ const styles = StyleSheet.create({
     borderColor: '#E2E6EE',
     borderStyle: 'dashed',
   },
-  activeBackground: {backgroundColor: '#F2FAF9'},
+  activeBackground: { backgroundColor: '#F2FAF9' },
   cardText: {
     fontSize: 16,
     color: '#5A6578',
     fontWeight: '500',
     marginTop: 14,
   },
-  activeCardText: {color: '#3B4859', fontWeight: '600'},
+  activeCardText: { color: '#3B4859', fontWeight: '600' },
   continueButton: {
     backgroundColor: '#418B93',
     width: '100%',
@@ -258,18 +279,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  continueButtonText: {color: '#FFFFFF', fontSize: 18, fontWeight: '600'},
+  continueButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
   footerActionContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F1FD',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: '#F0F2F7',
     zIndex: 20,
-    elevation: 20,
   },
   bottomNavWrap: {
     position: 'absolute',

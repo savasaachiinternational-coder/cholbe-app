@@ -22,6 +22,15 @@ import {navigateCustomerTab} from './customerTabNavigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MedicineList'>;
 
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
 function formatMealTiming(value: string | null) {
   if (!value) return '—';
   const normalized = value.toLowerCase();
@@ -117,6 +126,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#8A94A6',
     fontSize: 14,
+    fontFamily: FONT.regular,
     marginTop: 8,
   },
   rotatedPillIcon: {

@@ -23,6 +23,7 @@ import {appointmentsApi} from '../../api/appointments';
 import {toAppointmentDetail} from '../../api/utils/appointmentHelpers';
 import {ApiError} from '../../api/client';
 import {getStoredUser} from '../../api/tokenStorage';
+import { WaveTitleBand } from '../../components/WaveTitleBand';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ConsultationSummary'>;
 
@@ -144,10 +145,12 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, {paddingBottom: insets.bottom + 110}]}>
-        <View style={styles.successStatusRibbon}>
+        {/* <View style={styles.successStatusRibbon}>
           <Feather name="check-circle" size={18} color="#0D9488" style={styles.successIconMargin} />
           <Text style={styles.successStatusText}>{successMessage}</Text>
-        </View>
+        </View> */}
+
+        <WaveTitleBand title={successMessage} icon = 'check-circle' style={{fontSize: 14, fontWeight: '400', color: '#616161', flex: 1}}/>
 
         <View style={styles.summaryCard}>
           <View style={styles.doctorMetaRow}>
@@ -163,10 +166,10 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
               Status:{' '}
               <Text style={styles.metricValueComplete}>{statusLabel}</Text>
             </Text>
-            <Text style={styles.metricItemText}>
+            {/* <Text style={styles.metricItemText}>
               Type:{' '}
               <Text style={styles.metricValueText}>{consultationType}</Text>
-            </Text>
+            </Text> */}
             <Text style={styles.metricItemText}>
               Date:{' '}
               <Text style={styles.metricValueText}>{dateLabel}</Text>
@@ -190,7 +193,7 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
                 })
               }>
               <Feather name="message-circle" size={18} color="#FFFFFF" style={styles.chatIconMargin} />
-              <Text style={styles.chatDoctorButtonText}>View Chat History</Text>
+              <Text style={styles.chatDoctorButtonText}>Chat With Doctor</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -256,6 +259,13 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
 
         <Text style={styles.footerPolicyNoticeText}>Terms and Cancellation Policy</Text>
       </ScrollView>
+       <TouchableOpacity
+              style={[styles.floatingScanButton, { bottom: insets.bottom + 100 }]}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('AiSymptomHome')}
+            >
+              <Image source={require('../../assets/syaiicon.png')} />
+            </TouchableOpacity>
 
       {!isDoctorViewer ? (
         <View style={styles.bottomNavWrap}>
@@ -271,17 +281,19 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F5F6FA'},
+  container: {flex: 1, backgroundColor: '#F4F3FC'},
   centered: {justifyContent: 'center', alignItems: 'center'},
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent:"center",
+    alignItems: 'flex-start',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F5F6FA',
+    gap:10,
+    backgroundColor: '#F4F3FC',
   },
   backButton: {padding: 4, width: 32},
-  headerTitle: {fontSize: 18, fontWeight: '700', color: '#1E293B', flex: 1, textAlign: 'center'},
+  headerTitle: {fontSize: 18, fontWeight: '600', color: '#424242', flex: 1,},
   headerSpacer: {width: 32},
   scrollContent: {paddingHorizontal: 16},
   successStatusRibbon: {
@@ -299,8 +311,9 @@ const styles = StyleSheet.create({
   successIconMargin: {marginRight: 8},
   successStatusText: {fontSize: 13, fontWeight: '500', color: '#334155', flex: 1},
   summaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    marginTop:24,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -316,19 +329,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
-    paddingBottom: 14,
+    paddingBottom: 12,
   },
   doctorAvatar: {width: 60, height: 60, borderRadius: 30, backgroundColor: '#E2E8F0'},
   doctorInfoTextContainer: {marginLeft: 14},
-  doctorName: {fontSize: 16, fontWeight: '700', color: '#1E293B'},
-  doctorSpecialty: {fontSize: 12, color: '#64748B', fontWeight: '500', marginTop: 2},
+  doctorName: {fontSize: 18, fontWeight: '600', color: '#212121'},
+  doctorSpecialty: {fontSize: 14, color: '#616161', fontWeight: '400', marginTop: 2},
   metricsListBlock: {paddingVertical: 14, gap: 8},
   metricItemText: {fontSize: 13, fontWeight: '500', color: '#64748B'},
   metricValueComplete: {color: '#0D9488', fontWeight: '600'},
   metricValueText: {color: '#1E293B', fontWeight: '700'},
   chatDoctorButton: {
     backgroundColor: '#408E91',
-    borderRadius: 16,
+    borderRadius: 40,
     paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -336,9 +349,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   chatIconMargin: {marginRight: 8},
-  chatDoctorButtonText: {color: '#FFFFFF', fontSize: 14, fontWeight: '600'},
+  chatDoctorButtonText: {color: '#FFFFFF', fontSize: 12, fontWeight: '400'},
   feedbackCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 24,
     padding: 16,
     borderWidth: 1,
@@ -352,24 +365,25 @@ const styles = StyleSheet.create({
   submittedRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8},
   submittedText: {fontSize: 14, color: '#0D9488', fontWeight: '600'},
   submittedComment: {fontSize: 13, color: '#64748B', fontStyle: 'italic', marginTop: 4},
-  feedbackSectionHeading: {fontSize: 15, fontWeight: '600', color: '#475569', marginTop: 4},
+  feedbackSectionHeading: {fontSize: 14, fontWeight: '600', color: '#616161', marginTop: 4},
   ratingStarsRow: {flexDirection: 'row', marginTop: 12, marginBottom: 16},
   starTouch: {marginRight: 6},
   feedbackTextInput: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F5F4FD',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E0E0E0',
     padding: 12,
     fontSize: 14,
     color: '#1E293B',
     height: 100,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   submitFeedbackButton: {
     backgroundColor: '#408E91',
-    borderRadius: 16,
-    paddingVertical: 14,
+    borderRadius: 40,
+    paddingVertical: 12,
+    paddingHorizontal:14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -377,11 +391,27 @@ const styles = StyleSheet.create({
   noApptNote: {fontSize: 11, color: '#EF4444', textAlign: 'center', marginTop: 8},
   footerPolicyNoticeText: {
     fontSize: 12,
-    color: '#94A3B8',
-    fontWeight: '500',
+    color: '#9E9E9E',
+    fontWeight: '400',
     textAlign: 'center',
     marginTop: 32,
     marginBottom: 12,
+  },
+   floatingScanButton: {
+    position: 'absolute',
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#A7F3D0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+    zIndex: 99,
   },
   bottomNavWrap: {position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 10},
 });

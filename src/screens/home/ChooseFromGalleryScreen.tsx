@@ -25,6 +25,15 @@ import {pickedFileFromAsset} from '../../utils/fileAsset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseFromGallery'>;
 
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
 const {width} = Dimensions.get('window');
 const NUM_COLUMNS = 4;
 const GRID_SPACING = 8;
@@ -230,9 +239,10 @@ const styles = StyleSheet.create({
   headerLeftGroup: {flexDirection: 'row', alignItems: 'center'},
   backButton: {marginRight: 6},
   headerTitleText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333333',
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '500',
+    color: '#424242',
   },
   dropdownFilterPill: {
     flexDirection: 'row',
@@ -244,12 +254,14 @@ const styles = StyleSheet.create({
   },
   dropdownFilterText: {
     fontSize: 13,
+    fontFamily: FONT.medium,
     color: '#FFFFFF',
     fontWeight: '500',
   },
   dropdownIcon: {marginLeft: 4},
   helperText: {
     fontSize: 13,
+    fontFamily: FONT.regular,
     color: '#7D8797',
     marginBottom: 12,
     textAlign: 'center',
@@ -287,7 +299,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   selectedOverlayBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 3,
     borderColor: '#45A096',
     borderRadius: 8,
@@ -311,6 +323,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bottomNavWrap: {

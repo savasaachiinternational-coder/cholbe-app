@@ -57,13 +57,9 @@ const DONUT_SIZE = 140;
 const DONUT_HOLE = 82;
 
 function buildStockSegments(overview: InventoryOverview | null): StockSegment[] {
-  if (!overview || overview.totalItems === 0) {
-    return [
-      {color: '#00A884', percent: 1, label: 'In Stock', value: '0 (0%)'},
-    ];
-  }
-
-  const {totalItems, lowStockCount, outOfStock} = overview;
+  const totalItems = overview?.totalItems ?? 0;
+  const lowStockCount = overview?.lowStockCount ?? 0;
+  const outOfStock = overview?.outOfStock ?? 0;
   const inStock = Math.max(0, totalItems - lowStockCount - outOfStock);
   const pct = (n: number) => (totalItems > 0 ? n / totalItems : 0);
   const labelPct = (n: number) => Math.round(pct(n) * 100);
@@ -76,18 +72,18 @@ function buildStockSegments(overview: InventoryOverview | null): StockSegment[] 
       value: `${inStock.toLocaleString()} (${labelPct(inStock)}%)`,
     },
     {
-      color: '#FFC107',
+      color: '#F5C243',
       percent: pct(lowStockCount),
       label: 'Low Stock',
       value: `${lowStockCount.toLocaleString()} (${labelPct(lowStockCount)}%)`,
     },
     {
-      color: '#E26D6D',
+      color: '#EF4136',
       percent: pct(outOfStock),
       label: 'Out of Stock',
       value: `${outOfStock.toLocaleString()} (${labelPct(outOfStock)}%)`,
     },
-  ].filter(s => s.percent > 0);
+  ];
 }
 
 function PieSlice({
@@ -102,31 +98,52 @@ function PieSlice({
   size: number;
 }) {
   const startAngle = startPercent * 360;
-  const sweepAngle = sweepPercent * 360;
+  const sweepAngle = Math.min(Math.max(sweepPercent, 0), 1) * 360;
   const radius = size / 2;
 
+  // The wedge is a semicircle clipped to the right half and pivoted about the
+  // circle centre: at -180deg it sits outside the clip (no colour), at 0deg it
+  // fills the clip (180deg of colour). A full circle would look identical at
+  // every rotation, which is why the sweep has to drive a half-disc.
   const renderHalf = (rotation: number, angle: number) => (
     <View
+      key={`${rotation}-${angle}`}
       style={{
         position: 'absolute',
         width: size,
         height: size,
         transform: [{rotate: `${rotation}deg`}],
       }}>
-      <View style={{width: radius, height: size, overflow: 'hidden', marginLeft: radius}}>
+      <View
+        style={{
+          position: 'absolute',
+          left: radius,
+          width: radius,
+          height: size,
+          overflow: 'hidden',
+        }}>
         <View
           style={{
-            width: size,
+            width: radius,
             height: size,
-            borderRadius: radius,
             backgroundColor: color,
-            marginLeft: -radius,
-            transform: [{rotate: `${angle}deg`}],
+            borderTopRightRadius: radius,
+            borderBottomRightRadius: radius,
+            transform: [
+              {translateX: -radius / 2},
+              {rotate: `${angle - 180}deg`},
+              {translateX: radius / 2},
+            ],
           }}
         />
       </View>
     </View>
   );
+
+  // An empty bucket paints nothing at all.
+  if (sweepAngle <= 0) {
+    return null;
+  }
 
   if (sweepAngle <= 180) {
     return renderHalf(startAngle, sweepAngle);
@@ -142,10 +159,12 @@ function PieSlice({
 
 function StockDonutChart({segments}: {segments: StockSegment[]}) {
   let cumulative = 0;
+  const plotted = segments.reduce((sum, segment) => sum + segment.percent, 0);
 
   return (
     <View style={styles.donutCanvasWrapper}>
       <View style={styles.donutPieLayer}>
+        {plotted <= 0 ? <View style={styles.donutEmptyTrack} /> : null}
         {segments.map(segment => {
           const slice = (
             <PieSlice
@@ -334,7 +353,7 @@ export function AdminInventoryScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F4F3FC',
   },
   scrollContent: {
     paddingTop: 4,
@@ -346,7 +365,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F4F3FC',
   },
   headerTitle: {
     fontSize: 18,
@@ -362,11 +381,11 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fdfcff',
     marginHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: 40,
     paddingHorizontal: 16,
-    height: 48,
+    height: 56,
     borderWidth: 1,
     borderColor: '#ECEFF3',
     marginBottom: 16,
@@ -385,12 +404,12 @@ const styles = StyleSheet.create({
   },
   metricItemBox: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
   },
   metricLabelText: {
     fontSize: 12,
@@ -404,12 +423,13 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   analyticsSectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 12,
     marginHorizontal: 16,
     marginTop: 18,
     padding: 16,
     borderWidth: 1,
+    elevation:1,
     borderColor: '#ECEFF3',
   },
   analyticsHeaderRow: {
@@ -480,15 +500,21 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   legendMainLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#333D47',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#212121',
   },
   legendSubValue: {
-    fontSize: 12,
-    color: '#9AA6B2',
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#616161',
+    fontWeight: '400',
     paddingLeft: 18,
+  },
+  donutEmptyTrack: {
+    width: DONUT_SIZE,
+    height: DONUT_SIZE,
+    borderRadius: DONUT_SIZE / 2,
+    backgroundColor: '#ECEFF3',
   },
   sectionHeaderLineRow: {
     flexDirection: 'row',
@@ -500,8 +526,8 @@ const styles = StyleSheet.create({
   },
   sectionHeadingText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#333D47',
+    fontWeight: '600',
+    color: '#616161',
   },
   viewAllInlineRow: {
     flexDirection: 'row',
@@ -509,8 +535,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   viewAllInlineText: {
-    fontSize: 11,
-    color: '#7E8B97',
+    fontSize: 12,
+    color: '#424242',
   },
   alertsVerticalStack: {
     gap: 10,
@@ -523,13 +549,13 @@ const styles = StyleSheet.create({
   },
   alertCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     marginHorizontal: 16,
     borderRadius: 14,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E6E3EE',
   },
   alertItemImage: {
     width: 50,
@@ -544,19 +570,19 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   alertItemName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#424242',
   },
   alertItemType: {
     fontSize: 11,
-    color: '#7E8B97',
-    fontWeight: '500',
+    color: '#616161',
+    fontWeight: '400',
   },
   stockCountText: {
     fontSize: 12,
-    color: '#4F5E6D',
-    fontWeight: '500',
+    color: '#424242',
+    fontWeight: '600',
   },
   boldStockNum: {
     fontWeight: '700',

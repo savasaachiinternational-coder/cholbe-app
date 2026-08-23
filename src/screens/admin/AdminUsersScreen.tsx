@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -9,20 +9,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../navigation/types';
-import {AdminBottomNav} from './AdminBottomNav';
-import {ADMIN_USER_FILTERS, type AdminUserFilter} from './adminNav';
-import {adminApi} from '../../api/admin';
-import {type PublicUser} from '../../api/auth';
-import {ApiError} from '../../api/client';
-import {NotificationBell} from '../../components/NotificationBell';
-import {AvatarImage} from '../../components/AvatarImage';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../navigation/types';
+import { AdminBottomNav } from './AdminBottomNav';
+import { ADMIN_USER_FILTERS, type AdminUserFilter } from './adminNav';
+import { adminApi } from '../../api/admin';
+import { type PublicUser } from '../../api/auth';
+import { ApiError } from '../../api/client';
+import { NotificationBell } from '../../components/NotificationBell';
+import { AvatarImage } from '../../components/AvatarImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AUsers'>;
 
@@ -31,7 +31,7 @@ type DoctorRow = {
   specialty: string;
   fee: string | number;
   status: string;
-  user: {fullName: string; email: string | null; phone: string | null};
+  user: { fullName: string; email: string | null; phone: string | null };
 };
 
 type SpecialtyRow = {
@@ -44,9 +44,9 @@ type SpecialtyRow = {
 const DOCTOR_FILTERS = ['All', 'PENDING', 'ACTIVE', 'INACTIVE'] as const;
 
 function filterParams(filter: AdminUserFilter) {
-  if (filter === 'Customers') return {role: 'CUSTOMER'};
-  if (filter === 'Vendors') return {role: 'VENDOR'};
-  if (filter === 'Blocked') return {status: 'BLOCKED'};
+  if (filter === 'Customers') return { role: 'CUSTOMER' };
+  if (filter === 'Vendors') return { role: 'VENDOR' };
+  if (filter === 'Blocked') return { status: 'BLOCKED' };
   return undefined;
 }
 
@@ -87,7 +87,14 @@ function UserCard({
 }) {
   return (
     <View style={[styles.userCardRow, isLast && styles.userCardRowLast]}>
-      <AvatarImage uri={item.avatarUrl} style={styles.userAvatar} />
+      <Image
+        source={
+          item.avatarUrl
+            ? { uri: item.avatarUrl }
+            : require('../../assets/profile.png')
+        }
+        style={styles.userAvatar}
+      />
       <View style={styles.metaInfoColumn}>
         <Text style={styles.userNameText}>{item.fullName}</Text>
         <Text style={styles.userEmailText}>{item.email ?? '—'}</Text>
@@ -96,14 +103,25 @@ function UserCard({
           <Text style={styles.userPhoneText}>{item.phone ?? '—'}</Text>
         </View>
         <View style={styles.userActionsRow}>
-          <View style={[styles.statusDot, {backgroundColor: statusBadgeColor(item.status)}]} />
-          <Text style={[styles.statusDotText, {color: statusBadgeColor(item.status)}]}>
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: statusBadgeColor(item.status) },
+            ]}
+          />
+          <Text
+            style={[
+              styles.statusDotText,
+              { color: statusBadgeColor(item.status) },
+            ]}
+          >
             {item.status}
           </Text>
           <TouchableOpacity
             style={styles.actionChip}
             disabled={updating}
-            onPress={onToggleBlock}>
+            onPress={onToggleBlock}
+          >
             <Text style={styles.actionChipText}>
               {item.status === 'BLOCKED' ? 'Unblock' : 'Block'}
             </Text>
@@ -111,7 +129,8 @@ function UserCard({
           <TouchableOpacity
             style={[styles.actionChip, styles.dangerChip]}
             disabled={updating}
-            onPress={onDelete}>
+            onPress={onDelete}
+          >
             <Feather name="trash-2" size={12} color="#DC2626" />
           </TouchableOpacity>
         </View>
@@ -121,7 +140,7 @@ function UserCard({
   );
 }
 
-export function AdminUsersScreen({navigation, route}: Props) {
+export function AdminUsersScreen({ navigation, route }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<AdminUserFilter>(
@@ -160,7 +179,8 @@ export function AdminUsersScreen({navigation, route}: Props) {
       const data = await adminApi.users(params?.role, params?.status);
       setUsers(data as PublicUser[]);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not load users';
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load users';
       Alert.alert('Users', message);
     } finally {
       setLoading(false);
@@ -175,7 +195,10 @@ export function AdminUsersScreen({navigation, route}: Props) {
       );
       setDoctors(data as DoctorRow[]);
     } catch (err) {
-      Alert.alert('Doctors', err instanceof ApiError ? err.message : 'Could not load doctors');
+      Alert.alert(
+        'Doctors',
+        err instanceof ApiError ? err.message : 'Could not load doctors',
+      );
     } finally {
       setLoading(false);
     }
@@ -187,7 +210,10 @@ export function AdminUsersScreen({navigation, route}: Props) {
       const data = await adminApi.specialties();
       setSpecialties(data);
     } catch (err) {
-      Alert.alert('Specialties', err instanceof ApiError ? err.message : 'Could not load specialties');
+      Alert.alert(
+        'Specialties',
+        err instanceof ApiError ? err.message : 'Could not load specialties',
+      );
     } finally {
       setLoading(false);
     }
@@ -249,7 +275,12 @@ export function AdminUsersScreen({navigation, route}: Props) {
         await adminApi.updateUserStatus(user.id, nextStatus);
         await loadUsers();
       } catch (err) {
-        Alert.alert('Error', err instanceof ApiError ? err.message : 'Could not update user status');
+        Alert.alert(
+          'Error',
+          err instanceof ApiError
+            ? err.message
+            : 'Could not update user status',
+        );
       } finally {
         setUpdatingUserId(null);
       }
@@ -260,7 +291,7 @@ export function AdminUsersScreen({navigation, route}: Props) {
   const handleDeleteUser = useCallback(
     (user: PublicUser) => {
       Alert.alert('Delete User', `Remove "${user.fullName}" permanently?`, [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
@@ -270,7 +301,10 @@ export function AdminUsersScreen({navigation, route}: Props) {
               await adminApi.deleteUser(user.id);
               await loadUsers();
             } catch (err) {
-              Alert.alert('Error', err instanceof ApiError ? err.message : 'Could not delete user');
+              Alert.alert(
+                'Error',
+                err instanceof ApiError ? err.message : 'Could not delete user',
+              );
             } finally {
               setUpdatingUserId(null);
             }
@@ -309,22 +343,28 @@ export function AdminUsersScreen({navigation, route}: Props) {
       loadDoctors();
       Alert.alert('Doctors', 'Doctor added successfully.');
     } catch (err) {
-      Alert.alert('Doctors', err instanceof ApiError ? err.message : 'Create failed');
+      Alert.alert(
+        'Doctors',
+        err instanceof ApiError ? err.message : 'Create failed',
+      );
     }
   };
 
   const setDoctorStatus = async (id: string, status: string) => {
     try {
-      await adminApi.updateDoctor(id, {status});
+      await adminApi.updateDoctor(id, { status });
       loadDoctors();
     } catch (err) {
-      Alert.alert('Doctors', err instanceof ApiError ? err.message : 'Update failed');
+      Alert.alert(
+        'Doctors',
+        err instanceof ApiError ? err.message : 'Update failed',
+      );
     }
   };
 
   const removeDoctor = async (id: string) => {
     Alert.alert('Delete doctor', 'Remove this doctor permanently?', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
@@ -333,7 +373,10 @@ export function AdminUsersScreen({navigation, route}: Props) {
             await adminApi.deleteDoctor(id);
             loadDoctors();
           } catch (err) {
-            Alert.alert('Doctors', err instanceof ApiError ? err.message : 'Delete failed');
+            Alert.alert(
+              'Doctors',
+              err instanceof ApiError ? err.message : 'Delete failed',
+            );
           }
         },
       },
@@ -343,20 +386,26 @@ export function AdminUsersScreen({navigation, route}: Props) {
   const createSpecialty = async () => {
     if (!newSpecialtyName.trim()) return;
     try {
-      await adminApi.createSpecialty({name: newSpecialtyName.trim()});
+      await adminApi.createSpecialty({ name: newSpecialtyName.trim() });
       setNewSpecialtyName('');
       loadSpecialties();
     } catch (err) {
-      Alert.alert('Specialties', err instanceof ApiError ? err.message : 'Create failed');
+      Alert.alert(
+        'Specialties',
+        err instanceof ApiError ? err.message : 'Create failed',
+      );
     }
   };
 
   const toggleSpecialty = async (item: SpecialtyRow) => {
     try {
-      await adminApi.updateSpecialty(item.id, {isActive: !item.isActive});
+      await adminApi.updateSpecialty(item.id, { isActive: !item.isActive });
       loadSpecialties();
     } catch (err) {
-      Alert.alert('Specialties', err instanceof ApiError ? err.message : 'Update failed');
+      Alert.alert(
+        'Specialties',
+        err instanceof ApiError ? err.message : 'Update failed',
+      );
     }
   };
 
@@ -365,17 +414,21 @@ export function AdminUsersScreen({navigation, route}: Props) {
       await adminApi.deleteSpecialty(id);
       loadSpecialties();
     } catch (err) {
-      Alert.alert('Specialties', err instanceof ApiError ? err.message : 'Delete failed');
+      Alert.alert(
+        'Specialties',
+        err instanceof ApiError ? err.message : 'Delete failed',
+      );
     }
   };
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.headerButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
+          onPress={() => navigation.goBack()}
+        >
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{screenTitle(activeFilter)}</Text>
@@ -389,8 +442,9 @@ export function AdminUsersScreen({navigation, route}: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          {paddingBottom: 85 + insets.bottom},
-        ]}>
+          { paddingBottom: 85 + insets.bottom },
+        ]}
+      >
         <View style={styles.searchContainer}>
           <Feather name="search" size={20} color="#9AA6B2" />
           <TextInput
@@ -401,8 +455,15 @@ export function AdminUsersScreen({navigation, route}: Props) {
             onChangeText={setSearch}
           />
           {activeFilter === 'Doctors' ? (
-            <TouchableOpacity activeOpacity={0.7} onPress={() => setShowAddDoctor(v => !v)}>
-              <Feather name={showAddDoctor ? 'minus-circle' : 'plus-circle'} size={22} color="#4E929D" />
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setShowAddDoctor(v => !v)}
+            >
+              <Feather
+                name={showAddDoctor ? 'minus-circle' : 'plus-circle'}
+                size={22}
+                color="#4E929D"
+              />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity activeOpacity={0.7}>
@@ -414,20 +475,30 @@ export function AdminUsersScreen({navigation, route}: Props) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersContent}>
+          contentContainerStyle={styles.filtersContent}
+        >
           {ADMIN_USER_FILTERS.map(filterItem => {
             const isFilterActive = activeFilter === filterItem;
             return (
               <TouchableOpacity
                 key={filterItem}
-                style={[styles.chipItem, isFilterActive && styles.chipItemActive]}
+                style={[
+                  styles.chipItem,
+                  isFilterActive && styles.chipItemActive,
+                ]}
                 activeOpacity={0.8}
                 onPress={() => {
                   setActiveFilter(filterItem);
                   setSearch('');
                   if (filterItem === 'Doctors') setShowAddDoctor(true);
-                }}>
-                <Text style={[styles.chipItemText, isFilterActive && styles.chipItemActiveText]}>
+                }}
+              >
+                <Text
+                  style={[
+                    styles.chipItemText,
+                    isFilterActive && styles.chipItemActiveText,
+                  ]}
+                >
                   {filterItem}
                 </Text>
               </TouchableOpacity>
@@ -474,7 +545,10 @@ export function AdminUsersScreen({navigation, route}: Props) {
                   onChangeText={setFee}
                   keyboardType="numeric"
                 />
-                <TouchableOpacity style={styles.primaryBtn} onPress={createDoctor}>
+                <TouchableOpacity
+                  style={styles.primaryBtn}
+                  onPress={createDoctor}
+                >
                   <Text style={styles.primaryBtnText}>Create Doctor</Text>
                 </TouchableOpacity>
               </View>
@@ -483,17 +557,23 @@ export function AdminUsersScreen({navigation, route}: Props) {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.subFiltersContent}>
+              contentContainerStyle={styles.subFiltersContent}
+            >
               {DOCTOR_FILTERS.map(f => (
                 <TouchableOpacity
                   key={f}
-                  style={[styles.chipItem, doctorStatusFilter === f && styles.chipItemActive]}
-                  onPress={() => setDoctorStatusFilter(f)}>
+                  style={[
+                    styles.chipItem,
+                    doctorStatusFilter === f && styles.chipItemActive,
+                  ]}
+                  onPress={() => setDoctorStatusFilter(f)}
+                >
                   <Text
                     style={[
                       styles.chipItemText,
                       doctorStatusFilter === f && styles.chipItemActiveText,
-                    ]}>
+                    ]}
+                  >
                     {f}
                   </Text>
                 </TouchableOpacity>
@@ -512,43 +592,57 @@ export function AdminUsersScreen({navigation, route}: Props) {
                     activeOpacity={0.85}
                     style={[
                       styles.doctorCardRow,
-                      index === filteredDoctors.length - 1 && styles.userCardRowLast,
+                      index === filteredDoctors.length - 1 &&
+                        styles.userCardRowLast,
                     ]}
                     onPress={() =>
-                      navigation.navigate('ADoctorEdit', {doctorId: doctor.id})
-                    }>
+                      navigation.navigate('ADoctorEdit', {
+                        doctorId: doctor.id,
+                      })
+                    }
+                  >
                     <View style={styles.doctorMeta}>
-                      <Text style={styles.userNameText}>{doctor.user.fullName}</Text>
+                      <Text style={styles.userNameText}>
+                        {doctor.user.fullName}
+                      </Text>
                       <Text style={styles.userEmailText}>
                         {doctor.specialty} • ৳{doctor.fee} • {doctor.status}
                       </Text>
-                      <Text style={styles.userPhoneText}>{doctor.user.email ?? '—'}</Text>
+                      <Text style={styles.userPhoneText}>
+                        {doctor.user.email ?? '—'}
+                      </Text>
                     </View>
                     <View style={styles.doctorActions}>
                       <TouchableOpacity
                         style={styles.actionChip}
                         onPress={() =>
-                          navigation.navigate('ADoctorEdit', {doctorId: doctor.id})
-                        }>
+                          navigation.navigate('ADoctorEdit', {
+                            doctorId: doctor.id,
+                          })
+                        }
+                      >
                         <Feather name="edit-2" size={14} color="#4E929D" />
                         <Text style={styles.actionChipText}>Edit</Text>
                       </TouchableOpacity>
                       {doctor.status !== 'ACTIVE' ? (
                         <TouchableOpacity
                           style={styles.actionChip}
-                          onPress={() => setDoctorStatus(doctor.id, 'ACTIVE')}>
+                          onPress={() => setDoctorStatus(doctor.id, 'ACTIVE')}
+                        >
                           <Text style={styles.actionChipText}>Activate</Text>
                         </TouchableOpacity>
                       ) : (
                         <TouchableOpacity
                           style={styles.actionChip}
-                          onPress={() => setDoctorStatus(doctor.id, 'INACTIVE')}>
+                          onPress={() => setDoctorStatus(doctor.id, 'INACTIVE')}
+                        >
                           <Text style={styles.actionChipText}>Deactivate</Text>
                         </TouchableOpacity>
                       )}
                       <TouchableOpacity
                         style={[styles.actionChip, styles.dangerChip]}
-                        onPress={() => removeDoctor(doctor.id)}>
+                        onPress={() => removeDoctor(doctor.id)}
+                      >
                         <Feather name="trash-2" size={14} color="#DC2626" />
                       </TouchableOpacity>
                     </View>
@@ -566,7 +660,10 @@ export function AdminUsersScreen({navigation, route}: Props) {
                 value={newSpecialtyName}
                 onChangeText={setNewSpecialtyName}
               />
-              <TouchableOpacity style={styles.primaryBtnInline} onPress={createSpecialty}>
+              <TouchableOpacity
+                style={styles.primaryBtnInline}
+                onPress={createSpecialty}
+              >
                 <Text style={styles.primaryBtnText}>Add</Text>
               </TouchableOpacity>
             </View>
@@ -581,20 +678,26 @@ export function AdminUsersScreen({navigation, route}: Props) {
                     key={item.id}
                     style={[
                       styles.specialtyRow,
-                      index === filteredSpecialties.length - 1 && styles.userCardRowLast,
-                    ]}>
-                    <View style={{flex: 1}}>
+                      index === filteredSpecialties.length - 1 &&
+                        styles.userCardRowLast,
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
                       <Text style={styles.userNameText}>{item.name}</Text>
                       <Text style={styles.userEmailText}>{item.slug}</Text>
                     </View>
-                    <TouchableOpacity style={styles.actionChip} onPress={() => toggleSpecialty(item)}>
+                    <TouchableOpacity
+                      style={styles.actionChip}
+                      onPress={() => toggleSpecialty(item)}
+                    >
                       <Text style={styles.actionChipText}>
                         {item.isActive ? 'Active' : 'Inactive'}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionChip, styles.dangerChip]}
-                      onPress={() => removeSpecialty(item.id)}>
+                      onPress={() => removeSpecialty(item.id)}
+                    >
                       <Feather name="trash-2" size={14} color="#DC2626" />
                     </TouchableOpacity>
                   </View>
@@ -624,7 +727,11 @@ export function AdminUsersScreen({navigation, route}: Props) {
         )}
       </ScrollView>
 
-      <AdminBottomNav activeTab="user" bottomInset={insets.bottom} navigation={navigation} />
+      <AdminBottomNav
+        activeTab="user"
+        bottomInset={insets.bottom}
+        navigation={navigation}
+      />
     </View>
   );
 }
@@ -632,7 +739,7 @@ export function AdminUsersScreen({navigation, route}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F3F0FC',
   },
   scrollContent: {
     paddingTop: 4,
@@ -643,12 +750,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F3F0FC',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontWeight: '600',
+    color: '#424242',
     flex: 1,
     marginLeft: 12,
   },
@@ -659,11 +766,11 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 24,
+    borderRadius: 40,
     paddingHorizontal: 16,
-    height: 48,
+    height: 56,
     borderWidth: 1,
     borderColor: '#ECEFF3',
     gap: 8,
@@ -688,29 +795,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 18,
-    backgroundColor: '#F0F3F6',
+    backgroundColor: '#F2F1FA',
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 1,
   },
   chipItemActive: {
     backgroundColor: '#4E929D',
   },
   chipItemText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#7E8B97',
+    fontSize: 10,
+    fontWeight: '400',
+    color: '#424242',
   },
   chipItemActiveText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: '#FFF',
+    fontWeight: '400',
   },
   directoryContainerCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     borderRadius: 14,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E6E3EE',
     paddingTop: 8,
     paddingBottom: 4,
     minHeight: 120,
@@ -769,7 +877,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
   },
-  loader: {marginVertical: 32},
+  loader: { marginVertical: 32 },
   emptyText: {
     textAlign: 'center',
     color: '#9AA6B2',
@@ -782,7 +890,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E0E0E0',
     position: 'relative',
     minHeight: 88,
   },
@@ -790,7 +898,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E0E0E0',
   },
   specialtyRow: {
     flexDirection: 'row',
@@ -798,7 +906,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E0E0E0',
     gap: 8,
   },
   userCardRowLast: {

@@ -3,6 +3,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,14 +13,36 @@ import {
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
+import LinearGradient from 'react-native-linear-gradient';
 import Feather from 'react-native-vector-icons/Feather';
 import {
   FREQUENCY_OPTIONS,
   INVENTORY_OPTIONS,
   REMINDER_MINUTE_OPTIONS,
+  STRENGTH_OPTIONS,
   formatDisplayDate,
   type MedicationFrequency,
+  type MedicationStrength,
 } from '../utils/medicationDraft';
+
+// Teal fill for selected chips/cells. Uses react-native-linear-gradient rather
+// than the experimental_backgroundImage style prop, which crashes Android at
+// draw time. The solid colour sits underneath as a first-frame fallback.
+const ACTIVE_GRADIENT = ['#5FA9A8', '#3E8E8E'];
+const ACTIVE_SOLID = '#45A096';
+
+// Fills its parent. The parent needs overflow:'hidden' (or a matching radius
+// here) to clip the corners.
+function ActiveFill({radius}: {radius?: number}) {
+  return (
+    <LinearGradient
+      colors={ACTIVE_GRADIENT}
+      start={{x: 0, y: 0}}
+      end={{x: 1, y: 0}}
+      style={[StyleSheet.absoluteFill, radius ? {borderRadius: radius} : null]}
+    />
+  );
+}
 
 function parseIsoDate(iso: string) {
   if (!iso) return new Date();
@@ -352,55 +375,202 @@ export function FrequencyPicker({value, onChange}: FrequencyPickerProps) {
   );
 }
 
+type StrengthPickerProps = {
+  value: string;
+  onChange: (value: MedicationStrength) => void;
+  placeholder?: string;
+  /** Overrides the trigger box — padding, height, margins, radius. */
+  style?: object;
+};
+
+export function StrengthPicker({
+  value,
+  onChange,
+  placeholder = 'Select strength',
+  style,
+}: StrengthPickerProps) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <>
+      <TouchableOpacity
+        style={[styles.dropdownTrigger, style]}
+        activeOpacity={0.8}
+        onPress={() => setVisible(true)}>
+        <Text style={[styles.dropdownValue, !value && styles.datePlaceholderText]}>
+          {value || placeholder}
+        </Text>
+        <Feather name="chevron-down" size={20} color="#7D8797" />
+      </TouchableOpacity>
+
+      <Modal visible={visible} transparent animationType="fade">
+        <Pressable style={styles.modalBackdrop} onPress={() => setVisible(false)} />
+        <View style={styles.optionSheet}>
+          {/* Scrolls because the strength list is long enough to run off-screen,
+              unlike the 6-row frequency/inventory sheets. */}
+          <ScrollView
+            style={styles.optionSheetScroll}
+            showsVerticalScrollIndicator={false}>
+            {STRENGTH_OPTIONS.map(option => (
+              <TouchableOpacity
+                key={option}
+                style={styles.optionRow}
+                onPress={() => {
+                  onChange(option);
+                  setVisible(false);
+                }}>
+                <Text
+                  style={[
+                    styles.optionText,
+                    option === value && styles.optionTextActive,
+                  ]}>
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
 type MinuteChipRowProps = {
   value: number;
   onChange: (minutes: number) => void;
   allowCustom?: boolean;
+  /** Which presets to offer. Defaults to all of REMINDER_MINUTE_OPTIONS. */
+  options?: {value: number; label: string}[];
+  // 'stacked'   — pills on one row, full-width Custom bar beneath.
+  // 'inline'    — pills and Custom all sharing a single row.
+  // 'segmented' — one connected bar of cells, Custom as the last cell.
+  variant?: 'stacked' | 'inline' | 'segmented';
 };
 
-export function MinuteChipRow({value, onChange, allowCustom}: MinuteChipRowProps) {
+export function MinuteChipRow({
+  value,
+  onChange,
+  allowCustom,
+  options,
+  variant = 'stacked',
+}: MinuteChipRowProps) {
   const [customVisible, setCustomVisible] = useState(false);
   const [customValue, setCustomValue] = useState(String(value));
 
-  const isPreset = REMINDER_MINUTE_OPTIONS.some(option => option.value === value);
+  const presets = options ?? REMINDER_MINUTE_OPTIONS;
+  const isPreset = presets.some(option => option.value === value);
+
+  const openCustom = () => {
+    setCustomValue(String(value));
+    setCustomVisible(true);
+  };
 
   return (
     <View style={styles.chipsSectionWrap}>
-      <View style={styles.chipsRowWithCustom}>
-        {REMINDER_MINUTE_OPTIONS.map(option => (
-          <TouchableOpacity
-            key={option.value}
-            style={[
-              styles.chipButton,
-              value === option.value && styles.chipButtonActive,
-            ]}
-            onPress={() => onChange(option.value)}>
-            <Text
+      {variant === 'segmented' ? (
+        // One connected bar: hairline dividers between cells, Custom as the last
+        // cell. The bar's overflow clips the active fill into the rounded ends.
+        <View style={styles.minuteSegmentBar}>
+          {presets.map((option, index) => {
+            const active = value === option.value;
+            const prevActive =
+              index > 0 && value === presets[index - 1].value;
+            return (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.minuteSegmentCell,
+                  index > 0 && !active && !prevActive && styles.minuteSegmentDivider,
+                ]}
+                activeOpacity={0.85}
+                onPress={() => onChange(option.value)}>
+                {active ? <ActiveFill /> : null}
+                <Text
+                  style={[
+                    styles.minuteSegmentText,
+                    active && styles.chipButtonTextActive,
+                  ]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          {allowCustom ? (
+            <TouchableOpacity
               style={[
-                styles.chipButtonText,
-                value === option.value && styles.chipButtonTextActive,
-              ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-        {allowCustom ? (
-          <TouchableOpacity
-            style={[styles.inlineCustomButton, !isPreset && styles.chipButtonActive]}
-            onPress={() => {
-              setCustomValue(String(value));
-              setCustomVisible(true);
-            }}>
-            <Text
-              style={[
-                styles.inlineCustomButtonText,
-                !isPreset && styles.chipButtonTextActive,
-              ]}>
-              Custom
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
+                styles.minuteSegmentCell,
+                isPreset && styles.minuteSegmentDivider,
+              ]}
+              activeOpacity={0.85}
+              onPress={openCustom}>
+              {!isPreset ? <ActiveFill /> : null}
+              <Text
+                style={[
+                  styles.minuteSegmentText,
+                  !isPreset && styles.chipButtonTextActive,
+                ]}>
+                Custom
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ) : (
+        // Pills sharing the row. 'inline' puts Custom in that same row as an
+        // equal-width pill; 'stacked' drops it below as a full-width bar.
+        <>
+          <View style={styles.chipsRowWithCustom}>
+            {presets.map(option => {
+              const active = value === option.value;
+              return (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[styles.chipButton, active && styles.chipButtonActiveShape]}
+                  activeOpacity={0.85}
+                  onPress={() => onChange(option.value)}>
+                  {active ? <ActiveFill radius={20} /> : null}
+                  <Text
+                    style={[
+                      styles.chipButtonText,
+                      active && styles.chipButtonTextActive,
+                    ]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+
+            {allowCustom && variant === 'inline' ? (
+              <TouchableOpacity
+                style={[
+                  styles.chipButton,
+                  styles.chipButtonLast,
+                  !isPreset && styles.chipButtonActiveShape,
+                ]}
+                activeOpacity={0.85}
+                onPress={openCustom}>
+                {!isPreset ? <ActiveFill radius={20} /> : null}
+                <Text
+                  style={[
+                    styles.chipButtonText,
+                    !isPreset && styles.chipButtonTextActive,
+                  ]}>
+                  Custom
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          {allowCustom && variant !== 'inline' ? (
+            <TouchableOpacity
+              style={styles.customWideButton}
+              activeOpacity={0.9}
+              onPress={openCustom}>
+              <ActiveFill radius={20} />
+              <Text style={styles.customWideButtonText}>Custom</Text>
+            </TouchableOpacity>
+          ) : null}
+        </>
+      )}
 
       <Modal visible={customVisible} transparent animationType="fade">
         <Pressable style={styles.modalBackdrop} onPress={() => setCustomVisible(false)} />
@@ -519,10 +689,11 @@ const styles = StyleSheet.create({
   timeIcon: {marginRight: 10},
   timeText: {fontSize: 15, color: '#333333', fontWeight: '500'},
   dropdownTrigger: {
+    flex:1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F2FE',
     borderRadius: 12,
     height: 50,
     paddingHorizontal: 16,
@@ -533,7 +704,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 12,
     height: 44,
     paddingHorizontal: 12,
@@ -562,6 +733,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 8,
   },
+  optionSheetScroll: {maxHeight: 320},
   modalTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -585,19 +757,64 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
+  // 'stacked' variant — pills share the row evenly, Custom bar sits below.
   chipButton: {
-    backgroundColor: '#EEF1F6',
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    flex: 1,
+    // Only shows while unselected — the active state covers it with ActiveFill.
+    backgroundColor: '#F5F4FD',
+    borderWidth: 1,
+    borderColor: '#E6E9F0',
+    borderRadius: 20,
+    paddingHorizontal: 6,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 8,
-    marginBottom: 8,
+    // iOS equivalent of elevation 1. No overflow:'hidden' here — on Android it
+    // can suppress the elevation shadow, and ActiveFill carries its own radius,
+    // so clipping is not needed to round the selected fill.
+    shadowColor: '#000000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 1.5,
+    elevation: 1,
   },
-  chipButtonActive: {backgroundColor: '#45A096'},
-  chipButtonText: {fontSize: 13, color: '#5A6578', fontWeight: '500'},
-  chipButtonTextActive: {color: '#FFFFFF'},
+  // chipButton carries marginRight for spacing; the row's last pill drops it.
+  chipButtonLast: {marginRight: 0},
+  chipButtonActive: {backgroundColor: ACTIVE_SOLID},
+  chipButtonActiveShape: {borderColor: 'transparent'},
+  chipButtonText: {fontSize: 12, color: '#5A6578', fontWeight: '500'},
+  chipButtonTextActive: {color: '#FFFFFF', fontWeight: '600'},
+  customWideButton: {
+    height: 38,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    overflow: 'hidden',
+    backgroundColor: ACTIVE_SOLID,
+  },
+  customWideButtonText: {fontSize: 14, color: '#FFFFFF', fontWeight: '600'},
+  // 'segmented' variant — one connected bar, Custom as the last cell.
+  minuteSegmentBar: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E6E9F0',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  minuteSegmentCell: {
+    flex: 1,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  minuteSegmentDivider: {borderLeftWidth: 1, borderLeftColor: '#E6E9F0'},
+  minuteSegmentText: {fontSize: 11, color: '#5A6578', fontWeight: '500'},
   inlineCustomButton: {
-    backgroundColor: '#45A096',
+    backgroundColor: ACTIVE_SOLID,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 8,

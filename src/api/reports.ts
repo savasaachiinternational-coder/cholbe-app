@@ -26,7 +26,11 @@ export const reportsApi = {
     mimeType?: string;
     tip?: string;
   }) {
-    return apiRequest('/reports', {method: 'POST', auth: true, body: payload});
+    return apiRequest<HealthReport>('/reports', {
+      method: 'POST',
+      auth: true,
+      body: payload,
+    });
   },
 
   list() {

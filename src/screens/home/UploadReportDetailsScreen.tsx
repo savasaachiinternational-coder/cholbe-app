@@ -25,6 +25,15 @@ import {DatePickerField} from '../../components/MedicationPickers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UploadReportDetails'>;
 
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
 const {width} = Dimensions.get('window');
 
 const REPORT_TYPES: {label: string; value: ReportType}[] = [
@@ -130,10 +139,9 @@ export function UploadReportDetailsScreen({navigation, route}: Props) {
           style={styles.backButton}
           activeOpacity={0.7}
           onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={28} color="#333333" />
+          <Feather name="chevron-left" size={20} color="#333333" />
         </TouchableOpacity>
         <Text style={styles.headerTitleText}>Review Details</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.titleContainer}>
@@ -311,34 +319,35 @@ export function UploadReportDetailsScreen({navigation, route}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9FE',
+    backgroundColor: '#F5F2FE',
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap:10,
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#F9F9FE',
+    marginBottom:24,
+    backgroundColor: '#F5F2FE',
   },
   backButton: {
     padding: 2,
   },
   headerTitleText: {
-    fontSize: 20,
+    fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#333333',
+    color: '#424242',
   },
-  headerSpacer: {width: 28},
+  headerSpacer: {width: 24},
   titleContainer: {
     alignItems: 'center',
-    marginTop: 12,
     marginBottom: 12,
   },
   screenTitle: {
-    fontSize: 20,
+    fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#333333',
+    color: '#424242',
   },
   scrollCanvasContent: {
     paddingHorizontal: 20,
@@ -346,7 +355,7 @@ const styles = StyleSheet.create({
     paddingBottom: 160,
   },
   mainFormCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 30,
     padding: 16,
     shadowColor: '#E0E4F0',
@@ -359,11 +368,11 @@ const styles = StyleSheet.create({
   },
   uploadBoxBorder: {
     width: '100%',
-    height: 130,
+    height: 190,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FCFCFE',
+    backgroundColor: '#F5F4FD',
     borderWidth: 1.5,
     borderColor: '#45A096',
     borderStyle: 'dashed',
@@ -382,6 +391,7 @@ const styles = StyleSheet.create({
   uploadTitleText: {
     fontSize: 14,
     color: '#7D8797',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginBottom: 2,
     marginTop: 8,
@@ -395,33 +405,36 @@ const styles = StyleSheet.create({
   browseHereText: {
     fontSize: 16,
     color: '#45A096',
+    fontFamily: FONT.bold,
     fontWeight: '700',
   },
   inputGroup: {
     marginBottom: 14,
   },
   inputLabel: {
-    fontSize: 13,
-    color: '#8A94A6',
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#616161',
+    fontFamily: FONT.medium,
+    fontWeight: '400',
     marginBottom: 6,
     paddingLeft: 2,
   },
   textInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F2F7',
+    backgroundColor: '#F5F4FD',
     borderRadius: 12,
-    height: 46,
+    height: 40,
     paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: '#E6E9F0',
   },
   textInput: {
     flex: 1,
-    fontSize: 14,
-    color: '#495057',
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#616161',
+    fontFamily: FONT.medium,
+    fontWeight: '400',
     padding: 0,
   },
   searchIcon: {
@@ -431,24 +444,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F1F2F7',
+    backgroundColor: '#F5F4FD',
     borderRadius: 12,
-    height: 46,
+    height: 40,
     paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: '#E6E9F0',
   },
   dropdownValue: {
-    fontSize: 14,
-    color: '#495057',
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#616161',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   dateSelectorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F1F2F7',
-    height: 46,
+    backgroundColor: '#F5F4FD',
+    height: 42,
     borderRadius: 12,
     paddingHorizontal: 14,
     borderWidth: 1,
@@ -457,6 +471,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 14,
     color: '#495057',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   tipCardContainer: {
@@ -475,21 +490,24 @@ const styles = StyleSheet.create({
   },
   tipIcon: {marginRight: 8},
   tipTitleText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#333333',
+    fontSize: 12,
+    fontFamily: FONT.bold,
+    fontWeight: '600',
+    color: '#616161',
   },
   tipBodyText: {
-    fontSize: 13,
-    color: '#5A6578',
-    lineHeight: 18,
+    fontSize: 12,
+    color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   tipInput: {
-    fontSize: 13,
-    color: '#5A6578',
+    fontSize: 12,
+    color: '#616161',
+    fontFamily: FONT.regular,
     lineHeight: 18,
     minHeight: 56,
+    fontWeight: '400',
     textAlignVertical: 'top',
     padding: 0,
   },
@@ -506,22 +524,23 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#EBEFF5',
-    height: 52,
-    borderRadius: 26,
+    backgroundColor: '#E6E3EE',
+    height: 44,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#5A6E85',
+    color: '#4DA69F',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   uploadButton: {
     flex: 1.4,
-    backgroundColor: '#45A096',
-    height: 52,
-    borderRadius: 26,
+    backgroundColor: '#4DA69F',
+    height: 44,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#45A096',
@@ -531,8 +550,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   uploadButtonText: {
-    color: '#FFFFFF',
+    color: '#FFF',
     fontSize: 16,
+    fontFamily: FONT.regular,
     fontWeight: '600',
   },
   buttonDisabled: {
@@ -546,6 +566,7 @@ const styles = StyleSheet.create({
   },
   typeOptionText: {
     fontSize: 14,
+    fontFamily: FONT.regular,
     color: '#333D47',
   },
   dateInput: {
@@ -574,10 +595,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {
     color: '#45A096',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

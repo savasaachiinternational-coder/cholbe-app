@@ -41,9 +41,11 @@ import {AddEmergencyContactModal} from '../../components/AddEmergencyContactModa
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - 44) / 2;
 const SUMMARY_CARD_GAP = 12;
-const SUMMARY_CARD_WIDTH = SCREEN_WIDTH * 0.78;
+const SUMMARY_CARD_WIDTH = SCREEN_WIDTH * 0.42;
 const SUMMARY_SNAP_INTERVAL = SUMMARY_CARD_WIDTH + SUMMARY_CARD_GAP;
 const SUB_TAB_SCROLL_STEP = 160;
+// Single source for the page tint so the header, sub-tab bar and body stay aligned.
+const PAGE_BG = '#F4F1FD';
 
 type SummaryCarouselItem =
   | {id: 'conditions'; type: 'conditions'}
@@ -54,6 +56,15 @@ type Props = NativeStackScreenProps<RootStackParamList, 'MyProfile'>;
 
 const PROFILE_AVATAR = require('../../assets/b1.png');
 const DOCTOR_AVATAR = require('../../assets/b2.png');
+
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
 
 export function MyProfileScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
@@ -336,8 +347,8 @@ export function MyProfileScreen({navigation}: Props) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.profileSubTabsWrap}>
-        {subTabsOverflow ? (
+      <View >
+        {/* {subTabsOverflow ? (
           <TouchableOpacity
             style={[
               styles.subTabArrowButton,
@@ -352,9 +363,9 @@ export function MyProfileScreen({navigation}: Props) {
               color={canScrollSubTabsLeft ? '#475569' : '#CBD5E1'}
             />
           </TouchableOpacity>
-        ) : null}
+        ) : null} */}
 
-        <View style={styles.profileSubTabsScrollWrap}>
+        {/* <View style={styles.profileSubTabsScrollWrap}>
           <ScrollView
             ref={subTabsScrollRef}
             horizontal
@@ -393,9 +404,9 @@ export function MyProfileScreen({navigation}: Props) {
               );
             })}
           </ScrollView>
-        </View>
+        </View> */}
 
-        {subTabsOverflow ? (
+        {/* {subTabsOverflow ? (
           <TouchableOpacity
             style={[
               styles.subTabArrowButton,
@@ -410,7 +421,7 @@ export function MyProfileScreen({navigation}: Props) {
               color={canScrollSubTabsRight ? '#475569' : '#CBD5E1'}
             />
           </TouchableOpacity>
-        ) : null}
+        ) : null} */}
       </View>
 
       <ScrollView
@@ -436,9 +447,18 @@ export function MyProfileScreen({navigation}: Props) {
               </Text>
             ) : null}
             <Text style={styles.userDemographicsText}>{demographics}</Text>
-            <Text style={styles.userMetaRow}>📍 {location}</Text>
-            <Text style={styles.userMetaRow}>📞 {user?.phone ?? '—'}</Text>
-            <Text style={styles.userMetaRow}>✉️ {user?.email ?? '—'}</Text>
+            <View style={styles.userMetaLine}>
+              <Feather name="map-pin" size={11} color="#408E91" />
+              <Text style={styles.userMetaRow}>{location}</Text>
+            </View>
+            <View style={styles.userMetaLine}>
+              <Feather name="phone" size={11} color="#408E91" />
+              <Text style={styles.userMetaRow}>{user?.phone ?? '—'}</Text>
+            </View>
+            <View style={styles.userMetaLine}>
+              <Feather name="mail" size={11} color="#408E91" />
+              <Text style={styles.userMetaRow}>{user?.email ?? '—'}</Text>
+            </View>
           </View>
         </View>
 
@@ -727,10 +747,10 @@ export function MyProfileScreen({navigation}: Props) {
                         <Text style={styles.familyMemberRelation}>
                           {member.relationship}
                         </Text>
-                        <Text style={styles.familyMemberLogin} numberOfLines={1}>
+                        {/* <Text style={styles.familyMemberLogin} numberOfLines={1}>
                           {loginId}
                         </Text>
-                        <Text style={styles.familyTapHint}>Tap for full details</Text>
+                        <Text style={styles.familyTapHint}>Tap for full details</Text> */}
                       </View>
                     </TouchableOpacity>
                   );
@@ -778,7 +798,6 @@ export function MyProfileScreen({navigation}: Props) {
           ) : (
             healthSummary.map(item => (
               <View key={item.id} style={styles.gridSummaryCard}>
-                <Feather name="calendar" size={20} color="#1E293B" />
                 <Text style={styles.gridSummaryLabel}>{item.label}</Text>
                 <Text style={styles.gridSummaryValue}>{item.value}</Text>
                 <Text style={styles.gridSummarySub}>{item.sub}</Text>
@@ -897,8 +916,9 @@ export function MyProfileScreen({navigation}: Props) {
 
       <TouchableOpacity
         style={[styles.floatingScanButton, {bottom: insets.bottom + 90}]}
-        activeOpacity={0.85}>
-        <Feather name="maximize" size={24} color="#1E293B" />
+        activeOpacity={0.85} 
+        onPress={() => navigation.navigate('AiSymptomHome')}>
+         <Image source={require('../../assets/syaiicon.png')} />
       </TouchableOpacity>
 
       <View style={styles.bottomNavWrap}>
@@ -1007,7 +1027,7 @@ function CustomerChangePasswordModal({visible, onClose}: {visible: boolean; onCl
 const cpStyles = StyleSheet.create({
   overlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
   modal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -1019,17 +1039,18 @@ const cpStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  title: {fontSize: 16, fontWeight: '700', color: '#1E293B'},
+  title: {fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#1E293B'},
   field: {marginBottom: 14},
-  label: {fontSize: 12, fontWeight: '600', color: '#475569', marginBottom: 6},
+  label: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569', marginBottom: 6},
   input: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F2F1FB',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#EEF0F6',
     paddingHorizontal: 14,
     height: 46,
     fontSize: 14,
+    fontFamily: FONT.regular,
     color: '#1E293B',
   },
   btn: {
@@ -1041,7 +1062,7 @@ const cpStyles = StyleSheet.create({
     marginTop: 8,
   },
   btnDisabled: {opacity: 0.6},
-  btnText: {color: '#FFFFFF', fontSize: 15, fontWeight: '700'},
+  btnText: {color: '#FFFFFF', fontSize: 15, fontFamily: FONT.bold, fontWeight: '700'},
 });
 
 function QuickActionIcon({type}: {type: QuickAction['icon']}) {
@@ -1060,7 +1081,7 @@ function QuickActionIcon({type}: {type: QuickAction['icon']}) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FA',
+    backgroundColor: PAGE_BG,
   },
   centered: {
     justifyContent: 'center',
@@ -1074,15 +1095,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 10,
-    backgroundColor: '#FFFFFF',
+    paddingBottom: 20,
+    backgroundColor: PAGE_BG,
   },
   profileSubTabsWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    backgroundColor: PAGE_BG,
     minHeight: 56,
     paddingHorizontal: 6,
     gap: 4,
@@ -1091,7 +1110,9 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E6E4F0',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -1102,6 +1123,7 @@ const styles = StyleSheet.create({
   profileSubTabsScrollWrap: {
     flex: 1,
     minWidth: 0,
+    backgroundColor:'#F4F1FD',
     overflow: 'hidden',
   },
   profileSubTabsScroll: {
@@ -1117,7 +1139,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     minHeight: 36,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'transparent',
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1128,6 +1150,7 @@ const styles = StyleSheet.create({
   },
   profileSubTabText: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     lineHeight: Platform.OS === 'android' ? 18 : undefined,
     fontWeight: '600',
     color: '#64748B',
@@ -1142,31 +1165,40 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#424242',
     flex: 1,
-    textAlign: 'center',
+    marginLeft: 6,
+    textAlign: 'left',
   },
   editProfileTopButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+    backgroundColor: '#F5F1FD',
+    borderWidth: 1,
+    borderColor: '#EEF0F6',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
   },
   editIconMargin: {
     marginRight: 4,
   },
   editProfileTopText: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
   },
   profileBioSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E6E4F0',
+    paddingVertical: 16,
+    marginTop: 4,
     marginBottom: 16,
   },
   avatarWrapper: {
@@ -1196,28 +1228,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userNameText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontSize: 18,
+    fontFamily: FONT.bold,
+    fontWeight: '600',
+    color: '#212121',
   },
   userDemographicsText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
+    fontSize: 10,
+    fontFamily: FONT.medium,
+    color: '#424242',
+    fontWeight: '400',
     marginTop: 2,
     marginBottom: 4,
   },
   guardianHintText: {
     fontSize: 11,
+    fontFamily: FONT.semibold,
     color: '#0D9488',
     fontWeight: '600',
     marginTop: 2,
     marginBottom: 2,
   },
+  userMetaLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 3,
+  },
   userMetaRow: {
-    fontSize: 11,
-    color: '#64748B',
+    fontSize: 10,
+    fontFamily: FONT.regular,
+    color: '#424242',
     lineHeight: 15,
+    flex: 1,
   },
   summaryHorizontalScroll: {
     marginTop: 8,
@@ -1229,14 +1272,14 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   summaryMetricsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF9FF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 14,
+    borderColor: '#EEF0F6',
+    padding: 12,
     width: SUMMARY_CARD_WIDTH,
     marginRight: SUMMARY_CARD_GAP,
-    minHeight: 120,
+    minHeight: 112,
   },
   summaryDotsRow: {
     flexDirection: 'row',
@@ -1257,6 +1300,7 @@ const styles = StyleSheet.create({
   },
   summaryEmptyText: {
     fontSize: 12,
+    fontFamily: FONT.medium,
     color: '#94A3B8',
     fontWeight: '500',
   },
@@ -1268,11 +1312,13 @@ const styles = StyleSheet.create({
   },
   vitalLabel: {
     fontSize: 12,
+    fontFamily: FONT.medium,
     color: '#64748B',
     fontWeight: '500',
   },
   vitalValue: {
     fontSize: 14,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E293B',
   },
@@ -1284,11 +1330,13 @@ const styles = StyleSheet.create({
   },
   summaryCardTitle: {
     fontSize: 13,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E293B',
     marginLeft: 6,
-    paddingRight: 16,
+    paddingRight: 18,
     flex: 1,
+    lineHeight: 17,
   },
   summaryCardArrow: {
     position: 'absolute',
@@ -1307,11 +1355,13 @@ const styles = StyleSheet.create({
   },
   tagChipText: {
     fontSize: 10,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#EF4444',
   },
   medicationQuantityText: {
     fontSize: 13,
+    fontFamily: FONT.medium,
     color: '#475569',
     fontWeight: '500',
   },
@@ -1325,11 +1375,13 @@ const styles = StyleSheet.create({
   },
   viewDetailsChipText: {
     fontSize: 11,
+    fontFamily: FONT.semibold,
     color: '#0D9488',
     fontWeight: '600',
   },
   sectionTitleLabel: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginTop: 20,
@@ -1337,6 +1389,7 @@ const styles = StyleSheet.create({
   },
   sectionTitleLabelNoMargin: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
   },
@@ -1361,14 +1414,15 @@ const styles = StyleSheet.create({
   },
   sectionInlineEditText: {
     fontSize: 13,
+    fontFamily: FONT.medium,
     color: '#64748B',
     fontWeight: '500',
   },
   assignedDoctorCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF9FF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#EEF0F6',
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1386,11 +1440,13 @@ const styles = StyleSheet.create({
   },
   doctorCardNameText: {
     fontSize: 15,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E293B',
   },
   doctorCardSpecText: {
     fontSize: 12,
+    fontFamily: FONT.medium,
     color: '#64748B',
     fontWeight: '500',
   },
@@ -1403,10 +1459,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2E8F0',
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 40,
   },
   doctorInlineChatText: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     color: '#475569',
     fontWeight: '600',
   },
@@ -1414,18 +1471,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#408E91',
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 40,
   },
   doctorInlineBookText: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     color: '#FFFFFF',
     fontWeight: '600',
   },
   emergencyContractsContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF9FF',
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#EEF0F6',
     padding: 14,
     gap: 12,
   },
@@ -1456,6 +1514,7 @@ const styles = StyleSheet.create({
   },
   contactAvatarInitial: {
     fontSize: 14,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#475569',
   },
@@ -1465,16 +1524,19 @@ const styles = StyleSheet.create({
   },
   contactNameTitle: {
     fontSize: 14,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E293B',
   },
   contactRelationLabel: {
     fontSize: 11,
+    fontFamily: FONT.medium,
     color: '#64748B',
     fontWeight: '500',
   },
   contactPhoneText: {
     fontSize: 12,
+    fontFamily: FONT.medium,
     color: '#475569',
     fontWeight: '500',
     flex: 1,
@@ -1495,12 +1557,13 @@ const styles = StyleSheet.create({
   },
   contactActionText: {
     fontSize: 11,
+    fontFamily: FONT.semibold,
     color: '#475569',
     fontWeight: '600',
   },
   addContractButton: {
     backgroundColor: '#E11D48',
-    borderRadius: 14,
+    borderRadius: 40,
     paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1513,6 +1576,7 @@ const styles = StyleSheet.create({
   addContractButtonText: {
     color: '#FFFFFF',
     fontSize: 13,
+    fontFamily: FONT.bold,
     fontWeight: '700',
   },
   familyCarouselScroll: {
@@ -1522,10 +1586,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   familyAvatarCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF9FF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#EEF0F6',
     padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1548,11 +1612,13 @@ const styles = StyleSheet.create({
   },
   familyAvatarInitial: {
     fontSize: 14,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#475569',
   },
   emptySummaryText: {
     fontSize: 13,
+    fontFamily: FONT.regular,
     color: '#64748B',
     paddingVertical: 8,
   },
@@ -1562,21 +1628,25 @@ const styles = StyleSheet.create({
   },
   familyMemberName: {
     fontSize: 13,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E293B',
   },
   familyMemberRelation: {
     fontSize: 11,
+    fontFamily: FONT.medium,
     color: '#64748B',
     fontWeight: '500',
   },
   familyMemberLogin: {
     fontSize: 10,
+    fontFamily: FONT.regular,
     color: '#94A3B8',
     marginTop: 2,
   },
   familyTapHint: {
     fontSize: 9,
+    fontFamily: FONT.semibold,
     color: '#0D9488',
     marginTop: 4,
     fontWeight: '600',
@@ -1600,7 +1670,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#EEF0F6',
     paddingVertical: 14,
     paddingHorizontal: 10,
     alignItems: 'center',
@@ -1609,6 +1679,7 @@ const styles = StyleSheet.create({
   },
   profileActionButtonText: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#1E293B',
     textAlign: 'center',
@@ -1619,6 +1690,7 @@ const styles = StyleSheet.create({
   },
   viewAllTextLink: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     color: '#64748B',
     fontWeight: '600',
     marginRight: 2,
@@ -1633,24 +1705,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#EEF0F6',
     padding: 12,
     width: GRID_ITEM_WIDTH,
   },
   gridSummaryLabel: {
     fontSize: 11,
+    fontFamily: FONT.medium,
     color: '#64748B',
     fontWeight: '500',
-    marginTop: 6,
   },
   gridSummaryValue: {
     fontSize: 14,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E293B',
     marginTop: 2,
   },
   gridSummarySub: {
     fontSize: 10,
+    fontFamily: FONT.regular,
     color: '#94A3B8',
     marginTop: 4,
   },
@@ -1658,7 +1732,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#EEF0F6',
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1668,8 +1742,8 @@ const styles = StyleSheet.create({
   actionIconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: '#F1F5F9',
+    borderRadius: 18,
+    backgroundColor: '#E6F4F1',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1680,11 +1754,13 @@ const styles = StyleSheet.create({
   },
   actionButtonTitleText: {
     fontSize: 12,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E293B',
   },
   actionButtonSubText: {
     fontSize: 9,
+    fontFamily: FONT.regular,
     color: '#64748B',
     marginTop: 2,
   },
@@ -1696,7 +1772,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#EEF0F6',
     paddingVertical: 4,
     marginBottom: 8,
   },
@@ -1728,16 +1804,19 @@ const styles = StyleSheet.create({
   },
   settingsTitleText: {
     fontSize: 14,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E293B',
   },
   settingsTitleTextLogout: {
     fontSize: 14,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#DC2626',
   },
   settingsSubText: {
     fontSize: 11,
+    fontFamily: FONT.regular,
     color: '#64748B',
     marginTop: 2,
   },

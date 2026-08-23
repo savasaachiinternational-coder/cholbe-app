@@ -38,6 +38,15 @@ import {performLogout} from '../../auth/sessionControl';
 import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VProfile'>;
+
+// Figma "Card/Shadow 1": 0 4px 60px 0 rgba(4, 6, 15, 0.08).
+const CARD_SHADOW = {
+  shadowColor: '#04060F',
+  shadowOffset: {width: 0, height: 4},
+  shadowOpacity: 0.08,
+  shadowRadius: 30,
+  elevation: 2,
+} as const;
 type ExpandedSection = 'store' | 'wallet' | 'vault' | null;
 
 type VendorProfile = {
@@ -953,7 +962,7 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F0EFF8',
   },
   loader: {
     marginTop: 40,
@@ -967,7 +976,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F4F1FD',
   },
   headerTitle: {
     fontSize: 18,
@@ -981,13 +990,13 @@ const styles = StyleSheet.create({
     width: 32,
   },
   storeMainCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 16,
     marginHorizontal: 16,
     marginTop: 12,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#ECEFF3',
+    ...CARD_SHADOW,
+    elevation:0,
   },
   storeBannerImage: {
     width: '100%',
@@ -1037,13 +1046,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   pharmacistCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 16,
     marginHorizontal: 16,
     marginTop: 12,
     padding: 14,
-    borderWidth: 1,
-    borderColor: '#ECEFF3',
+    ...CARD_SHADOW,
+     elevation:0,
   },
   pharmacistSectionLabel: {
     fontSize: 11,
@@ -1057,7 +1066,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E4E2EF',
     paddingBottom: 12,
   },
   pharmacistAvatar: {
@@ -1104,12 +1113,12 @@ const styles = StyleSheet.create({
   },
   metricScoreBox: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ECEFF3',
+    ...CARD_SHADOW,
+     elevation:0,
   },
   metricScoreValue: {
     fontSize: 20,
@@ -1131,19 +1140,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   settingCardWrapper: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 16,
     marginHorizontal: 16,
     padding: 14,
-    borderWidth: 1,
-    borderColor: '#ECEFF3',
+    ...CARD_SHADOW,
+     elevation:0,
   },
   settingRowHeaderLink: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E4E2EF',
     paddingBottom: 12,
   },
   settingRowHeaderLinkCollapsed: {
@@ -1163,7 +1172,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: '#E6F3F5',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1202,18 +1211,18 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   operationalSubContainer: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F3F2FB',
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E4E2EF',
   },
   operationalHeaderInline: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#ECEFF3',
+    borderBottomColor: '#E4E2EF',
     paddingBottom: 8,
     marginBottom: 8,
   },
@@ -1246,7 +1255,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E0E0E0',
     paddingHorizontal: 8,
     height: 34,
     fontSize: 12,
@@ -1278,13 +1287,13 @@ const styles = StyleSheet.create({
   payoutTypeChip: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E0E0E0',
     borderRadius: 10,
     paddingVertical: 8,
     alignItems: 'center',
   },
   payoutTypeChipActive: {
-    backgroundColor: '#E8F4F6',
+    backgroundColor: '#E6F3F5',
     borderColor: '#4E929D',
   },
   payoutTypeChipText: {
@@ -1315,7 +1324,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   revenueBannerCyanCard: {
-    backgroundColor: '#3F8694',
+    backgroundColor: '#4DA69F',
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
@@ -1356,7 +1365,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E4E2EF',
   },
   paymentMethodMeta: {
     flex: 1,
@@ -1405,7 +1414,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E4E2EF',
   },
   vaultDocumentLeftMetaGroup: {
     flexDirection: 'row',
@@ -1449,13 +1458,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   appLinksCardContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 16,
     marginHorizontal: 16,
     paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#ECEFF3',
     marginBottom: 8,
+    ...CARD_SHADOW,
   },
   appSettingsLinkRow: {
     flexDirection: 'row',
@@ -1463,7 +1471,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F3F6',
+    borderBottomColor: '#E4E2EF',
   },
   appSettingsLinkRowLast: {
     borderBottomWidth: 0,
@@ -1516,7 +1524,7 @@ const styles = StyleSheet.create({
   logoutBtnText: {color: '#E26D6D', fontSize: 13, fontWeight: '700'},
   cpOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
   cpModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -1532,10 +1540,10 @@ const styles = StyleSheet.create({
   cpField: {marginBottom: 14},
   cpLabel: {fontSize: 12, fontWeight: '600', color: '#4F5E6D', marginBottom: 6},
   cpInput: {
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
     paddingHorizontal: 14,
     height: 46,
     fontSize: 14,
@@ -1553,7 +1561,7 @@ const styles = StyleSheet.create({
   cpSaveBtnText: {color: '#FFFFFF', fontSize: 15, fontWeight: '700'},
   epOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
   epModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -1569,10 +1577,10 @@ const styles = StyleSheet.create({
   epField: {marginBottom: 14},
   epLabel: {fontSize: 12, fontWeight: '600', color: '#4F5E6D', marginBottom: 6},
   epInput: {
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E0E0E0',
     paddingHorizontal: 14,
     height: 46,
     fontSize: 14,

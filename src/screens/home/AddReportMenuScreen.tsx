@@ -1,21 +1,39 @@
-import {useState} from 'react';
-import {Dimensions, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useState } from 'react';
+import {
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../navigation/types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../navigation/types';
+import { WaveTitleBand } from '../../components/WaveTitleBand';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddReportMenu'>;
-const {width} = Dimensions.get('window');
 
-export function AddReportMenuScreen({navigation}: Props) {
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
+const { width } = Dimensions.get('window');
+
+export function AddReportMenuScreen({ navigation }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const [selectedOption, setSelectedOption] = useState<'manual' | 'upload' | null>(
-    null,
-  );
+  const [selectedOption, setSelectedOption] = useState<
+    'manual' | 'upload' | null
+  >(null);
 
   const handleContinue = () => {
     if (!selectedOption) {
@@ -30,33 +48,40 @@ export function AddReportMenuScreen({navigation}: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.headerContainer, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.backButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
+          onPress={() => navigation.goBack()}
+        >
           <Feather name="chevron-left" size={28} color="#333333" />
         </TouchableOpacity>
 
-        <View style={styles.logoContainer}>
+        {/* <View style={styles.logoContainer}>
           <View style={styles.logoPlaceholder}>
             <MaterialCommunityIcons name="medical-bag" size={20} color="#00A896" />
             <Text style={styles.logoTextMain}>Cholbe</Text>
           </View>
           <Text style={styles.logoTextSub}>PHARMACY</Text>
-        </View>
-
+        </View> */}
+        <Image
+          source={require('../../assets/logoImage.png')}
+          style={styles.iconImage}
+        />
         <TouchableOpacity
           style={styles.headerIconButton}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
+          onPress={() => navigation.navigate('Notifications')}
+        >
           <Feather name="bell" size={24} color="#333333" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.titleContainer}>
+      <WaveTitleBand title='Add Report' color='#F4F1FD' style={styles.waveText}/>
+
+      {/* <View style={styles.titleContainer}>
         <Text style={styles.screenTitle}>Add Report</Text>
-      </View>
+      </View> */}
 
       <View style={styles.contentCard}>
         <TouchableOpacity
@@ -66,7 +91,8 @@ export function AddReportMenuScreen({navigation}: Props) {
             selectedOption === 'manual' && styles.activeSelection,
           ]}
           activeOpacity={0.8}
-          onPress={() => setSelectedOption('manual')}>
+          onPress={() => setSelectedOption('manual')}
+        >
           <View style={styles.manualIconWrapper}>
             <MaterialCommunityIcons
               name="file-document-edit-outline"
@@ -81,12 +107,13 @@ export function AddReportMenuScreen({navigation}: Props) {
 
         <TouchableOpacity
           style={[
-            styles.selectionBox,
+            styles.uploadOuterBox,
             styles.uploadBoxBorder,
             selectedOption === 'upload' && styles.activeSelection,
           ]}
           activeOpacity={0.8}
-          onPress={() => setSelectedOption('upload')}>
+          onPress={() => setSelectedOption('upload')}
+        >
           <View style={styles.uploadIconWrapper}>
             <Feather name="download" size={28} color="#FFFFFF" />
           </View>
@@ -95,18 +122,25 @@ export function AddReportMenuScreen({navigation}: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.continueButton, !selectedOption && styles.continueButtonDisabled]}
+          style={[
+            styles.continueButton,
+            !selectedOption && styles.continueButtonDisabled,
+          ]}
           activeOpacity={0.9}
-          onPress={handleContinue}>
+          onPress={handleContinue}
+        >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.bottomTabBar, {paddingBottom: 12 + insets.bottom}]}>
+      <View
+        style={[styles.bottomTabBar, { paddingBottom: 12 + insets.bottom }]}
+      >
         <TouchableOpacity
           style={styles.tabItem}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('Home')}>
+          onPress={() => navigation.navigate('Home')}
+        >
           <Feather name="home" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Home</Text>
         </TouchableOpacity>
@@ -114,7 +148,8 @@ export function AddReportMenuScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.tabItem}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('PharmacyShop')}>
+          onPress={() => navigation.navigate('PharmacyShop')}
+        >
           <MaterialCommunityIcons name="clippy" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Pharmacy</Text>
         </TouchableOpacity>
@@ -122,20 +157,30 @@ export function AddReportMenuScreen({navigation}: Props) {
         <TouchableOpacity
           style={styles.tabItem}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('MedicineList')}>
-          <MaterialCommunityIcons name="heart-pulse" size={24} color="#A0A5BA" />
+          onPress={() => navigation.navigate('MedicineList')}
+        >
+          <MaterialCommunityIcons
+            name="heart-pulse"
+            size={24}
+            color="#A0A5BA"
+          />
           <Text style={styles.tabLabel}>Medication</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem} activeOpacity={0.7}>
-          <MaterialCommunityIcons name="file-document-outline" size={24} color="#45A096" />
+          <MaterialCommunityIcons
+            name="file-document-outline"
+            size={24}
+            color="#45A096"
+          />
           <Text style={[styles.tabLabel, styles.activeTabLabel]}>Report</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.tabItem}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('MyProfile')}>
+          onPress={() => navigation.navigate('MyProfile')}
+        >
           <Feather name="user" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Profile</Text>
         </TouchableOpacity>
@@ -147,7 +192,7 @@ export function AddReportMenuScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9FE',
+    backgroundColor: '#F4F1FD',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -158,6 +203,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 4,
+    backgroundColor:'#F4F1FD'
+  },
+  iconImage: {
+    height: 48,
+    width: 150,
+    resizeMode: 'cover',
   },
   headerIconButton: {
     padding: 4,
@@ -172,16 +223,24 @@ const styles = StyleSheet.create({
   },
   logoTextMain: {
     fontSize: 22,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E3A60',
     marginLeft: 4,
   },
   logoTextSub: {
     fontSize: 9,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#49739B',
     letterSpacing: 2,
     marginTop: -2,
+  },
+  waveText:{
+    color:'#424242',
+    fontSize:18,
+    fontFamily: FONT.semibold,
+    fontWeight:'600'
   },
   titleContainer: {
     alignItems: 'center',
@@ -190,33 +249,47 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },
   contentCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F1FD',
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingHorizontal: 24,
     paddingTop: 48,
     shadowColor: '#E0E4F0',
-    shadowOffset: {width: 0, height: -10},
+    shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.4,
     shadowRadius: 15,
     elevation: 8,
   },
   selectionBox: {
+    flexDirection:'row',
+    gap:5,
     width: '100%',
     height: 120,
-    borderRadius: 16,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FCFCFE',
+    backgroundColor: '#F5F2FE',
+    elevation:1,
+  },
+    uploadOuterBox: {
+    gap:5,
+    width: '100%',
+    height: 140,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F2FE',
+    elevation:1,
   },
   manualBoxBorder: {
     borderWidth: 1,
-    borderColor: '#E2E6EE',
+    borderColor: '#E0E0E0',
     borderStyle: 'dashed',
   },
   uploadBoxBorder: {
@@ -229,6 +302,8 @@ const styles = StyleSheet.create({
     borderColor: '#45A096',
   },
   manualIconWrapper: {
+    flexDirection:'row',
+    gap:5,
     marginBottom: 8,
   },
   uploadIconWrapper: {
@@ -241,32 +316,37 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   selectionText: {
-    fontSize: 16,
-    color: '#8A94A6',
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#616161',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   uploadTitleText: {
-    fontSize: 15,
-    color: '#7D8797',
+    fontSize: 14,
+    color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginBottom: 4,
   },
   browseHereText: {
-    fontSize: 17,
-    color: '#45A096',
-    fontWeight: '700',
+    fontSize: 16,
+    color: '#4DA69F',
+    fontFamily: FONT.bold,
+    fontWeight: '600',
   },
   dividerText: {
     textAlign: 'center',
-    fontSize: 15,
+    fontSize: 12,
     color: '#7D8797',
+    fontWeight:'400',
+    fontFamily: FONT.regular,
     marginVertical: 24,
   },
   continueButton: {
     backgroundColor: '#418B93',
     width: '100%',
-    height: 54,
-    borderRadius: 27,
+    height: 50,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 'auto',
@@ -276,8 +356,9 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
+    color: '#FFF',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bottomTabBar: {
@@ -298,10 +379,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {
     color: '#45A096',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

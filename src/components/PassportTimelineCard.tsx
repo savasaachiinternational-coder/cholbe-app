@@ -1,5 +1,5 @@
-import {ReactNode} from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import { ReactNode } from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export function formatPassportListTime(value?: string | null) {
   if (!value) return '—';
@@ -40,14 +40,20 @@ export function PassportTimelineCard({
   return (
     <View style={styles.timelineRow}>
       <View style={styles.timelineRail}>
-        <View style={[styles.timelineDot, isFirst && styles.timelineDotActive]} />
+        <View
+          style={[styles.timelineDot, isFirst && styles.timelineDotActive]}
+        />
         {!isLast ? <View style={styles.timelineLine} /> : null}
       </View>
 
       <View style={styles.card}>
-        <View style={styles.waveDecorator1} />
-        <View style={styles.waveDecorator2} />
-
+        {/* <View style={styles.waveDecorator1} />
+        <View style={styles.waveDecorator2} /> */}
+        <Image
+          source={require('../assets/medicine_cardbg.png')}
+          style={styles.cardBg}
+          resizeMode="cover"
+        />
         <View style={styles.cardInner}>
           <View style={styles.iconSlot}>{icon}</View>
 
@@ -74,7 +80,8 @@ export function PassportTimelineCard({
               <TouchableOpacity
                 style={styles.actionButton}
                 activeOpacity={0.8}
-                onPress={onPressAction}>
+                onPress={onPressAction}
+              >
                 <Text style={styles.actionButtonText}>{actionLabel}</Text>
               </TouchableOpacity>
             </View>
@@ -126,11 +133,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E8EDF5',
     shadowColor: '#C5D0E3',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 10,
     elevation: 2,
-    minHeight: 118,
+    minHeight: 100,
   },
   waveDecorator1: {
     position: 'absolute',
@@ -152,16 +159,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#E4E8FA',
     opacity: 0.65,
   },
+   cardBg: {
+    position: 'absolute',
+    top: -10,
+    left: -10,
+    width: '160%',
+    height: '160%',
+    opacity: 0.10,
+    transform: [{ rotate: '-5deg' }],
+  },
   cardInner: {
     flexDirection: 'row',
-    paddingVertical: 14,
+    paddingVertical: 7,
     paddingHorizontal: 14,
     alignItems: 'flex-start',
   },
   iconSlot: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#F1F3F7',
     justifyContent: 'center',
     alignItems: 'center',
@@ -177,18 +193,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 2,
   },
   title: {
     flex: 1,
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#212529',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1919',
   },
   time: {
-    fontSize: 11,
-    color: '#8A94A6',
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#1B1B1B',
+    fontWeight: '400',
     marginTop: 3,
   },
   metaRow: {
@@ -196,7 +212,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 10,
+    marginBottom: 2,
   },
   metaItem: {
     flexDirection: 'row',

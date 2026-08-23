@@ -1,4 +1,5 @@
-import {mapsApi} from '../api/maps';
+import { Alert } from 'react-native';
+import { GOOGLE_MAPS_API_KEY } from '../config/googleMaps';
 
 export type GeocodedAddress = {
   formattedAddress: string;
@@ -22,7 +23,7 @@ export function looksLikeCoordinates(text: string): boolean {
 }
 
 function pickComponent(
-  components: Array<{long_name: string; types: string[]}>,
+  components: Array<{ long_name: string; types: string[] }>,
   ...types: string[]
 ) {
   const match = components.find(c => types.some(t => c.types.includes(t)));
@@ -30,7 +31,7 @@ function pickComponent(
 }
 
 function buildFromComponents(
-  components: Array<{long_name: string; types: string[]}>,
+  components: Array<{ long_name: string; types: string[] }>,
   formattedAddress: string,
 ): GeocodedAddress {
   const city =
@@ -77,13 +78,12 @@ async function reverseGeocodeWithNominatim(
       `https://nominatim.openstreetmap.org/reverse` +
       `?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`;
     const response = await fetch(url, {
-      headers: {'User-Agent': 'CholbePharmacyApp/1.0'},
+      headers: { 'User-Agent': 'CholbePharmacyApp/1.0' },
     });
     const data = (await response.json()) as {
       display_name?: string;
       address?: Record<string, string>;
     };
-
     if (!data.display_name) {
       return null;
     }
@@ -120,9 +120,7 @@ export function regionFallbackAddress(region?: RegionDraft): GeocodedAddress {
   const sector = region?.sector?.trim() || 'Uttara Sector 12';
 
   return {
-    formattedAddress: [sector, area, city]
-      .filter(Boolean)
-      .join(', '),
+    formattedAddress: [sector, area, city].filter(Boolean).join(', '),
     city,
     area,
     sector,
@@ -137,8 +135,19 @@ async function reverseGeocodeWithGoogle(
   longitude: number,
 ): Promise<GeocodedAddress | null> {
   try {
-    const result = await mapsApi.reverseGeocode(latitude, longitude);
-    if (!result) {
+    const url =
+      `https://maps.googleapis.com/maps/api/geocode/json` +
+      `?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+    const response = await fetch(url);
+    const data = (await response.json()) as {
+      status: string;
+      results?: Array<{
+        formatted_address: string;
+        address_components: Array<{ long_name: string; types: string[] }>;
+      }>;
+    };
+
+    if (data.status !== 'OK' || !data.results?.length) {
       return null;
     }
     return buildFromComponents(result.components, result.formattedAddress);

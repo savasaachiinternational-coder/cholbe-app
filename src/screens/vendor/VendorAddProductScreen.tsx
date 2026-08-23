@@ -7,12 +7,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import {launchImageLibrary, type Asset} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
@@ -25,6 +25,7 @@ import {vendorProductsApi} from '../../api/vendorProducts';
 import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
 import {NotificationBell} from '../../components/NotificationBell';
+import {WaveWithChild} from '../../components/WaveWithChild';
 import {DatePickerField} from '../../components/MedicationPickers';
 import {
   PRODUCT_CATEGORIES,
@@ -37,6 +38,24 @@ import {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VAddProduct'>;
 type PickerField = 'category' | 'unitType' | 'temperature' | null;
+
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
+// Figma "Card/Shadow 1": 0 4px 60px 0 rgba(4, 6, 15, 0.08).
+const CARD_SHADOW = {
+  shadowColor: '#04060F',
+  shadowOffset: {width: 0, height: 4},
+  shadowOpacity: 0.08,
+  shadowRadius: 30,
+  elevation: 2,
+} as const;
 
 export function VendorAddProductScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
@@ -139,12 +158,12 @@ export function VendorAddProductScreen({navigation}: Props) {
           style={styles.headerButton}
           activeOpacity={0.7}
           onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={26} color="#1A1C1E" />
+          <Feather name="chevron-left" size={26} color="#212121" />
         </TouchableOpacity>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoTextMain}>+ Cholbe</Text>
-          <Text style={styles.logoTextSub}>PHARMACY</Text>
-        </View>
+        <Image
+          source={require('../../assets/logoImage.png')}
+          style={styles.logoImage}
+        />
         <NotificationBell
           style={styles.headerButton}
           onPress={() => navigation.navigate('Notifications')}
@@ -157,7 +176,11 @@ export function VendorAddProductScreen({navigation}: Props) {
           styles.scrollContent,
           {paddingBottom: 100 + insets.bottom},
         ]}>
-        <Text style={styles.screenHeading}>Add New Product /Medicine</Text>
+        <View style={styles.waveHost}>
+          <WaveWithChild color="#F4F1FD" style={styles.waveContent}>
+            <Text style={styles.screenHeading}>Add New Product /Medicine</Text>
+          </WaveWithChild>
+        </View>
 
         <View style={styles.formContainer}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
@@ -169,7 +192,7 @@ export function VendorAddProductScreen({navigation}: Props) {
               value={productName}
               onChangeText={setProductName}
               placeholder="e.g. Amlodipine"
-              placeholderTextColor="#A0AEC0"
+              placeholderTextColor="#9E9E9E"
             />
           </View>
 
@@ -180,7 +203,7 @@ export function VendorAddProductScreen({navigation}: Props) {
               value={genericName}
               onChangeText={setGenericName}
               placeholder="e.g. Acetaminophen"
-              placeholderTextColor="#A0AEC0"
+              placeholderTextColor="#9E9E9E"
             />
           </View>
 
@@ -192,7 +215,7 @@ export function VendorAddProductScreen({navigation}: Props) {
                 activeOpacity={0.7}
                 onPress={() => setActivePicker('category')}>
                 <Text style={styles.dropdownText}>{category}</Text>
-                <Feather name="chevron-down" size={16} color="#7E8B97" />
+                <Feather name="chevron-down" size={20} color="#616161" />
               </TouchableOpacity>
             </View>
             <View style={styles.flexField}>
@@ -203,7 +226,7 @@ export function VendorAddProductScreen({navigation}: Props) {
                   value={brand}
                   onChangeText={setBrand}
                   placeholder="Manufacture"
-                  placeholderTextColor="#A0AEC0"
+                  placeholderTextColor="#9E9E9E"
                 />
               </View>
             </View>
@@ -220,7 +243,7 @@ export function VendorAddProductScreen({navigation}: Props) {
                   value={unitPrice}
                   onChangeText={setUnitPrice}
                   placeholder="TK 0.00"
-                  placeholderTextColor="#A0AEC0"
+                  placeholderTextColor="#9E9E9E"
                   keyboardType="numeric"
                 />
               </View>
@@ -233,7 +256,7 @@ export function VendorAddProductScreen({navigation}: Props) {
                   value={discountPrice}
                   onChangeText={setDiscountPrice}
                   placeholder="TK 0.00"
-                  placeholderTextColor="#A0AEC0"
+                  placeholderTextColor="#9E9E9E"
                   keyboardType="numeric"
                 />
               </View>
@@ -248,8 +271,8 @@ export function VendorAddProductScreen({navigation}: Props) {
                   style={styles.textInput}
                   value={stockQuantity}
                   onChangeText={setStockQuantity}
-                  placeholder="e.g. 100"
-                  placeholderTextColor="#A0AEC0"
+                  placeholder="e.g. 100 Boxes"
+                  placeholderTextColor="#9E9E9E"
                   keyboardType="numeric"
                 />
               </View>
@@ -262,7 +285,7 @@ export function VendorAddProductScreen({navigation}: Props) {
                   value={minAlertLevel}
                   onChangeText={setMinAlertLevel}
                   placeholder="e.g. 10"
-                  placeholderTextColor="#A0AEC0"
+                  placeholderTextColor="#9E9E9E"
                   keyboardType="numeric"
                 />
               </View>
@@ -290,7 +313,7 @@ export function VendorAddProductScreen({navigation}: Props) {
                   value={batchNumber}
                   onChangeText={setBatchNumber}
                   placeholder="e.g. BT-492"
-                  placeholderTextColor="#A0AEC0"
+                  placeholderTextColor="#9E9E9E"
                 />
               </View>
             </View>
@@ -302,110 +325,136 @@ export function VendorAddProductScreen({navigation}: Props) {
             activeOpacity={0.7}
             onPress={() => setActivePicker('unitType')}>
             <Text style={styles.dropdownText}>{unitType}</Text>
-            <Feather name="chevron-down" size={16} color="#7E8B97" />
+            <Feather name="chevron-down" size={20} color="#616161" />
           </TouchableOpacity>
 
-          <View style={styles.toggleSectionHeader}>
-            <View style={styles.toggleHeaderLeft}>
-              <MaterialCommunityIcons name="calendar-plus" size={20} color="#4E929D" />
-              <Text style={styles.toggleSectionTitle}>Prescription & Usage</Text>
-              <Text style={styles.toggleSubHint}>Prescription Required</Text>
+          <View style={styles.blockCard}>
+            <View style={styles.blockHeaderRow}>
+              <View style={styles.blockIconTile}>
+                <MaterialCommunityIcons
+                  name="calendar-plus"
+                  size={18}
+                  color="#4DA69F"
+                />
+              </View>
+              <Text style={styles.blockTitle}>Prescription & Usage</Text>
+              <Text style={styles.blockHint}>Prescription Required</Text>
+              <ToggleSwitch
+                value={prescriptionRequired}
+                onValueChange={setPrescriptionRequired}
+              />
             </View>
-            <Switch
-              value={prescriptionRequired}
-              onValueChange={setPrescriptionRequired}
-              trackColor={{false: '#CBD5E1', true: '#47B39D'}}
-              thumbColor="#FFFFFF"
-            />
-          </View>
 
-          <Text style={styles.inputLabel}>Short Description</Text>
-          <View style={styles.textAreaBox}>
-            <TextInput
-              style={styles.textAreaInput}
-              placeholder="Brief overview of the product..."
-              placeholderTextColor="#A0AEC0"
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          <Text style={styles.inputLabel}>Side Effects</Text>
-          <View style={styles.textAreaBox}>
-            <TextInput
-              style={styles.textAreaInput}
-              placeholder="List common side effects.."
-              placeholderTextColor="#A0AEC0"
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          <View style={styles.mediaContainer}>
-            <View style={styles.mediaHeader}>
-              <Feather name="image" size={18} color="#4E929D" />
-              <Text style={styles.mediaTitle}>Product Media</Text>
+            <Text style={styles.inputLabel}>Short Description</Text>
+            <View style={styles.textAreaBox}>
+              <TextInput
+                style={styles.textAreaInput}
+                placeholder="Brief overview of the product..."
+                placeholderTextColor="#9E9E9E"
+                multiline
+                numberOfLines={4}
+              />
             </View>
-            <TouchableOpacity style={styles.uploadDashedZone} activeOpacity={0.8} onPress={handlePickImage}>
+
+            <Text style={styles.inputLabel}>Side Effects</Text>
+            <View style={[styles.textAreaBox, styles.textAreaBoxLast]}>
+              <TextInput
+                style={styles.textAreaInput}
+                placeholder="List common side effects.."
+                placeholderTextColor="#9E9E9E"
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+          </View>
+
+          <View style={styles.blockCard}>
+            <View style={styles.blockHeaderRow}>
+              <View style={styles.blockIconTile}>
+                <Feather name="image" size={16} color="#4DA69F" />
+              </View>
+              <Text style={styles.blockTitle}>Product Media</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.uploadDashedZone}
+              activeOpacity={0.8}
+              onPress={handlePickImage}>
               {imageAsset?.uri ? (
-                <Image source={{uri: imageAsset.uri}} style={{width: '100%', height: '100%', borderRadius: 10}} resizeMode="cover" />
+                <Image
+                  source={{uri: imageAsset.uri}}
+                  style={styles.uploadedPreview}
+                  resizeMode="cover"
+                />
               ) : (
                 <>
-                  <MaterialCommunityIcons name="crop-free" size={28} color="#47B39D" />
-                  <Text style={styles.uploadZoneText}>Tap to upload image</Text>
+                  <MaterialCommunityIcons
+                    name="crop-free"
+                    size={32}
+                    color="#4DA69F"
+                  />
+                  <Text style={styles.uploadZoneText}>Upload Image</Text>
                 </>
               )}
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.toggleSectionHeader, styles.toggleSectionSpaced]}>
-            <View style={styles.toggleHeaderLeft}>
-              <MaterialCommunityIcons name="flask-outline" size={20} color="#4E929D" />
-              <Text style={styles.toggleSectionTitle}>Reminder to refill Inventory</Text>
-            </View>
-            <Switch
-              value={reminderActive}
-              onValueChange={setReminderActive}
-              trackColor={{false: '#CBD5E1', true: '#47B39D'}}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-
-          <View style={[styles.rowFields, styles.rowFieldsSpaced]}>
-            <View style={styles.flexField}>
-              <Text style={styles.inputLabel}>Temperature</Text>
-              <TouchableOpacity
-                style={styles.dropdownBox}
-                activeOpacity={0.7}
-                onPress={() => setActivePicker('temperature')}>
-                <Text style={styles.dropdownText} numberOfLines={1}>
-                  {temperature}
-                </Text>
-                <Feather name="chevron-down" size={16} color="#7E8B97" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.flexField}>
-              <Text style={styles.inputLabel}>Est. Delivery</Text>
-              <View style={styles.inputBox}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="e.g. 24-48 Hours"
-                  placeholderTextColor="#A0AEC0"
+          <View style={styles.blockCard}>
+            <View style={styles.blockHeaderRow}>
+              <View style={styles.blockIconTile}>
+                <MaterialCommunityIcons
+                  name="flask-outline"
+                  size={18}
+                  color="#4DA69F"
                 />
+              </View>
+              <Text style={styles.blockTitle}>Reminder to refill Inventory</Text>
+              <ToggleSwitch
+                value={reminderActive}
+                onValueChange={setReminderActive}
+              />
+            </View>
+
+            <View style={styles.rowFields}>
+              <View style={styles.flexField}>
+                <Text style={styles.inputLabel}>Temperature</Text>
+                <TouchableOpacity
+                  style={styles.dropdownBox}
+                  activeOpacity={0.7}
+                  onPress={() => setActivePicker('temperature')}>
+                  <Text style={styles.dropdownText} numberOfLines={1}>
+                    {temperature}
+                  </Text>
+                  <Feather name="chevron-down" size={20} color="#616161" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.flexField}>
+                <Text style={styles.inputLabel}>Est. Delivery</Text>
+                <View style={styles.inputBox}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="e.g. 24-48 Hours"
+                    placeholderTextColor="#9E9E9E"
+                  />
+                </View>
               </View>
             </View>
           </View>
 
           <TouchableOpacity
-            style={[styles.saveProductBtn, saving && styles.buttonDisabled]}
             activeOpacity={0.9}
             disabled={saving}
             onPress={handleSave}>
-            {saving ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.saveProductBtnText}>Save Product</Text>
-            )}
+            <LinearGradient
+              colors={['#5CB0AA', '#3E8D94']}
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 0}}
+              style={[styles.saveProductBtn, saving && styles.buttonDisabled]}>
+              {saving ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.saveProductBtnText}>Save Product</Text>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -426,6 +475,27 @@ export function VendorAddProductScreen({navigation}: Props) {
         />
       ) : null}
     </View>
+  );
+}
+
+// Figma: 40 x 22 track, 16px knob, Primary-500 on / Greyscale-300 off.
+function ToggleSwitch({
+  value,
+  onValueChange,
+}: {
+  value: boolean;
+  onValueChange: (next: boolean) => void;
+}) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={() => onValueChange(!value)}
+      style={[
+        styles.toggleTrack,
+        value ? styles.toggleTrackOn : styles.toggleTrackOff,
+      ]}>
+      <View style={styles.toggleKnob} />
+    </TouchableOpacity>
   );
 }
 
@@ -451,11 +521,12 @@ function OptionPickerModal<T extends string>({
       <Pressable style={styles.pickerOverlay} onPress={onClose}>
         <Pressable style={styles.pickerCard} onPress={e => e.stopPropagation()}>
           <Text style={styles.pickerTitle}>{title}</Text>
-          {options.map(option => (
+          {options.map((option, index) => (
             <TouchableOpacity
               key={option}
               style={[
                 styles.pickerOption,
+                index === options.length - 1 && styles.pickerOptionLast,
                 selected === option && styles.pickerOptionSelected,
               ]}
               activeOpacity={0.7}
@@ -478,108 +549,110 @@ function OptionPickerModal<T extends string>({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F4F1FD',
   },
   scrollContent: {
-    paddingTop: 4,
+    paddingTop: 0,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderColor: '#ECEFF3',
+    backgroundColor: '#F4F1FD',
   },
-  logoContainer: {
-    alignItems: 'center',
-  },
-  logoTextMain: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#3F8694',
-  },
-  logoTextSub: {
-    fontSize: 8,
-    letterSpacing: 2,
-    color: '#7E8B97',
-    fontWeight: '600',
-    marginTop: -2,
+  logoImage: {
+    height: 48,
+    width: 150,
+    resizeMode: 'cover',
   },
   headerButton: {
     padding: 2,
     width: 32,
   },
-  screenHeading: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333D47',
-    textAlign: 'center',
-    marginVertical: 16,
+
+  // ---- Wave title band ----
+  waveHost: {
+    paddingHorizontal: 16,
+    backgroundColor: '#F4F1FD',
   },
+  waveContent: {
+    paddingTop:10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 0,
+    paddingBottom: 8,
+  },
+  // Figma H6/bold: Proxima Nova 18px / 600 / 120%, Greyscale-900.
+  screenHeading: {
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#212121',
+    textAlign: 'center',
+  },
+
+  // ---- Form card ----
   formContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 24,
     marginHorizontal: 12,
+    marginTop: 8,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#EAEFF5',
+    ...CARD_SHADOW,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#6F767E',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
     marginTop: 14,
     marginBottom: 8,
   },
   inputLabel: {
-    fontSize: 12,
-    color: '#6F767E',
-    fontWeight: '500',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
     marginBottom: 6,
     marginTop: 8,
   },
+  // Figma: 12px radius, 1px Greyscale-300, white well.
   inputBox: {
-    backgroundColor: '#F4F5F6',
-    borderRadius: 10,
-    height: 44,
-    paddingHorizontal: 12,
+    backgroundColor: '#F5F2FE',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    height: 48,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  inputBoxWithIcon: {
-    backgroundColor: '#F4F5F6',
-    borderRadius: 10,
-    height: 44,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 8,
   },
   expiryDateField: {
-    backgroundColor: '#F4F5F6',
-    borderRadius: 10,
-    height: 44,
-    paddingHorizontal: 12,
+    backgroundColor: '#F5F2FE',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    height: 48,
+    paddingHorizontal: 16,
     marginBottom: 8,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
   textInput: {
     flex: 1,
-    fontSize: 13,
-    color: '#1A1C1E',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#212121',
     padding: 0,
   },
   rowFields: {
     flexDirection: 'row',
     gap: 12,
-  },
-  rowFieldsSpaced: {
-    marginBottom: 16,
   },
   flexField: {
     flex: 1,
@@ -588,10 +661,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F4F5F6',
-    borderRadius: 10,
-    height: 44,
-    paddingHorizontal: 12,
+    backgroundColor: '#F5F2FE',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    height: 48,
+    paddingHorizontal: 16,
     marginBottom: 8,
   },
   dropdownBoxSpaced: {
@@ -599,104 +674,138 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     flex: 1,
-    fontSize: 13,
-    color: '#1A1C1E',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#212121',
     marginRight: 8,
   },
-  toggleSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ECEFF3',
-    marginBottom: 10,
-  },
-  toggleSectionSpaced: {
+
+  // ---- Nested blocks ----
+  blockCard: {
+    backgroundColor: '#F5F2FE',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    padding: 12,
     marginTop: 16,
   },
-  toggleHeaderLeft: {
+  blockHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    flex: 1,
     gap: 8,
   },
-  toggleSectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#333D47',
+  blockIconTile: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#F5F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  toggleSubHint: {
-    fontSize: 11,
-    color: '#7E8B97',
-    fontWeight: '500',
+  blockTitle: {
+    fontSize: 14,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
+  },
+  blockHint: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#616161',
+    letterSpacing: 0.2,
   },
   textAreaBox: {
-    backgroundColor: '#F4F5F6',
+    backgroundColor: '#F5F2FE',
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
     padding: 12,
     height: 100,
-    marginBottom: 12,
+    marginBottom: 8,
+  },
+  textAreaBoxLast: {
+    marginBottom: 0,
   },
   textAreaInput: {
-    fontSize: 13,
-    color: '#1A1C1E',
+    fontSize: 14,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#212121',
     textAlignVertical: 'top',
     padding: 0,
     flex: 1,
   },
-  mediaContainer: {
-    borderWidth: 1,
-    borderColor: '#ECEFF3',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 10,
-  },
-  mediaHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 6,
-  },
-  mediaTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#333D47',
-  },
   uploadDashedZone: {
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: '#47B39D',
-    borderRadius: 10,
-    height: 110,
+    borderColor: '#4DA69F',
+    borderRadius: 12,
+    height: 130,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F4FAF8',
+    backgroundColor: '#F5F2FE',
+    marginTop: 12,
+    overflow: 'hidden',
+  },
+  uploadedPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
   },
   uploadZoneText: {
-    fontSize: 13,
-    color: '#333D47',
-    fontWeight: '600',
+    fontSize: 14,
+    fontFamily: FONT.medium,
+    fontWeight: '500',
+    color: '#424242',
     marginTop: 8,
   },
+
+  // ---- Toggle ----
+  toggleTrack: {
+    width: 40,
+    height: 22,
+    borderRadius: 11,
+    padding: 3,
+    justifyContent: 'center',
+  },
+  toggleTrackOn: {
+    backgroundColor: '#4DA69F',
+    alignItems: 'flex-end',
+  },
+  toggleTrackOff: {
+    backgroundColor: '#E0E0E0',
+    alignItems: 'flex-start',
+  },
+  toggleKnob: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+  },
+
+  // ---- Save ----
   saveProductBtn: {
-    backgroundColor: '#3F8694',
-    borderRadius: 22,
-    height: 46,
+    borderRadius: 100,
+    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 24,
+    marginBottom: 4,
   },
   saveProductBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   buttonDisabled: {
     opacity: 0.7,
   },
+
+  // ---- Option picker ----
   pickerOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.45)',
@@ -704,53 +813,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   pickerCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 8,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 12,
+    paddingVertical: 4,
     maxHeight: '70%',
+    ...CARD_SHADOW,
   },
   pickerTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#ECEFF3',
+    borderBottomColor: '#E4E2EF',
   },
   pickerOption: {
     paddingHorizontal: 16,
     paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E4E2EF',
+  },
+  pickerOptionLast: {
+    borderBottomWidth: 0,
   },
   pickerOptionSelected: {
-    backgroundColor: '#E8F4F6',
+    backgroundColor: '#E6F3F5',
   },
   pickerOptionText: {
     fontSize: 14,
-    color: '#4F5E6D',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#424242',
   },
   pickerOptionTextSelected: {
-    color: '#3F8694',
-    fontWeight: '600',
-  },
-  datePickerColumns: {
-    flexDirection: 'row',
-    height: 200,
-  },
-  datePickerColumn: {
-    flex: 1,
-  },
-  datePickerConfirmBtn: {
-    backgroundColor: '#3F8694',
-    borderRadius: 10,
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  datePickerConfirmText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    color: '#4DA69F',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

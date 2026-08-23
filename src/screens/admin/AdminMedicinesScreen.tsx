@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useState} from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -10,27 +10,37 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {ApiError} from '../../api/client';
-import {medicinesApi, type Medicine} from '../../api/medicines';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../navigation/types';
-import {AdminBottomNav} from './AdminBottomNav';
-import {ADMIN_MEDICINE_FILTERS, type AdminMedicineFilter} from './adminNav';
-import {NotificationBell} from '../../components/NotificationBell';
-import {ProductImage} from '../../components/ProductImage';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ApiError } from '../../api/client';
+import { medicinesApi, type Medicine } from '../../api/medicines';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../navigation/types';
+import { AdminBottomNav } from './AdminBottomNav';
+import { ADMIN_MEDICINE_FILTERS, type AdminMedicineFilter } from './adminNav';
+import { NotificationBell } from '../../components/NotificationBell';
+import { ProductImage } from '../../components/ProductImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AMedicines'>;
+
+// Proxima Nova per the Figma typography. Android resolves a weight by the exact
+// font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
 
 function filterMedicines(items: Medicine[], filter: AdminMedicineFilter) {
   if (filter === 'All') return items;
   if (filter === 'Active') return items.filter(m => m.status === 'ACTIVE');
   if (filter === 'Inactive') return items.filter(m => m.status === 'INACTIVE');
-  if (filter === 'Out of Stock') return items.filter(m => m.status === 'OUT_OF_STOCK');
+  if (filter === 'Out of Stock')
+    return items.filter(m => m.status === 'OUT_OF_STOCK');
   return items;
 }
 
@@ -49,50 +59,38 @@ function statusLabel(status: string) {
 function MedicineCard({
   item,
   onPress,
-  onDelete,
-  onToggleStatus,
-  updating,
 }: {
   item: Medicine;
   onPress: () => void;
-  onDelete: () => void;
-  onToggleStatus: () => void;
-  updating: boolean;
 }) {
   return (
-    <TouchableOpacity style={styles.medicineCard} onPress={onPress} activeOpacity={0.85}>
-      <ProductImage imageUrl={item.imageUrl} style={styles.medicineImage} />
-      <View style={styles.metaInfoColumn}>
-        <Text style={styles.medicineNameText}>{item.name}</Text>
-        <Text style={styles.medicineTypeText}>{item.category ?? item.brand ?? '—'}</Text>
-        {item.genericName ? (
-          <Text style={styles.genericText}>{item.genericName}</Text>
-        ) : null}
-        <View style={[styles.statusBadge, {backgroundColor: statusColor(item.status) + '20'}]}>
-          <Text style={[styles.statusBadgeText, {color: statusColor(item.status)}]}>
-            {statusLabel(item.status)}
-          </Text>
-        </View>
+    <TouchableOpacity
+      style={styles.medicineCard}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
+      <View style={styles.medicineImageBox}>
+        <Image
+          source={{
+            uri:
+              item.imageUrl ??
+              'https://via.placeholder.com/80x60/ECEFF3/000000?text=Medicine',
+          }}
+          style={styles.medicineImage}
+        />
       </View>
-      <View style={styles.actionColumn}>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={onToggleStatus}
-          disabled={updating}
-          activeOpacity={0.7}>
-          <Feather
-            name={item.status === 'ACTIVE' ? 'toggle-right' : 'toggle-left'}
-            size={20}
-            color={item.status === 'ACTIVE' ? '#00A884' : '#9AA6B2'}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.deleteBtn]}
-          onPress={onDelete}
-          disabled={updating}
-          activeOpacity={0.7}>
-          <Feather name="trash-2" size={16} color="#E26D6D" />
-        </TouchableOpacity>
+      <View style={styles.metaInfoColumn}>
+        <Text style={styles.medicineNameText} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={styles.medicineTypeText} numberOfLines={1}>
+          {item.category ?? item.brand ?? '—'}
+        </Text>
+        <View style={styles.medicineBottomRow}>
+          {/* Stock and price are not on the medicine model yet. */}
+          <Text style={styles.medicineStockText}>Stock:—</Text>
+          <Text style={styles.medicinePriceText}>tk —</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -101,13 +99,24 @@ function MedicineCard({
 function MedicineDetailModal({
   medicine,
   onClose,
+  onDelete,
+  onToggleStatus,
+  updating,
 }: {
   medicine: Medicine | null;
   onClose: () => void;
+  onDelete: () => void;
+  onToggleStatus: () => void;
+  updating: boolean;
 }) {
   if (!medicine) return null;
   return (
-    <Modal visible={!!medicine} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={!!medicine}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.detailModal}>
           <View style={styles.detailModalHeader}>
@@ -146,9 +155,52 @@ function MedicineDetailModal({
             ) : null}
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Status</Text>
-              <Text style={[styles.detailValue, {color: statusColor(medicine.status)}]}>
+              <Text
+                style={[
+                  styles.detailValue,
+                  { color: statusColor(medicine.status) },
+                ]}
+              >
                 {statusLabel(medicine.status)}
               </Text>
+            </View>
+
+            {/* Row actions moved here: the list card matches the design, which
+                has no inline controls. */}
+            <View style={styles.detailActionRow}>
+              <TouchableOpacity
+                style={styles.detailActionBtn}
+                onPress={onToggleStatus}
+                disabled={updating}
+                activeOpacity={0.8}
+              >
+                <Feather
+                  name={
+                    medicine.status === 'ACTIVE'
+                      ? 'toggle-right'
+                      : 'toggle-left'
+                  }
+                  size={20}
+                  color={medicine.status === 'ACTIVE' ? '#00A651' : '#9E9E9E'}
+                />
+                <Text style={styles.detailActionText}>
+                  {medicine.status === 'ACTIVE' ? 'Set Inactive' : 'Set Active'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.detailActionBtn, styles.detailDeleteBtn]}
+                onPress={onDelete}
+                disabled={updating}
+                activeOpacity={0.8}
+              >
+                <Feather name="trash-2" size={18} color="#E26D6D" />
+                <Text
+                  style={[styles.detailActionText, styles.detailDeleteText]}
+                >
+                  Delete
+                </Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </View>
@@ -157,7 +209,7 @@ function MedicineDetailModal({
   );
 }
 
-export function AdminMedicinesScreen({navigation}: Props) {
+export function AdminMedicinesScreen({ navigation }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<AdminMedicineFilter>('All');
@@ -165,7 +217,9 @@ export function AdminMedicinesScreen({navigation}: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
+    null,
+  );
 
   const loadMedicines = useCallback(async () => {
     setLoading(true);
@@ -173,7 +227,8 @@ export function AdminMedicinesScreen({navigation}: Props) {
       const data = await medicinesApi.list();
       setMedicines(data);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not load medicines';
+      const message =
+        err instanceof ApiError ? err.message : 'Could not load medicines';
       Alert.alert('Medicines', message);
     } finally {
       setLoading(false);
@@ -188,39 +243,49 @@ export function AdminMedicinesScreen({navigation}: Props) {
 
   const handleDelete = useCallback(
     (id: string, name: string) => {
-      Alert.alert('Delete Medicine', `Delete "${name}"? This cannot be undone.`, [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setUpdatingId(id);
-            try {
-              await medicinesApi.delete(id);
-              await loadMedicines();
-            } catch (err) {
-              const message = err instanceof ApiError ? err.message : 'Could not delete medicine';
-              Alert.alert('Error', message);
-            } finally {
-              setUpdatingId(null);
-            }
+      Alert.alert(
+        'Delete Medicine',
+        `Delete "${name}"? This cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              setUpdatingId(id);
+              try {
+                await medicinesApi.delete(id);
+                await loadMedicines();
+              } catch (err) {
+                const message =
+                  err instanceof ApiError
+                    ? err.message
+                    : 'Could not delete medicine';
+                Alert.alert('Error', message);
+              } finally {
+                setUpdatingId(null);
+              }
+            },
           },
-        },
-      ]);
+        ],
+      );
     },
     [loadMedicines],
   );
 
   const handleToggleStatus = useCallback(
     async (medicine: Medicine) => {
-      const nextStatus =
-        medicine.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      const nextStatus = medicine.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       setUpdatingId(medicine.id);
       try {
+        console.log('successfully update in');
         await medicinesApi.updateStatus(medicine.id, nextStatus);
+        console.log('successfully update in server');
+
         await loadMedicines();
       } catch (err) {
-        const message = err instanceof ApiError ? err.message : 'Could not update status';
+        const message =
+          err instanceof ApiError ? err.message : 'Could not update status';
         Alert.alert('Error', message);
       } finally {
         setUpdatingId(null);
@@ -243,11 +308,12 @@ export function AdminMedicinesScreen({navigation}: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.headerButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
+          onPress={() => navigation.goBack()}
+        >
           <Feather name="chevron-left" size={26} color="#1A1C1E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Medicines</Text>
@@ -261,35 +327,46 @@ export function AdminMedicinesScreen({navigation}: Props) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          {paddingBottom: 85 + insets.bottom},
-        ]}>
+          { paddingBottom: 85 + insets.bottom },
+        ]}
+      >
         <View style={styles.searchContainer}>
-          <Feather name="search" size={20} color="#9AA6B2" />
+          <Feather name="search" size={24} color="#9E9E9E" />
           <TextInput
             placeholder="Search"
-            placeholderTextColor="#9AA6B2"
+            placeholderTextColor="#9E9E9E"
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
           />
           <TouchableOpacity activeOpacity={0.7}>
-            <MaterialCommunityIcons name="tune" size={20} color="#4E929D" />
+            <MaterialCommunityIcons name="tune" size={22} color="#4DA69F" />
           </TouchableOpacity>
         </View>
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersContent}>
+          contentContainerStyle={styles.filtersContent}
+        >
           {ADMIN_MEDICINE_FILTERS.map(filterItem => {
             const isFilterActive = activeFilter === filterItem;
             return (
               <TouchableOpacity
                 key={filterItem}
-                style={[styles.chipItem, isFilterActive && styles.chipItemActive]}
+                style={[
+                  styles.chipItem,
+                  isFilterActive && styles.chipItemActive,
+                ]}
                 activeOpacity={0.8}
-                onPress={() => setActiveFilter(filterItem)}>
-                <Text style={[styles.chipItemText, isFilterActive && styles.chipItemActiveText]}>
+                onPress={() => setActiveFilter(filterItem)}
+              >
+                <Text
+                  style={[
+                    styles.chipItemText,
+                    isFilterActive && styles.chipItemActiveText,
+                  ]}
+                >
                   {filterItem}
                 </Text>
               </TouchableOpacity>
@@ -307,21 +384,33 @@ export function AdminMedicinesScreen({navigation}: Props) {
               <MedicineCard
                 key={medicine.id}
                 item={medicine}
-                updating={updatingId === medicine.id}
                 onPress={() => setSelectedMedicine(medicine)}
-                onDelete={() => handleDelete(medicine.id, medicine.name)}
-                onToggleStatus={() => handleToggleStatus(medicine)}
               />
             ))
           )}
         </View>
       </ScrollView>
 
-      <AdminBottomNav activeTab="medicine" bottomInset={insets.bottom} navigation={navigation} />
+      <AdminBottomNav
+        activeTab="medicine"
+        bottomInset={insets.bottom}
+        navigation={navigation}
+      />
 
       <MedicineDetailModal
         medicine={selectedMedicine}
         onClose={() => setSelectedMedicine(null)}
+        updating={updatingId === selectedMedicine?.id}
+        onDelete={() => {
+          if (selectedMedicine) {
+            handleDelete(selectedMedicine.id, selectedMedicine.name);
+          }
+        }}
+        onToggleStatus={() => {
+          if (selectedMedicine) {
+            handleToggleStatus(selectedMedicine);
+          }
+        }}
       />
     </View>
   );
@@ -330,7 +419,7 @@ export function AdminMedicinesScreen({navigation}: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#F0EFF8',
   },
   scrollContent: {
     paddingTop: 4,
@@ -341,12 +430,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F9FAFC',
+    backgroundColor: '#F0EFF8',
   },
+  // Figma H6/bold: Proxima Nova 18px / 600 / 120%, Greyscale-800.
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    lineHeight: 22,
+    color: '#424242',
     flex: 1,
     marginLeft: 12,
   },
@@ -357,113 +449,152 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     marginHorizontal: 16,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#ECEFF3',
-    gap: 8,
+    borderRadius: 100,
+    paddingHorizontal: 20,
+    height: 56,
+    gap: 12,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily: FONT.regular,
     padding: 0,
-    color: '#1A1C1E',
+    color: '#212121',
   },
   filtersContent: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    gap: 8,
+    gap: 4,
   },
+  // Figma: 10px 20px padding, 40px radius, 1px Greyscale-300 border.
   chipItem: {
+    paddingVertical: 10,
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 18,
-    backgroundColor: '#F0F3F6',
-    marginRight: 8,
+    borderRadius: 40,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginRight: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
   chipItemActive: {
-    backgroundColor: '#4E929D',
+    backgroundColor: '#4DA69F',
+    borderColor: '#4DA69F',
   },
   chipItemText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#7E8B97',
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#424242',
   },
   chipItemActiveText: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontFamily: FONT.medium,
+    fontWeight: '500',
   },
   cardsVerticalStack: {
     gap: 12,
   },
-  loader: {marginVertical: 32},
+  loader: { marginVertical: 32 },
   emptyText: {
     textAlign: 'center',
-    color: '#9AA6B2',
+    fontFamily: FONT.regular,
+    color: '#9E9E9E',
     fontSize: 14,
     paddingVertical: 32,
   },
+  // Figma: 8px padding, 8px gap, 8px radius, #F3F2FB.
   medicineCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
+    backgroundColor: '#F3F2FB',
+    borderRadius: 8,
+    padding: 8,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#ECEFF3',
+    borderColor: '#E7E5F2',
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  // White tile behind the pack shot, as in the mockup.
+  medicineImageBox: {
+    width: 84,
+    height: 84,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   medicineImage: {
-    width: 70,
-    height: 56,
-    borderRadius: 8,
+    width: '100%',
+    height: '100%',
     resizeMode: 'contain',
-    marginRight: 12,
   },
   metaInfoColumn: {
     flex: 1,
     justifyContent: 'center',
-    gap: 2,
+    gap: 4,
   },
   medicineNameText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1C1E',
+    fontSize: 18,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
   },
   medicineTypeText: {
-    fontSize: 11,
-    color: '#7E8B97',
-    fontWeight: '500',
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    color: '#616161',
+    fontWeight: '400',
   },
-  genericText: {
-    fontSize: 11,
-    color: '#9AA6B2',
+  medicineBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
   },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginTop: 4,
+  medicineStockText: {
+    fontSize: 16,
+    fontFamily: FONT.regular,
+    color: '#616161',
+    fontWeight: '400',
   },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
+  medicinePriceText: {
+    fontSize: 18,
+    fontFamily: FONT.bold,
+    fontWeight: '700',
+    color: '#212121',
   },
-  actionColumn: {
+  detailActionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  detailActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    paddingLeft: 8,
+    height: 46,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
-  actionBtn: {
-    padding: 6,
+  detailDeleteBtn: {
+    borderColor: '#F3C9C9',
   },
-  deleteBtn: {},
+  detailActionText: {
+    fontSize: 14,
+    fontFamily: FONT.medium,
+    fontWeight: '500',
+    color: '#424242',
+  },
+  detailDeleteText: {
+    color: '#E26D6D',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',

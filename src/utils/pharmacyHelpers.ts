@@ -13,7 +13,7 @@ export function formatBdt(amount: number | string) {
     return '৳0';
   }
   const hasFraction = Math.abs(n % 1) > 0.001;
-  return `৳${n.toLocaleString('en-BD', {
+  return `৳ ${n.toLocaleString('en-BD', {
     minimumFractionDigits: hasFraction ? 2 : 0,
     maximumFractionDigits: hasFraction ? 2 : 0,
   })}`;

@@ -1,31 +1,45 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../navigation/types';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {HomeBottomNav} from './HomeBottomNav';
-import type {BottomTabKey} from './homeData';
-import {MedicationFormFields} from '../../components/MedicationFormFields';
-import {useMedicationDraft} from '../../context/MedicationDraftContext';
-import {ApiError} from '../../api/client';
+import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../navigation/types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { HomeBottomNav } from './HomeBottomNav';
+import type { BottomTabKey } from './homeData';
+import { MedicationFormFields } from '../../components/MedicationFormFields';
+import { useMedicationDraft } from '../../context/MedicationDraftContext';
+import { ApiError } from '../../api/client';
+import { WaveTitleBand } from '../../components/WaveTitleBand';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddMedicationForm'>;
 
-export function AddMedicationFormScreen({navigation}: Props) {
+const SAVE_GRADIENT = ['#EE8E8C', '#E06B6A'];
+
+// Proxima Nova is applied on this screen only. Android resolves a weight by the
+// exact font file name, so each weight is referenced by its own family name.
+const FONT = {
+  regular: 'ProximaNova-Regular',
+  medium: 'ProximaNova-Medium',
+  semibold: 'ProximaNova-Semibold',
+  bold: 'ProximaNova-Bold',
+} as const;
+
+export function AddMedicationFormScreen({ navigation }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const {draft, saveSchedule} = useMedicationDraft();
+  const { draft, saveSchedule } = useMedicationDraft();
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -38,7 +52,8 @@ export function AddMedicationFormScreen({navigation}: Props) {
       await saveSchedule();
       navigation.navigate('MedicineList');
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not save medication';
+      const message =
+        err instanceof ApiError ? err.message : 'Could not save medication';
       Alert.alert('Save failed', message);
     } finally {
       setSaving(false);
@@ -67,32 +82,33 @@ export function AddMedicationFormScreen({navigation}: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.headerContainer, {paddingTop: insets.top + 8}]}>
+      <View style={[styles.headerContainer, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.headerIconButton}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
+          onPress={() => navigation.goBack()}
+        >
           <Feather name="chevron-left" size={28} color="#333333" />
         </TouchableOpacity>
 
-        <View style={styles.logoContainer}>
-          <View style={styles.logoPlaceholder}>
-            <MaterialCommunityIcons name="medical-bag" size={20} color="#00A896" />
-            <Text style={styles.logoTextMain}>Cholbe</Text>
-          </View>
-          <Text style={styles.logoTextSub}>PHARMACY</Text>
-        </View>
+        <Image
+          source={require('../../assets/logoImage.png')}
+          style={styles.iconImage}
+        />
 
         <TouchableOpacity
           style={styles.headerIconButton}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
+          onPress={() => navigation.navigate('Notifications')}
+        >
           <Feather name="bell" size={24} color="#333333" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.titleContainer}>
-        <Text style={styles.screenTitle}>Add Medication</Text>
+      <View
+        style={{ marginTop: -16, justifyContent: 'center', marginBottom: 12 }}
+      >
+        <WaveTitleBand title={'Add Medication'} color="#F5F2FE"  style={styles.paddingInWave}/>
       </View>
 
       <ScrollView
@@ -101,15 +117,23 @@ export function AddMedicationFormScreen({navigation}: Props) {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.scrollContent,
-          {paddingBottom: insets.bottom + 110},
-        ]}>
+          { paddingBottom: insets.bottom + 110 },
+        ]}
+      >
         <MedicationFormFields />
 
         <TouchableOpacity
           style={styles.saveButton}
           activeOpacity={0.9}
           onPress={handleSave}
-          disabled={saving}>
+          disabled={saving}
+        >
+          <LinearGradient
+            colors={SAVE_GRADIENT}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
@@ -130,7 +154,7 @@ export function AddMedicationFormScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F9F9FE'},
+  container: { flex: 1, backgroundColor: '#F5F2FE' },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -138,46 +162,62 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 8,
   },
-  headerIconButton: {padding: 4, width: 32},
-  logoContainer: {alignItems: 'center', justifyContent: 'center'},
-  logoPlaceholder: {flexDirection: 'row', alignItems: 'center'},
+  iconImage: {
+    height: 48,
+    width: 150,
+    resizeMode: 'cover',
+  },
+  headerIconButton: { padding: 4, width: 32 },
+  logoContainer: { alignItems: 'center', justifyContent: 'center' },
+  logoPlaceholder: { flexDirection: 'row', alignItems: 'center' },
   logoTextMain: {
     fontSize: 22,
+    fontFamily: FONT.bold,
     fontWeight: '700',
     color: '#1E3A60',
     marginLeft: 4,
   },
   logoTextSub: {
     fontSize: 9,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#49739B',
     letterSpacing: 2,
     marginTop: -2,
   },
-  titleContainer: {alignItems: 'center', marginTop: 24, marginBottom: 16},
-  screenTitle: {fontSize: 20, fontWeight: '600', color: '#333333'},
+  titleContainer: { alignItems: 'center', marginTop: 24, marginBottom: 16 },
+  screenTitle: { fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#333333' },
+  paddingInWave:{
+    paddingBottom:40,
+    color:'#424242',
+    fontSize:18,
+    fontFamily: FONT.semibold,
+    fontWeight:'600',
+  },
   contentCard: {
     flex: 1,
-    backgroundColor: '#F9F9FE',
+    backgroundColor: '#F5F2FE',
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
+    marginTop:-50,
     shadowColor: '#E0E4F0',
-    shadowOffset: {width: 0, height: -10},
+    shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.4,
     shadowRadius: 15,
-    elevation: 8,
+    elevation: 5,
   },
-  scrollContent: {paddingHorizontal: 20, paddingTop: 32},
+  scrollContent: { paddingHorizontal: 20, paddingTop: 32 },
   saveButton: {
     backgroundColor: '#E57373',
-    height: 54,
+    height: 48,
     borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 16,
+    overflow: 'hidden',
   },
-  saveButtonText: {color: '#FFFFFF', fontSize: 18, fontWeight: '600'},
+  saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
   bottomNavWrap: {
     position: 'absolute',
     left: 0,

@@ -4,12 +4,12 @@ import {
   NavigationContainer,
 } from '@react-navigation/native';
 import {useCallback, useEffect, useState} from 'react';
-import {StatusBar, useColorScheme} from 'react-native';
+import {Alert, StatusBar, useColorScheme} from 'react-native';
 import {
   SafeAreaProvider,
   initialWindowMetrics,
 } from 'react-native-safe-area-context';
-import {hasSession, getStoredUser, clearSession} from './src/api/tokenStorage';
+import {hasSession, getStoredUser, clearSession, getIsFirtTime, setIsFirtTime} from './src/api/tokenStorage';
 import {setLogoutHandler} from './src/auth/sessionControl';
 import {wrapWithCrashReporting} from './src/monitoring/sentry';
 import {getHomeRouteForRole} from './src/navigation/roleRoutes';
@@ -30,6 +30,7 @@ import {MedicationDraftProvider} from './src/context/MedicationDraftContext';
 import {NotificationProvider} from './src/context/NotificationContext';
 import {OnboardingScreen} from './src/screens/onboarding/OnboardingScreen';
 import {SplashScreen} from './src/screens/onboarding/SplashScreen';
+import { CreateHealthProfileScreenUpdated } from './src/screens/auth/CreateHealthProfileScreenUpdated';
 
 type AppPhase =
   | 'splash'
@@ -78,15 +79,26 @@ function App() {
 
   const handleSplashFinish = useCallback(async () => {
     const loggedIn = await hasSession();
+    const isFirstTime = await getIsFirtTime();
     if (loggedIn) {
       await enterMainApp();
       return;
     }
-    setPhase('onboarding');
+    if(!isFirstTime){
+      setPhase('onboarding');
+      return;
+    }
+    setPhase('signIn');
+    
   }, [enterMainApp]);
 
   const handleGoToSignIn = useCallback(() => {
     setPhase('signIn');
+  }, []);
+  //changed
+  const handleOnboardingFinish = useCallback(() => {
+    setPhase('signIn');
+    setIsFirtTime()
   }, []);
 
   const handleForgotPassword = useCallback(() => {
@@ -189,7 +201,7 @@ function App() {
       {phase === 'splash' && <SplashScreen onFinish={handleSplashFinish} />}
       {phase === 'onboarding' && (
         <OnboardingScreen
-          onFinish={handleGoToSignIn}
+          onFinish={handleOnboardingFinish}
           onSignIn={handleGoToSignIn}
         />
       )}
@@ -201,7 +213,7 @@ function App() {
         />
       )}
       {phase === 'register' && (
-        <CreateHealthProfileScreen
+        <CreateHealthProfileScreenUpdated
           onBack={handleBackToSignIn}
           onLogin={handleBackToSignIn}
           onContinue={handleRegisterContinue}

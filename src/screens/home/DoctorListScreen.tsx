@@ -19,23 +19,35 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
-import {DOCTOR_CATEGORIES} from './doctorListData';
+import {
+  CATEGORY_MORE_IMAGE,
+  DOCTOR_CATEGORIES,
+  getCategoryImage,
+} from './doctorListData';
 import {doctorsApi, type Doctor} from '../../api/doctors';
 import {specialtiesApi, type Specialty} from '../../api/specialties';
 import {ApiError} from '../../api/client';
 import {formatBdt} from '../../utils/pharmacyHelpers';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 44) / 2;
 const CATEGORY_WIDTH = (SCREEN_WIDTH - 52) / 3;
+/** Image tiles shown before the "More" tile is used to reveal the rest. */
+const CATEGORY_TILE_LIMIT = 5;
+const CATEGORY_TILE_WIDTH = (SCREEN_WIDTH - 56) / 3;
 const DOCTOR_PLACEHOLDER = require('../../assets/b2.png');
 
+
 type Props = NativeStackScreenProps<RootStackParamList, 'DoctorList'>;
+
 
 function formatFee(fee: string | number): string {
   const amount = typeof fee === 'string' ? Number(fee) : fee;
   return Number.isNaN(amount) ? String(fee) : formatBdt(amount);
 }
+
 
 export function DoctorListScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
@@ -45,10 +57,13 @@ export function DoctorListScreen({navigation}: Props) {
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+
 
   useEffect(() => {
     specialtiesApi.list().then(setSpecialties).catch(() => setSpecialties([]));
   }, []);
+
 
   const categoryItems = useMemo(() => {
     if (specialties.length > 0) {
@@ -56,6 +71,18 @@ export function DoctorListScreen({navigation}: Props) {
     }
     return DOCTOR_CATEGORIES.map(c => ({ key: c.id, label: c.name }));
   }, [specialties]);
+
+
+  const tileCategories = useMemo(
+    () => categoryItems.filter(cat => cat.label.trim().toLowerCase() !== 'more'),
+    [categoryItems],
+  );
+  const hasMoreCategories = tileCategories.length > CATEGORY_TILE_LIMIT;
+  const visibleTileCategories =
+    hasMoreCategories && !showAllCategories
+      ? tileCategories.slice(0, CATEGORY_TILE_LIMIT)
+      : tileCategories;
+
 
   const loadDoctors = useCallback(async () => {
     setLoading(true);
@@ -74,10 +101,12 @@ export function DoctorListScreen({navigation}: Props) {
     }
   }, [searchQuery, activeCategory]);
 
+
   useEffect(() => {
     const timer = setTimeout(loadDoctors, 300);
     return () => clearTimeout(timer);
   }, [loadDoctors]);
+
 
   const filteredDoctors = useMemo(() => {
     if (!searchQuery.trim()) return doctors;
@@ -88,6 +117,7 @@ export function DoctorListScreen({navigation}: Props) {
         d.specialty.toLowerCase().includes(q),
     );
   }, [doctors, searchQuery]);
+
 
   const handleTabPress = (tab: BottomTabKey) => {
     if (tab === 'home') {
@@ -109,6 +139,7 @@ export function DoctorListScreen({navigation}: Props) {
     navigation.navigate('Home');
   };
 
+
   const bookDoctor = (doc: Doctor) => {
     navigation.navigate('BookVideoCall', {
       doctorId: doc.id,
@@ -117,6 +148,7 @@ export function DoctorListScreen({navigation}: Props) {
       consultationFee: formatFee(doc.fee),
     });
   };
+
 
   return (
     <View style={styles.container}>
@@ -130,6 +162,7 @@ export function DoctorListScreen({navigation}: Props) {
         <Text style={styles.headerTitle}>Doctor List</Text>
         <View style={styles.headerSpacer} />
       </View>
+
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -154,16 +187,89 @@ export function DoctorListScreen({navigation}: Props) {
               onChangeText={setSearchQuery}
             />
             <TouchableOpacity style={styles.filterInlineButton} activeOpacity={0.7}>
-              <Feather name="sliders" size={18} color="#14B8A6" />
+              <MaterialIcons name="tune" size={18} color="#4DA69F" />
             </TouchableOpacity>
           </View>
         </View>
 
+
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionHeading}>Explore Doctors Near You</Text>
+          <TouchableOpacity style={styles.sectionHeaderViewAll} activeOpacity={.85} onPress={()=>{}}>
+            <Text style={styles.viewAllText}>View All</Text>
+             <Feather name="arrow-right" size={12} color="#101828" />
+          </TouchableOpacity>
+         
         </View>
 
-        <View style={styles.categoriesGrid}>
+
+        <View style={styles.categoryTileGrid}>
+          {visibleTileCategories.map(cat => {
+            const artwork = getCategoryImage(cat.label);
+            const active = activeCategory === cat.key;
+            return (
+              <TouchableOpacity
+                key={cat.key}
+                style={[
+                  styles.categoryTile,
+                  {width: CATEGORY_TILE_WIDTH},
+                  active && styles.categoryTileActive,
+                ]}
+                activeOpacity={0.8}
+                onPress={() =>
+                  setActiveCategory(prev => (prev === cat.key ? null : cat.key))
+                }>
+                <View style={styles.categoryTileIconWrap}>
+                  {artwork ? (
+                    <Image
+                      source={artwork}
+                      style={styles.categoryTileImage}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <Feather name="activity" size={28} color="#64748B" />
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.categoryTileLabel,
+                    active && styles.categoryTileLabelActive,
+                  ]}
+                  numberOfLines={2}>
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+
+
+          {hasMoreCategories && (
+            <TouchableOpacity
+              style={[styles.categoryTile, {width: CATEGORY_TILE_WIDTH}]}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={
+                showAllCategories
+                  ? 'Show fewer specialties'
+                  : 'Show all specialties'
+              }
+              onPress={() => setShowAllCategories(prev => !prev)}>
+              <View style={styles.categoryTileIconWrap}>
+                <Image
+                  source={CATEGORY_MORE_IMAGE}
+                  style={styles.categoryTileImage}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={styles.categoryTileLabel} numberOfLines={2}>
+                {showAllCategories ? 'Less' : 'More'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+
+        {/* <View style={styles.categoriesGrid}>
           {categoryItems.map(cat => (
             <TouchableOpacity
               key={cat.key}
@@ -184,12 +290,14 @@ export function DoctorListScreen({navigation}: Props) {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </View> */}
+
 
         <View style={[styles.sectionHeaderRow, styles.availableHeader]}>
           <Text style={styles.sectionHeadingLarge}>Available Doctor</Text>
           <Text style={styles.viewAllText}>{filteredDoctors.length} found</Text>
         </View>
+
 
         {loading ? (
           <ActivityIndicator size="large" color="#0D9488" style={styles.loader} />
@@ -200,12 +308,14 @@ export function DoctorListScreen({navigation}: Props) {
             {filteredDoctors.map(doc => (
               <View key={doc.id} style={[styles.doctorProductCard, {width: CARD_WIDTH}]}>
                 <Image
-                  source={
-                    doc.imageUrl || doc.user.avatarUrl
-                      ? {uri: doc.imageUrl ?? doc.user.avatarUrl ?? undefined}
-                      : DOCTOR_PLACEHOLDER
-                  }
+                  // source={
+                  //   doc.imageUrl || doc.user.avatarUrl
+                  //     ? {uri: doc.imageUrl ?? doc.user.avatarUrl ?? require('../../assets/profile.png')}
+                  //     : require('../../assets/profile.png')
+                  // }
+                  source={require('../../assets/profile.png')}
                   style={styles.doctorImgCard}
+                  resizeMode='cover'
                 />
                 <View style={styles.cardContentBlock}>
                   <View style={styles.specialtyBadge}>
@@ -239,11 +349,14 @@ export function DoctorListScreen({navigation}: Props) {
         )}
       </ScrollView>
 
+
       <TouchableOpacity
         style={[styles.floatingScanButton, {bottom: insets.bottom + 90}]}
         activeOpacity={0.85}>
-        <Feather name="maximize" size={24} color="#1E293B" />
+          <Image source={require('../../assets/syaiicon.png')} onProgress={()=>{}}/>
+        {/* <Feather name="maximize" size={24} color="#1E293B" /> */}
       </TouchableOpacity>
+
 
       <View style={styles.bottomNavWrap}>
         <HomeBottomNav
@@ -256,27 +369,29 @@ export function DoctorListScreen({navigation}: Props) {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F4F1FD',
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F4F1FD',
   },
   backButton: {
     padding: 4,
-    width: 32,
+    width: 24,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
+    paddingLeft:10,
+    fontWeight: '600',
+    color: '#424242',
   },
   headerSpacer: {
     width: 32,
@@ -286,14 +401,15 @@ const styles = StyleSheet.create({
   },
   searchRow: {
     marginBottom: 16,
+    height:56
   },
   searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 40,
     paddingHorizontal: 12,
-    height: 48,
+    height: 56,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
@@ -315,19 +431,74 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  sectionHeaderViewAll:{
+    flexDirection:'row'
+  },
+  viewAllText:{
+    color:'#424242',
+    fontSize:10,
+    fontWeight:400,
+    paddingRight:8
+  },
   sectionHeading: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#616161',
   },
   sectionHeadingLarge: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontWeight: '600',
+    color: '#616161',
   },
-  viewAllText: {
-    fontSize: 13,
-    color: '#64748B',
+  // viewAllText: {
+  //   fontSize: 13,
+  //   color: '#64748B',
+  // },
+  categoryTileGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 16,
+  },
+  categoryTile: {
+    backgroundColor: '#F5F4FD',
+    borderRadius: 10,
+    padding:16,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#EEF2F6',
+    minHeight: 104,
+    elevation: 1,
+    shadowColor: '#04060F',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  categoryTileActive: {
+    borderColor: '#0D9488',
+    backgroundColor: '#F0FDFA',
+  },
+  categoryTileIconWrap: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  categoryTileImage: {
+    width: '100%',
+    height: '100%',
+  },
+  categoryTileLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+  categoryTileLabelActive: {
+    color: '#0D9488',
   },
   categoriesGrid: {
     flexDirection: 'row',
@@ -367,69 +538,75 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   doctorProductCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    paddingBottom: 10,
     marginBottom: 4,
   },
   doctorImgCard: {
     width: '100%',
-    height: 100,
     backgroundColor: '#E2E8F0',
+    height:116
   },
   cardContentBlock: {
-    padding: 10,
+    paddingHorizontal: 4,
+    paddingTop: 9,
   },
   specialtyBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F0FDFA',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginBottom: 6,
+    backgroundColor: '#8BC255',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginBottom:4
   },
   specialtyBadgeText: {
     fontSize: 10,
-    fontWeight: '600',
-    color: '#0D9488',
+    fontWeight: '400',
+    color: '#F7FBFE',
   },
   doctorNameText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 2,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#424242',
   },
   doctorDegreeText: {
-    fontSize: 11,
-    color: '#64748B',
-    marginBottom: 6,
-    minHeight: 28,
+    fontSize: 10,
+    fontWeight:'400',
+    color: '#616161',
+    marginBottom:4,
   },
   feeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0D9488',
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#424242',
+    marginBottom: 4,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    marginBottom: 4,
+    marginBottom: 6,
+    marginTop: -4,
   },
   ratingText: {fontSize: 10, color: '#64748B'},
   appointmentButton: {
-    backgroundColor: '#0D9488',
-    borderRadius: 8,
+    borderRadius: 40,
     paddingVertical: 8,
+    paddingHorizontal:16,
+    justifyContent:'center',
     alignItems: 'center',
+    borderWidth:1,
+    borderColor:'#4DA69F',
+    marginBottom:12
   },
   appointmentButtonText: {
-    color: '#FFFFFF',
+    color: '#4DA69F',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '400',
   },
   floatingScanButton: {
     position: 'absolute',

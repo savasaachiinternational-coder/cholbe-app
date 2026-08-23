@@ -27,10 +27,10 @@ export const ADMIN_TABS: {
   {key: 'orders', label: 'Orders', icon: 'file-text'},
   {key: 'vendors', label: 'Vendors', icon: 'home', materialIcon: 'supervised-user-circle'},
   {key: 'medicine', label: 'Medicine', icon: 'activity'},
-  {key: 'payments', label: 'Payments', icon: 'credit-card'},
+  // {key: 'payments', label: 'Payments', icon: 'credit-card'},
   {key: 'report', label: 'Report', icon: 'pie-chart'},
-  {key: 'user', label: 'User', icon: 'users'},
-  {key: 'inventory', label: 'Inventory', icon: 'archive'},
+  // {key: 'user', label: 'User', icon: 'users'},
+  // {key: 'inventory', label: 'Inventory', icon: 'archive'},
   {key: 'profile', label: 'Profile', icon: 'user'},
 ];
 
