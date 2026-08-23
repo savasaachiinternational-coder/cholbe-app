@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -338,10 +339,7 @@ export function VendorHomeScreen({ navigation }: Props) {
         {firstItem ? (
           <View style={styles.orderProductRow}>
             <View style={styles.orderProductImageBox}>
-              <Image
-                source={{ uri: 'https://via.placeholder.com/60/ECEFF3' }}
-                style={styles.orderProductImage}
-              />
+              <ProductImage style={styles.orderProductImage} />
             </View>
             <View style={styles.orderProductInfo}>
               <Text style={styles.orderProductTitle}>{firstItem.name}</Text>

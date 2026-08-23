@@ -4,6 +4,12 @@ import {
   FALLBACK_PRODUCT,
   resolveImageSource,
 } from './imageFallbacks';
+import {
+  getProductKind,
+  unitTypeToVariant,
+} from './productVariants';
+
+export {unitTypeToVariant} from './productVariants';
 
 export const DEFAULT_PRODUCT_IMAGE = FALLBACK_PRODUCT;
 
@@ -49,18 +55,9 @@ export function discountPercent(product: PharmacyProduct) {
   return Math.round((1 - disc / unit) * 100);
 }
 
-export function unitTypeToVariant(unitType?: string | null): 'PC' | 'STRIPE' | 'BOX' {
-  const u = (unitType ?? '').toLowerCase();
-  if (u.includes('box')) return 'BOX';
-  if (u.includes('stripe') || u.includes('strip')) return 'STRIPE';
-  return 'PC';
-}
-
-const MEDICINE_CATEGORIES = new Set(['Tablet', 'Capsule', 'Syrup', 'Medicines']);
-
 export function matchesShopCategory(product: PharmacyProduct, chip: string) {
   if (chip === 'All Items') return true;
-  if (chip === 'Medicines') return MEDICINE_CATEGORIES.has(product.category ?? '');
+  if (chip === 'Medicines') return getProductKind(product.category) === 'medicine';
   return (product.category ?? '') === chip;
 }
 

@@ -100,12 +100,7 @@ function MedicineRow({
       style={[styles.medicineItemRow, isLast && styles.medicineItemRowLast]}
     >
       <View style={styles.medicineImageBox}>
-        <Image
-          source={{
-            uri: 'https://via.placeholder.com/60/ECEFF3/000000?text=Medicine',
-          }}
-          style={styles.medicineImage}
-        />
+        <ProductImage style={styles.medicineImage} />
       </View>
       <Text style={styles.medicineNameText} numberOfLines={1}>
         {item.name}

@@ -12,7 +12,65 @@ export const VENDOR_TABS: {
   {key: 'profile', label: 'Profile', icon: 'user'},
 ];
 
-export const FILTER_CATEGORIES = ['All Items', 'Medicines', "Women's Care", 'Body Care'];
+export const FILTER_CATEGORIES = [
+  'All Items',
+  'Medicines',
+  'Body Care',
+  'Beauty',
+  "Women's Care",
+  'Baby Products',
+] as const;
+
+export const MEDICINE_CATEGORIES = [
+  'Tablet',
+  'Capsule',
+  'Syrup',
+  'Injection',
+  'Inhaler',
+] as const;
+
+export const PERSONAL_CARE_CATEGORIES = [
+  'Body Care',
+  'Beauty',
+  'Skin Care',
+  'Hair Care',
+  'Oral Care',
+  "Women's Care",
+  'Baby Products',
+] as const;
+
+export const PRODUCT_CATEGORIES = [
+  ...MEDICINE_CATEGORIES,
+  ...PERSONAL_CARE_CATEGORIES,
+] as const;
+
+export const MEDICINE_UNIT_TYPES = ['Piece', 'Stripe', 'Box'] as const;
+export const PERSONAL_CARE_UNIT_TYPES = [
+  'Bottle',
+  'Tube',
+  'Pack',
+  'Jar',
+  'Piece',
+  'Box',
+] as const;
+
+export const UNIT_TYPES = [
+  ...MEDICINE_UNIT_TYPES,
+  ...PERSONAL_CARE_UNIT_TYPES,
+] as const;
+
+export function isMedicineCategory(category: string) {
+  return (MEDICINE_CATEGORIES as readonly string[]).includes(category);
+}
+
+export function unitTypesForCategory(category: string): readonly string[] {
+  return isMedicineCategory(category)
+    ? MEDICINE_UNIT_TYPES
+    : PERSONAL_CARE_UNIT_TYPES;
+}
+
+export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+export type UnitType = (typeof UNIT_TYPES)[number];
 
 export const ORDER_FILTER_CHIPS = ['Accepted', 'Declined', 'Pending', 'Last 1 Weeks'] as const;
 export type OrderFilterChip = (typeof ORDER_FILTER_CHIPS)[number];
@@ -30,14 +88,10 @@ export const PAYMENT_STATUS_FILTERS = ['All Statuses', 'Paid', 'Pending'] as con
 export type PaymentDateFilter = (typeof PAYMENT_DATE_FILTERS)[number];
 export type PaymentStatusFilter = (typeof PAYMENT_STATUS_FILTERS)[number];
 
-export const PRODUCT_CATEGORIES = ['Tablet', 'Capsule', 'Syrup', 'Injection', 'Inhaler'] as const;
-export const UNIT_TYPES = ['Box', 'Stripe', 'Piece', 'Bottle'] as const;
 export const TEMPERATURE_OPTIONS = [
   'Room Temp (20-25°C)',
   'Refrigerated (2-8°C)',
   'Frozen (-18°C)',
 ] as const;
 
-export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
-export type UnitType = (typeof UNIT_TYPES)[number];
 export type TemperatureOption = (typeof TEMPERATURE_OPTIONS)[number];

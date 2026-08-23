@@ -1,5 +1,6 @@
 import type {ImageSourcePropType} from 'react-native';
 import {API_ORIGIN} from '../config/api';
+import {imageUri} from './fileAsset';
 
 export const FALLBACK_AVATAR = require('../assets/logo.png');
 export const FALLBACK_PRODUCT = require('../assets/b2.png');
@@ -30,8 +31,5 @@ export function resolveImageSource(
   if (!trimmed || isUnreliableImageUrl(trimmed)) {
     return fallback;
   }
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return {uri: trimmed};
-  }
-  return {uri: `${API_ORIGIN}${trimmed}`};
+  return {uri: imageUri(trimmed, API_ORIGIN)};
 }

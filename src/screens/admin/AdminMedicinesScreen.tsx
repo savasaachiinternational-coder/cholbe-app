@@ -70,14 +70,7 @@ function MedicineCard({
       activeOpacity={0.85}
     >
       <View style={styles.medicineImageBox}>
-        <Image
-          source={{
-            uri:
-              item.imageUrl ??
-              'https://via.placeholder.com/80x60/ECEFF3/000000?text=Medicine',
-          }}
-          style={styles.medicineImage}
-        />
+        <ProductImage imageUrl={item.imageUrl} style={styles.medicineImage} />
       </View>
       <View style={styles.metaInfoColumn}>
         <Text style={styles.medicineNameText} numberOfLines={1}>

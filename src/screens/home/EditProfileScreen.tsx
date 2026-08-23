@@ -2,7 +2,6 @@ import {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,15 +20,12 @@ import type {BottomTabKey} from './homeData';
 import {authApi} from '../../api/auth';
 import {profileApi, type EmergencyContact} from '../../api/profile';
 import {uploadAvatarAsset} from '../../api/uploads';
-import {imageUri} from '../../utils/fileAsset';
-import {API_ORIGIN} from '../../config/api';
 import {ApiError} from '../../api/client';
 import {useFocusEffect} from '@react-navigation/native';
 import {AddEmergencyContactModal} from '../../components/AddEmergencyContactModal';
+import {AvatarImage} from '../../components/AvatarImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditProfile'>;
-
-const PROFILE_AVATAR = require('../../assets/b1.png');
 
 export function EditProfileScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
@@ -111,6 +107,7 @@ export function EditProfileScreen({navigation}: Props) {
     try {
       const uploaded = await uploadAvatarAsset(asset);
       setAvatarUrl(uploaded.fileUrl);
+      await authApi.updateMe({avatarUrl: uploaded.fileUrl});
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not upload photo';
       Alert.alert('Upload photo', message);
@@ -222,14 +219,7 @@ export function EditProfileScreen({navigation}: Props) {
         keyboardShouldPersistTaps="handled">
         <View style={styles.avatarSection}>
           <View style={styles.avatarWrapper}>
-            <Image
-              source={
-                avatarUrl
-                  ? {uri: imageUri(avatarUrl, API_ORIGIN)}
-                  : PROFILE_AVATAR
-              }
-              style={styles.profileAvatar}
-            />
+            <AvatarImage uri={avatarUrl} style={styles.profileAvatar} />
             <TouchableOpacity
               style={styles.avatarCameraBadge}
               activeOpacity={0.8}

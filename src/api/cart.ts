@@ -11,6 +11,7 @@ export type CartItem = {
     id: string;
     imageUrl: string | null;
     unitType: string | null;
+    category?: string | null;
   } | null;
 };
 

@@ -30,7 +30,8 @@ import {DatePickerField} from '../../components/MedicationPickers';
 import {
   PRODUCT_CATEGORIES,
   TEMPERATURE_OPTIONS,
-  UNIT_TYPES,
+  isMedicineCategory,
+  unitTypesForCategory,
   type ProductCategory,
   type TemperatureOption,
   type UnitType,
@@ -64,7 +65,7 @@ export function VendorAddProductScreen({navigation}: Props) {
   const [prescriptionRequired, setPrescriptionRequired] = useState(true);
   const [reminderActive, setReminderActive] = useState(true);
   const [category, setCategory] = useState<ProductCategory>('Tablet');
-  const [unitType, setUnitType] = useState<UnitType>('Box');
+  const [unitType, setUnitType] = useState<UnitType>('Piece');
   const [temperature, setTemperature] = useState<TemperatureOption>(TEMPERATURE_OPTIONS[0]);
   const [activePicker, setActivePicker] = useState<PickerField>(null);
   const [productName, setProductName] = useState('');
@@ -83,6 +84,19 @@ export function VendorAddProductScreen({navigation}: Props) {
     const result = await launchImageLibrary({mediaType: 'photo', selectionLimit: 1});
     if (result.assets?.[0]) setImageAsset(result.assets[0]);
   };
+
+  const handleCategoryChange = (next: ProductCategory) => {
+    setCategory(next);
+    const units = unitTypesForCategory(next);
+    setUnitType(units[0] as UnitType);
+    setPrescriptionRequired(isMedicineCategory(next));
+    if (!isMedicineCategory(next)) {
+      setReminderActive(false);
+    }
+  };
+
+  const availableUnitTypes = unitTypesForCategory(category);
+  const showMedicineFields = isMedicineCategory(category);
 
   const handleSave = async () => {
     if (!productName.trim()) {
@@ -139,9 +153,19 @@ export function VendorAddProductScreen({navigation}: Props) {
 
   const pickerConfig =
     activePicker === 'category'
-      ? {title: 'Category', options: PRODUCT_CATEGORIES, selected: category, onSelect: setCategory}
+      ? {
+          title: 'Category',
+          options: PRODUCT_CATEGORIES,
+          selected: category,
+          onSelect: (value: ProductCategory) => handleCategoryChange(value),
+        }
       : activePicker === 'unitType'
-        ? {title: 'Unit Type', options: UNIT_TYPES, selected: unitType, onSelect: setUnitType}
+        ? {
+            title: 'Sell Unit',
+            options: availableUnitTypes,
+            selected: unitType,
+            onSelect: setUnitType,
+          }
         : activePicker === 'temperature'
           ? {
               title: 'Temperature',
@@ -319,7 +343,7 @@ export function VendorAddProductScreen({navigation}: Props) {
             </View>
           </View>
 
-          <Text style={styles.inputLabel}>Unit Type</Text>
+          <Text style={styles.inputLabel}>Sell Unit</Text>
           <TouchableOpacity
             style={[styles.dropdownBox, styles.dropdownBoxSpaced]}
             activeOpacity={0.7}
@@ -327,7 +351,13 @@ export function VendorAddProductScreen({navigation}: Props) {
             <Text style={styles.dropdownText}>{unitType}</Text>
             <Feather name="chevron-down" size={20} color="#616161" />
           </TouchableOpacity>
+          <Text style={styles.fieldHint}>
+            {showMedicineFields
+              ? 'Choose Piece, Stripe, or Box — customers can buy in that pack size.'
+              : 'Choose Bottle, Tube, Pack, etc. — customers buy one unit at a time.'}
+          </Text>
 
+          {showMedicineFields ? (
           <View style={styles.blockCard}>
             <View style={styles.blockHeaderRow}>
               <View style={styles.blockIconTile}>
@@ -367,6 +397,7 @@ export function VendorAddProductScreen({navigation}: Props) {
               />
             </View>
           </View>
+          ) : null}
 
           <View style={styles.blockCard}>
             <View style={styles.blockHeaderRow}>
@@ -415,6 +446,7 @@ export function VendorAddProductScreen({navigation}: Props) {
             </View>
 
             <View style={styles.rowFields}>
+              {showMedicineFields ? (
               <View style={styles.flexField}>
                 <Text style={styles.inputLabel}>Temperature</Text>
                 <TouchableOpacity
@@ -427,6 +459,7 @@ export function VendorAddProductScreen({navigation}: Props) {
                   <Feather name="chevron-down" size={20} color="#616161" />
                 </TouchableOpacity>
               </View>
+              ) : null}
               <View style={styles.flexField}>
                 <Text style={styles.inputLabel}>Est. Delivery</Text>
                 <View style={styles.inputBox}>
@@ -617,6 +650,13 @@ const styles = StyleSheet.create({
     color: '#616161',
     marginBottom: 6,
     marginTop: 8,
+  },
+  fieldHint: {
+    fontSize: 12,
+    fontFamily: FONT.regular,
+    color: '#9E9E9E',
+    marginBottom: 8,
+    lineHeight: 17,
   },
   // Figma: 12px radius, 1px Greyscale-300, white well.
   inputBox: {

@@ -87,14 +87,7 @@ function UserCard({
 }) {
   return (
     <View style={[styles.userCardRow, isLast && styles.userCardRowLast]}>
-      <Image
-        source={
-          item.avatarUrl
-            ? { uri: item.avatarUrl }
-            : require('../../assets/profile.png')
-        }
-        style={styles.userAvatar}
-      />
+      <AvatarImage uri={item.avatarUrl} style={styles.userAvatar} />
       <View style={styles.metaInfoColumn}>
         <Text style={styles.userNameText}>{item.fullName}</Text>
         <Text style={styles.userEmailText}>{item.email ?? '—'}</Text>

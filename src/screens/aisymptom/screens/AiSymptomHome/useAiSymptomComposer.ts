@@ -52,42 +52,7 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
     setMessage(prev => (prev ? `${prev}\n${text}` : text));
   }, []);
 
-  const runPickAttachment = useCallback(async () => {
-    let result;
-    try {
-      result = await launchImageLibrary({
-        mediaType: 'mixed',
-        selectionLimit: 1,
-        // Full-resolution photos slow OCR down without reading any better.
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 0.9,
-      });
-    } catch (err) {
-      // launchImageLibrary rejects when the native module is missing from the
-      // build; without this the tap looks like it did nothing at all.
-      Alert.alert('Attachment', errorText(err, 'Could not open the picker.'));
-      return;
-    }
-
-    if (result.didCancel) return;
-
-    // The picker reports failures in the response rather than by rejecting.
-    if (result.errorCode) {
-      Alert.alert(
-        'Attachment',
-        result.errorMessage ?? `Picker failed (${result.errorCode}).`,
-      );
-      return;
-    }
-
-    if (!result.assets?.length) return;
-
-    const file = pickedFileFromAsset(result.assets[0], 'symptom');
-    if (!file) {
-      Alert.alert('Attachment', 'Could not read the selected file.');
-      return;
-    }
+  const processFile = useCallback(async (file: PickedFile) => {
     setAttachment(file);
 
     if (!canRecognizeText(file.mimeType, file.uri, file.fileName)) return;
@@ -133,11 +98,61 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
     }
   }, [appendMessage]);
 
+  const runPickAttachment = useCallback(async () => {
+    let result;
+    try {
+      result = await launchImageLibrary({
+        mediaType: 'mixed',
+        selectionLimit: 1,
+        // Full-resolution photos slow OCR down without reading any better.
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.9,
+      });
+    } catch (err) {
+      // launchImageLibrary rejects when the native module is missing from the
+      // build; without this the tap looks like it did nothing at all.
+      Alert.alert('Attachment', errorText(err, 'Could not open the picker.'));
+      return;
+    }
+
+    if (result.didCancel) return;
+
+    // The picker reports failures in the response rather than by rejecting.
+    if (result.errorCode) {
+      Alert.alert(
+        'Attachment',
+        result.errorMessage ?? `Picker failed (${result.errorCode}).`,
+      );
+      return;
+    }
+
+    if (!result.assets?.length) return;
+
+    const file = pickedFileFromAsset(result.assets[0], 'symptom');
+    if (!file) {
+      Alert.alert('Attachment', 'Could not read the selected file.');
+      return;
+    }
+    await processFile(file);
+  }, [processFile]);
+
   const pickAttachment = useCallback(() => {
     runPickAttachment().catch(err => {
       Alert.alert('Attachment', errorText(err, 'Could not open the picker.'));
     });
   }, [runPickAttachment]);
+
+  // Used when a file arrives from outside the picker flow, e.g. the
+  // DocScanner camera screen handing back a captured photo.
+  const ingestScannedFile = useCallback(
+    (file: PickedFile) => {
+      processFile(file).catch(err => {
+        Alert.alert('Scan', errorText(err, 'Could not read that document.'));
+      });
+    },
+    [processFile],
+  );
 
   const removeAttachment = useCallback(() => setAttachment(null), []);
 
@@ -218,6 +233,7 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
     scanning,
     scanLabel: SCAN_LABELS[scanStatus],
     pickAttachment,
+    ingestScannedFile,
     removeAttachment,
     voiceNote,
     removeVoiceNote,

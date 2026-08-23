@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import Feather from 'react-native-vector-icons/Feather';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../../navigation/types';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -25,11 +25,13 @@ import {AI_HELP_CATEGORIES} from '../../data/AiSymptomHome/aiHelpCategories';
 import {useAiSymptomComposer} from './useAiSymptomComposer';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'AiSymptomHome'>;
+type Route = RouteProp<RootStackParamList, 'AiSymptomHome'>;
 
 export function AiSymptomHome() {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Navigation>();
+  const route = useRoute<Route>();
   const [userName, setUserName] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
@@ -49,6 +51,14 @@ export function AiSymptomHome() {
       body: draft.message,
     });
   });
+
+  useEffect(() => {
+    const scannedFile = route.params?.scannedFile;
+    if (!scannedFile) return;
+    composer.ingestScannedFile(scannedFile);
+    // Clear the param so returning to this screen later doesn't re-ingest it.
+    navigation.setParams({scannedFile: undefined});
+  }, [route.params?.scannedFile, composer.ingestScannedFile, navigation]);
 
   const closeAssistant = () => {
     if (navigation.canGoBack()) navigation.goBack();
@@ -76,9 +86,6 @@ export function AiSymptomHome() {
           </Text>
         </View>
 
-        {/* TEMPORARY — dev entry point for the DocScanner spike. Remove this
-            block (and the docScannerLink styles) once the real entry point
-            exists in the composer. */}
         <TouchableOpacity
           style={styles.docScannerLink}
           activeOpacity={0.85}
@@ -158,7 +165,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 22,
   },
-  // TEMPORARY — paired with the DocScanner dev link above.
   docScannerLink: {
     marginTop: 20,
     flexDirection: 'row',

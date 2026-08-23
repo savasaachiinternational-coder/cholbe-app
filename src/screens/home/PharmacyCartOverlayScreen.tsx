@@ -25,11 +25,13 @@ import {
   formatBdt,
   productListPrice,
   productUnitPrice,
-  unitTypeToVariant,
 } from '../../utils/pharmacyHelpers';
+import {
+  defaultPurchaseOption,
+  variantLabelForUnit,
+} from '../../utils/productVariants';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyCartOverlay'>;
-type VariantKey = 'PC' | 'STRIPE' | 'BOX';
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
@@ -44,12 +46,6 @@ const {width} = Dimensions.get('window');
 const CARD_SPACING = 12;
 const CARD_WIDTH = (width - 32 - CARD_SPACING) / 2;
 const DELIVERY_CHARGE = 30;
-
-const VARIANT_ROWS: {key: VariantKey; label: string}[] = [
-  {key: 'PC', label: '1 PC'},
-  {key: 'STRIPE', label: '1 Stripe = 10 pcs'},
-  {key: 'BOX', label: '1 Box = 10 Stripes'},
-];
 
 export function PharmacyCartOverlayScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
@@ -68,7 +64,7 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
       ]);
       setCartItems(cart.items);
       setSubtotal(cart.subtotal);
-      setProducts(shop.slice(0, 4));
+      setProducts(shop);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not load cart';
       Alert.alert('Cart', message);
@@ -85,11 +81,8 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
 
   const handleQuickAdd = async (product: PharmacyProduct) => {
     try {
-      const cart = await cartApi.addItem(
-        product.id,
-        1,
-        unitTypeToVariant(product.unitType),
-      );
+      const option = defaultPurchaseOption(product);
+      const cart = await cartApi.addItem(product.id, 1, option.key);
       setCartItems(cart.items);
       setSubtotal(cart.subtotal);
     } catch (err) {
@@ -110,22 +103,13 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
   // recover the struck-through list price and the discount badge.
   const productById = new Map(products.map(item => [item.id, item]));
 
-  const variantQuantity = (variant: VariantKey) =>
-    cartItems
-      .filter(item => item.variant === variant)
-      .reduce((total, item) => total + item.quantity, 0);
-
-  const handleVariantStep = async (variant: VariantKey, delta: number) => {
-    const target = cartItems.find(item => item.variant === variant);
-    if (!target) {
-      return;
-    }
-    const next = target.quantity + delta;
+  const handleLineQuantity = async (item: CartItem, delta: number) => {
+    const next = item.quantity + delta;
     try {
       const cart =
         next < 1
-          ? await cartApi.removeItem(target.id)
-          : await cartApi.updateItem(target.id, next);
+          ? await cartApi.removeItem(item.id)
+          : await cartApi.updateItem(item.id, next);
       setCartItems(cart.items);
       setSubtotal(cart.subtotal);
     } catch (err) {
@@ -145,6 +129,12 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
     const listTotal = product ? productListPrice(product) * item.quantity : null;
     const pct = product ? discountPercent(product) : null;
 
+    const variantLabel = variantLabelForUnit(
+      product?.unitType ?? item.vendorProduct?.unitType,
+      product?.category ?? item.vendorProduct?.category,
+      item.variant,
+    );
+
     return (
       <View key={item.id} style={styles.itemRow}>
         <ProductImage
@@ -160,7 +150,7 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
           </View>
           <View style={styles.itemMetaRow}>
             <Text style={styles.itemUnitPrice}>
-              {formatBdt(Number(item.unitPrice))}
+              {formatBdt(Number(item.unitPrice))} · {variantLabel}
             </Text>
             {listTotal != null && pct != null ? (
               <>
@@ -168,6 +158,21 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
                 <Text style={styles.itemDiscount}>{pct}% off</Text>
               </>
             ) : null}
+          </View>
+          <View style={styles.lineCounterRow}>
+            <TouchableOpacity
+              style={styles.counterBtn}
+              activeOpacity={0.7}
+              onPress={() => handleLineQuantity(item, -1)}>
+              <Feather name="minus" size={15} color="#9E9E9E" />
+            </TouchableOpacity>
+            <Text style={styles.counterValue}>{formatQuantity(item.quantity)}</Text>
+            <TouchableOpacity
+              style={styles.counterBtn}
+              activeOpacity={0.7}
+              onPress={() => handleLineQuantity(item, 1)}>
+              <Feather name="plus" size={15} color="#212121" />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -244,44 +249,6 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
                 />
                 <Text style={styles.summaryHeaderText}>Order Summary</Text>
               </View>
-
-              {VARIANT_ROWS.map(variant => {
-                const qty = variantQuantity(variant.key);
-                return (
-                  <View key={variant.key} style={styles.variantRow}>
-                    <View style={styles.radioRow}>
-                      <View
-                        style={[
-                          styles.radioCircle,
-                          qty > 0 && styles.radioCircleActive,
-                        ]}>
-                        {qty > 0 ? <View style={styles.radioInnerCircle} /> : null}
-                      </View>
-                      <Text style={styles.variantLabel}>{variant.label}</Text>
-                    </View>
-
-                    <View style={styles.counterRow}>
-                      <TouchableOpacity
-                        style={styles.counterBtn}
-                        activeOpacity={0.7}
-                        onPress={() => handleVariantStep(variant.key, -1)}>
-                        <Feather name="minus" size={15} color="#9E9E9E" />
-                      </TouchableOpacity>
-                      <Text style={styles.counterValue}>
-                        {formatQuantity(qty)}
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.counterBtn}
-                        activeOpacity={0.7}
-                        onPress={() => handleVariantStep(variant.key, 1)}>
-                        <Feather name="plus" size={15} color="#212121" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              })}
-
-              <View style={styles.cardDivider} />
 
               {cartItems.length === 0 ? (
                 <Text style={styles.emptyCartText}>Cart is empty</Text>
@@ -587,6 +554,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginTop: 4,
+  },
+  lineCounterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
   },
   itemUnitPrice: {fontSize: 12, fontFamily: FONT.regular, color: '#616161'},
   itemOldPrice: {

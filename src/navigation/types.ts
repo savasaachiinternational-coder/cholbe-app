@@ -185,7 +185,9 @@ export type RootStackParamList = {
   ChooseFromPharmacyGallery: undefined;
   //AiSymptom
 
-  AiSymptomHome:undefined;
+  AiSymptomHome:
+    | {scannedFile?: {uri: string; fileName: string; mimeType: string}}
+    | undefined;
   SymptomDuration:{title: string; body: string};
   PainStatus:{intake: SymptomIntake};
   PreviousHistoryCheck:{intake: SymptomIntake};

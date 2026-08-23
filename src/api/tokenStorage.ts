@@ -2,8 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 import { setCrashReportingUser } from '../monitoring/sentry';
 
-const TOKEN_KEY = '@cholbe/access_token';
-const USER_KEY = '@cholbe/user';
+const TOKEN_SERVICE = 'com.cholbe.session.token';
+const USER_SERVICE = 'com.cholbe.session.user';
+
+// Pre-encryption keys, read once so existing installs stay logged in.
+const LEGACY_TOKEN_KEY = '@cholbe/access_token';
+const LEGACY_USER_KEY = '@cholbe/user';
+
+const SECURE_OPTIONS = {
+  accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+} satisfies Keychain.SetOptions;
+
 const IS_FIRST_TIME = '@cholbe/isfirsttime';
 
 export type StoredUser = {

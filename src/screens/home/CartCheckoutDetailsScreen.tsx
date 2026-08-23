@@ -27,7 +27,6 @@ import { formatBdt } from '../../utils/pharmacyHelpers';
 import { looksLikeCoordinates, reverseGeocode } from '../../utils/geocoding';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CartCheckoutDetails'>;
-type VariantKey = 'PC' | 'Stripe' | 'Box';
 type AddressCategory = 'Home' | 'Office';
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
@@ -38,12 +37,6 @@ const FONT = {
   semibold: 'ProximaNova-Semibold',
   bold: 'ProximaNova-Bold',
 } as const;
-
-const VARIANTS: { key: VariantKey; label: string }[] = [
-  { key: 'PC', label: '1 PC' },
-  { key: 'Stripe', label: '1 Stripe = 10 pcs' },
-  { key: 'Box', label: '1 Box = 10 Stripes' },
-];
 
 const DEFAULT_LAT = 23.874;
 const DEFAULT_LNG = 90.3695;
@@ -80,12 +73,6 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const [addressCategory, setAddressCategory] =
     useState<AddressCategory>('Home');
-  const [selectedVariant, setSelectedVariant] = useState<VariantKey>('Box');
-  const [quantities, setQuantities] = useState<Record<VariantKey, number>>({
-    PC: 0,
-    Stripe: 0,
-    Box: 5,
-  });
   const [address, setAddress] = useState<Address | null>(null);
   const [cartSubtotal, setCartSubtotal] = useState(0);
   const [cartItems, setCartItems] = useState<
@@ -322,16 +309,6 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
       setSaving(false);
     }
   };
-
-  const handleQuantityChange = (variant: VariantKey, delta: number) => {
-    setQuantities(prev => ({
-      ...prev,
-      [variant]: Math.max(0, prev[variant] + delta),
-    }));
-    setSelectedVariant(variant);
-  };
-
-  const formatQuantity = (value: number) => value.toString().padStart(2, '0');
 
   const openAddressMap = () => {
     preserveFormRef.current = true;
@@ -595,44 +572,6 @@ export function CartCheckoutDetailsScreen({ navigation, route }: Props) {
             />
             <Text style={styles.orderSummaryTitle}>Order Summary</Text>
           </View>
-
-          {VARIANTS.map(variant => (
-            <View key={variant.key} style={styles.summaryCounterItem}>
-              <View
-                style={[
-                  styles.summaryRadioFake,
-                  selectedVariant === variant.key &&
-                    styles.summaryRadioFakeActive,
-                ]}
-              >
-                {selectedVariant === variant.key ? (
-                  <View style={styles.summaryRadioDot} />
-                ) : null}
-              </View>
-              <Text style={styles.summaryUnitText}>{variant.label}</Text>
-              <View style={styles.summaryControlRow}>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => handleQuantityChange(variant.key, -1)}
-                >
-                  <Feather
-                    name="minus-circle"
-                    size={20}
-                    color={quantities[variant.key] > 0 ? '#1A1C1E' : '#C8D1DB'}
-                  />
-                </TouchableOpacity>
-                <Text style={styles.summaryCountVal}>
-                  {formatQuantity(quantities[variant.key])}
-                </Text>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => handleQuantityChange(variant.key, 1)}
-                >
-                  <Feather name="plus-circle" size={20} color="#1A1C1E" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
 
           <View style={styles.dividerLine} />
 

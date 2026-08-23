@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -28,21 +28,22 @@ import {
   productListPrice,
   productUnitPrice,
   productVolumeLabel,
-  unitTypeToVariant,
 } from '../../utils/pharmacyHelpers';
+import {
+  type ApiVariant,
+  defaultPurchaseOption,
+  getPurchaseOptions,
+  isMedicineProduct,
+  productInfoTabLabel,
+  productMetaLines,
+  productSubtitle,
+} from '../../utils/productVariants';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyDetails'>;
-type VariantKey = 'PC' | 'Stripe' | 'Box';
-type TabKey = 'Summary' | 'Medicine Info';
+type TabKey = 'Summary' | 'Info';
 
 const {width} = Dimensions.get('window');
 const CARD_WIDTH = (width - 32 - 12) / 2;
-
-const VARIANTS: {key: VariantKey; label: string}[] = [
-  {key: 'PC', label: '1 PC'},
-  {key: 'Stripe', label: '1 Stripe = 10 pcs'},
-  {key: 'Box', label: '1 Box = 10 Stripes'},
-];
 
 type InfoBlock = {text: string; bullet?: boolean; bold?: boolean};
 
@@ -121,14 +122,15 @@ const MEDICINE_INFO_SECTIONS: {title: string; blocks: InfoBlock[]}[] = [
   },
 ];
 
-function variantLabel(product: PharmacyProduct, key: VariantKey) {
-  if (key === 'PC') {
-    return product.unitType ? `1 ${product.unitType}` : '1 PC';
+function categoryBadgeIcon(category?: string | null) {
+  const cat = (category ?? '').toLowerCase();
+  if (cat.includes('baby')) return 'baby-carriage';
+  if (cat.includes('body') || cat.includes('skin') || cat.includes('hair')) {
+    return 'hand-holding-water';
   }
-  if (key === 'Stripe') {
-    return '1 Stripe = 10 pcs';
-  }
-  return '1 Box = 10 Stripes';
+  if (cat.includes('oral')) return 'tooth';
+  if (cat.includes('women')) return 'female';
+  return 'capsules';
 }
 
 export function PharmacyDetailsScreen({navigation, route}: Props) {
@@ -141,12 +143,18 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('Summary');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState<VariantKey>('Box');
-  const [quantities, setQuantities] = useState<Record<VariantKey, number>>({
-    PC: 0,
-    Stripe: 0,
-    Box: 1,
+  const [selectedVariant, setSelectedVariant] = useState<ApiVariant>('PC');
+  const [quantities, setQuantities] = useState<Partial<Record<ApiVariant, number>>>({
+    PC: 1,
   });
+
+  const purchaseOptions = useMemo(
+    () => (product ? getPurchaseOptions(product) : []),
+    [product],
+  );
+
+  const infoTabLabel = productInfoTabLabel(product?.category);
+  const productMeta = product ? productMetaLines(product) : null;
 
   const loadProduct = useCallback(async () => {
     setLoading(true);
@@ -159,14 +167,12 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
       setRelatedProducts(
         shop.filter(item => item.id !== data.id).slice(0, 4),
       );
-      const variantKey =
-        unitTypeToVariant(data.unitType) === 'BOX'
-          ? 'Box'
-          : unitTypeToVariant(data.unitType) === 'STRIPE'
-            ? 'Stripe'
-            : 'PC';
-      setSelectedVariant(variantKey);
-      setQuantities({PC: 0, Stripe: 0, Box: 0, [variantKey]: 1});
+      const options = getPurchaseOptions(data);
+      const initial = defaultPurchaseOption(data);
+      setSelectedVariant(initial.key);
+      setQuantities(
+        Object.fromEntries(options.map(option => [option.key, option.key === initial.key ? 1 : 0])),
+      );
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Product not found';
       Alert.alert('Product', message, [{text: 'OK', onPress: () => navigation.goBack()}]);
@@ -180,13 +186,17 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
   }, [loadProduct]);
 
   const productName = product?.name ?? 'Product';
-  const productType = product?.genericName ?? product?.category ?? 'Medicine';
+  const productType = product ? productSubtitle(product) : 'Product';
   const salePrice = product ? productUnitPrice(product) : 0;
   const listPrice = product ? productListPrice(product) : 0;
   const hasDiscount = product?.discountPrice != null && salePrice < listPrice;
-  const medicineDescription =
+  const productDescription =
     product?.medicine?.description?.trim() ||
-    `${productName} is available from ${product?.vendor?.pharmacyName ?? 'our pharmacy'}. Please follow your doctor's advice before use.`;
+    `${productName} is available from ${product?.vendor?.pharmacyName ?? 'our pharmacy'}.${
+      product && isMedicineProduct(product)
+        ? " Please follow your doctor's advice before use."
+        : ''
+    }`;
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -197,7 +207,7 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
     }
     setAdding(true);
     try {
-      await cartApi.addItem(product.id, qty, unitTypeToVariant(product.unitType));
+      await cartApi.addItem(product.id, qty, selectedVariant);
       navigation.navigate('PharmacyCartOverlay');
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not add to cart';
@@ -215,11 +225,23 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
     );
   }
 
-  const handleQuantityChange = (variant: VariantKey, delta: number) => {
+  const handleQuantityChange = (variant: ApiVariant, delta: number) => {
+    setSelectedVariant(variant);
     setQuantities(prev => ({
       ...prev,
-      [variant]: Math.max(0, prev[variant] + delta),
+      [variant]: Math.max(0, (prev[variant] ?? 0) + delta),
     }));
+  };
+
+  const handleSelectVariant = (variant: ApiVariant) => {
+    setSelectedVariant(variant);
+    setQuantities(prev => {
+      const next: Partial<Record<ApiVariant, number>> = {};
+      purchaseOptions.forEach(option => {
+        next[option.key] = option.key === variant ? Math.max(prev[variant] ?? 0, 1) : 0;
+      });
+      return next;
+    });
   };
 
   const formatQuantity = (value: number) => value.toString().padStart(2, '0');
@@ -231,28 +253,47 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
 
   const renderMedicineInfoContent = () => (
     <View style={styles.infoContentContainer}>
-      {MEDICINE_INFO_SECTIONS.map(section => (
-        <View key={section.title}>
-          <Text style={styles.contentHeading}>{section.title}</Text>
-          {section.blocks.map((block, index) =>
-            block.bullet ? (
-              <View key={`${section.title}-${index}`} style={styles.bulletRow}>
-                <Text style={styles.bullet}>•</Text>
+      {isMedicineProduct(product) ? (
+        MEDICINE_INFO_SECTIONS.map(section => (
+          <View key={section.title}>
+            <Text style={styles.contentHeading}>{section.title}</Text>
+            {section.blocks.map((block, index) =>
+              block.bullet ? (
+                <View key={`${section.title}-${index}`} style={styles.bulletRow}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text
+                    style={[styles.contentText, block.bold && styles.boldText]}>
+                    {block.text}
+                  </Text>
+                </View>
+              ) : (
                 <Text
-                  style={[styles.contentText, block.bold && styles.boldText]}>
+                  key={`${section.title}-${index}`}
+                  style={[styles.paragraph, block.bold && styles.boldText]}>
                   {block.text}
                 </Text>
-              </View>
-            ) : (
-              <Text
-                key={`${section.title}-${index}`}
-                style={[styles.paragraph, block.bold && styles.boldText]}>
-                {block.text}
-              </Text>
-            ),
-          )}
-        </View>
-      ))}
+              ),
+            )}
+          </View>
+        ))
+      ) : (
+        <>
+          <Text style={styles.contentHeading}>About this product</Text>
+          <Text style={styles.paragraph}>{productDescription}</Text>
+          {product.brand ? (
+            <>
+              <Text style={styles.contentHeading}>Brand</Text>
+              <Text style={styles.paragraph}>{product.brand}</Text>
+            </>
+          ) : null}
+          {product.unitType ? (
+            <>
+              <Text style={styles.contentHeading}>Unit</Text>
+              <Text style={styles.paragraph}>Sold per {product.unitType.toLowerCase()}.</Text>
+            </>
+          ) : null}
+        </>
+      )}
     </View>
   );
 
@@ -293,7 +334,7 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
       <View style={styles.disclaimerContainer}>
         <Text style={styles.disclaimerTitle}>Disclaimer:</Text>
         <Text style={styles.disclaimerText}>
-          {medicineDescription}
+          {productDescription}
         </Text>
       </View>
     </>
@@ -341,7 +382,8 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
           activeOpacity={0.8}
           onPress={async () => {
             try {
-              await cartApi.addItem(item.id, 1, unitTypeToVariant(item.unitType));
+              const option = defaultPurchaseOption(item);
+              await cartApi.addItem(item.id, 1, option.key);
               navigation.navigate('PharmacyCartOverlay');
             } catch (err) {
               const message =
@@ -427,14 +469,14 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
           </View>
 
           <View style={styles.tabsContainer}>
-            {(['Summary', 'Medicine Info'] as TabKey[]).map(tab => (
+            {(['Summary', 'Info'] as TabKey[]).map(tab => (
               <TouchableOpacity
                 key={tab}
                 style={[styles.tab, activeTab === tab && styles.activeTab]}
                 activeOpacity={0.8}
                 onPress={() => setActiveTab(tab)}>
                 <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-                  {tab}
+                  {tab === 'Info' ? infoTabLabel : 'Summary'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -447,30 +489,32 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
                 <Text style={styles.subTitleText}>{productType}</Text>
               </View>
               <View style={styles.categoryBadge}>
-                <FontAwesome5 name="capsules" size={12} color="#EDF7F6" />
+                <FontAwesome5
+                  name={categoryBadgeIcon(product.category)}
+                  size={12}
+                  color="#EDF7F6"
+                />
                 <Text style={styles.categoryBadgeText}>
-                  {product.category ?? 'Medicines'}
+                  {product.category ?? 'Product'}
                 </Text>
               </View>
             </View>
 
-            <View style={styles.detailsBlock}>
-              <Text style={styles.detailLine}>
-                Generics:{' '}
-                <Text style={styles.blueLink}>
-                  {product.genericName ?? product.name}.
+            {productMeta ? (
+              <View style={styles.detailsBlock}>
+                <Text style={styles.detailLine}>
+                  {productMeta.primaryLabel}:{' '}
+                  <Text style={styles.blueLink}>{productMeta.primaryValue}.</Text>
                 </Text>
-              </Text>
-              <Text style={styles.detailLine}>
-                Type:{' '}
-                <Text style={styles.blueLink}>
-                  {product.medicine?.medicineType ?? product.category ?? 'Medicine'}.
+                <Text style={styles.detailLine}>
+                  {productMeta.secondaryLabel}:{' '}
+                  <Text style={styles.blueLink}>{productMeta.secondaryValue}.</Text>
                 </Text>
-              </Text>
-              <Text style={styles.blueLink}>
-                {product.vendor?.pharmacyName ?? product.brand ?? 'Cholbe Pharmacy'}
-              </Text>
-            </View>
+                <Text style={styles.blueLink}>
+                  {product.vendor?.pharmacyName ?? product.brand ?? 'Cholbe Pharmacy'}
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           {activeTab === 'Summary' ? renderSummaryContent() : renderMedicineInfoContent()}
@@ -489,12 +533,12 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
       <View style={[styles.bottomPurchaseSheet, {paddingBottom: Math.max(insets.bottom, 16)}]}>
         <View style={styles.dragHandle} />
 
-        {VARIANTS.map(variant => (
+        {purchaseOptions.map(variant => (
           <View key={variant.key} style={styles.variantRow}>
             <TouchableOpacity
               style={styles.radioRow}
               activeOpacity={0.8}
-              onPress={() => setSelectedVariant(variant.key)}>
+              onPress={() => handleSelectVariant(variant.key)}>
               <View
                 style={[
                   styles.radioCircle,
@@ -502,7 +546,7 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
                 ]}>
                 {selectedVariant === variant.key && <View style={styles.radioInnerCircle} />}
               </View>
-              <Text style={styles.variantLabel}>{variantLabel(product, variant.key)}</Text>
+              <Text style={styles.variantLabel}>{variant.label}</Text>
             </TouchableOpacity>
 
             <View style={styles.counterRow}>
@@ -512,7 +556,9 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
                 onPress={() => handleQuantityChange(variant.key, -1)}>
                 <Feather name="minus" size={16} color="#7E8B97" />
               </TouchableOpacity>
-              <Text style={styles.counterValue}>{formatQuantity(quantities[variant.key])}</Text>
+              <Text style={styles.counterValue}>
+                {formatQuantity(quantities[variant.key] ?? 0)}
+              </Text>
               <TouchableOpacity
                 style={styles.counterBtn}
                 activeOpacity={0.7}

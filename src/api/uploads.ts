@@ -1,4 +1,4 @@
-import {apiRequest} from './client';
+import {apiRequest, ApiError} from './client';
 import type {Asset} from 'react-native-image-picker';
 import {pickedFileFromAsset} from '../utils/fileAsset';
 
@@ -15,14 +15,23 @@ function normalizeImageMime(mimeType: string) {
   return mime;
 }
 
+type UploadEndpoint =
+  | '/uploads/report'
+  | '/uploads/prescription'
+  | '/uploads/product-image'
+  | '/uploads/avatar'
+  | '/uploads/chat-attachment'
+  | '/uploads/vendor-document';
+
+/** Older production API builds only expose a subset of upload routes. */
+const UPLOAD_ENDPOINT_FALLBACKS: Partial<Record<UploadEndpoint, UploadEndpoint>> = {
+  '/uploads/avatar': '/uploads/product-image',
+  '/uploads/chat-attachment': '/uploads/report',
+  '/uploads/vendor-document': '/uploads/report',
+};
+
 export async function uploadFile(
-  endpoint:
-    | '/uploads/report'
-    | '/uploads/prescription'
-    | '/uploads/product-image'
-    | '/uploads/avatar'
-    | '/uploads/chat-attachment'
-    | '/uploads/vendor-document',
+  endpoint: UploadEndpoint,
   uri: string,
   fileName: string,
   mimeType: string,
@@ -33,11 +42,24 @@ export async function uploadFile(
     name: fileName,
     type: normalizeImageMime(mimeType),
   } as never);
-  return apiRequest<UploadResult>(endpoint, {
-    method: 'POST',
-    auth: true,
-    body: form,
-  });
+
+  try {
+    return await apiRequest<UploadResult>(endpoint, {
+      method: 'POST',
+      auth: true,
+      body: form,
+    });
+  } catch (err) {
+    const fallback = UPLOAD_ENDPOINT_FALLBACKS[endpoint];
+    if (fallback && err instanceof ApiError && err.status === 404) {
+      return apiRequest<UploadResult>(fallback, {
+        method: 'POST',
+        auth: true,
+        body: form,
+      });
+    }
+    throw err;
+  }
 }
 
 export async function uploadAvatarAsset(asset: Asset) {

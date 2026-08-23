@@ -28,6 +28,7 @@ import {
   type ScheduleTab,
 } from './homeData';
 import { ProductImage } from '../../components/ProductImage';
+import { AvatarImage } from '../../components/AvatarImage';
 import { RoleMenuDrawer } from '../../components/RoleMenuDrawer';
 import { UpdateHealthVitalsModal } from '../../components/UpdateHealthVitalsModal';
 import { formatBdt, productUnitPrice } from '../../utils/pharmacyHelpers';
@@ -273,14 +274,7 @@ export function HomeScreen() {
             />
             <View style={styles.profileBgNotch} pointerEvents="none" />
             <View style={styles.userInfoContainer}>
-              <Image
-                source={
-                  user?.avatarUrl
-                    ? { uri: user.avatarUrl }
-                    : require('../../assets/b2.png')
-                }
-                style={styles.avatar}
-              />
+              <AvatarImage uri={user?.avatarUrl} style={styles.avatar} />
               <View style={styles.userMeta}>
                 <Text style={styles.userName}>{user?.fullName ?? '—'}</Text>
                 <View style={styles.locationRow}>
@@ -666,6 +660,7 @@ export function HomeScreen() {
               return (
                 <View key={product.id} style={styles.productCard}>
                   <TouchableOpacity
+                    style={styles.productCardBody}
                     activeOpacity={0.85}
                     onPress={() =>
                       navigation.navigate('PharmacyDetails', {
@@ -682,12 +677,14 @@ export function HomeScreen() {
                       imageUrl={product.imageUrl}
                       style={styles.productImage}
                     />
-                    <Text style={styles.productTitle}>{product.name}</Text>
-                    <Text style={styles.productWeight}>
-                      {product.genericName ?? product.category ?? ''}
+                    <Text style={styles.productTitle} numberOfLines={2}>
+                      {product.name}
+                    </Text>
+                    <Text style={styles.productWeight} numberOfLines={1}>
+                      {product.genericName ?? product.category ?? ' '}
                     </Text>
                     <View style={styles.productPricingRow}>
-                      <Text style={styles.productVol}>
+                      <Text style={styles.productVol} numberOfLines={1}>
                         {product.category ?? 'Item'}
                       </Text>
                       {product.discountPrice ? (
@@ -1454,9 +1451,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 12,
     width: PRODUCT_CARD_WIDTH,
+    height: 268,
     marginRight: 12,
     borderWidth: 1,
     borderColor: '#F1F5F9',
+  },
+  productCardBody: {
+    flex: 1,
   },
   discountBadge: {
     position: 'absolute',
@@ -1485,11 +1486,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1E293B',
     marginTop: 8,
+    minHeight: 36,
+    lineHeight: 18,
   },
   productWeight: {
     fontSize: 11,
     color: '#64748B',
     marginTop: 1,
+    minHeight: 14,
   },
   productPricingRow: {
     flexDirection: 'row',

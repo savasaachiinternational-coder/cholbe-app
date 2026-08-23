@@ -37,6 +37,7 @@ import {ApiError} from '../../api/client';
 import {performLogout} from '../../auth/sessionControl';
 import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 import {AddEmergencyContactModal} from '../../components/AddEmergencyContactModal';
+import {AvatarImage} from '../../components/AvatarImage';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - 44) / 2;
@@ -53,9 +54,6 @@ type SummaryCarouselItem =
   | {id: 'vitals'; type: 'vitals'};
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyProfile'>;
-
-const PROFILE_AVATAR = require('../../assets/b1.png');
-const DOCTOR_AVATAR = require('../../assets/b2.png');
 
 // Proxima Nova is applied on this screen only. Android resolves a weight by the
 // exact font file name, so each weight is referenced by its own family name.
@@ -111,6 +109,10 @@ export function MyProfileScreen({navigation}: Props) {
     overview?.assignedDoctor?.specialty ??
     overview?.nextAppointment?.doctor.specialty ??
     'Video consultation';
+  const doctorAvatarUrl =
+    overview?.assignedDoctor?.user.avatarUrl ??
+    overview?.nextAppointment?.doctor.user.avatarUrl ??
+    null;
   const appointmentId = overview?.nextAppointment?.id;
   const assignedDoctorId =
     overview?.nextAppointment?.doctor.id ?? overview?.assignedDoctor?.id;
@@ -433,10 +435,13 @@ export function MyProfileScreen({navigation}: Props) {
         ]}>
         <View style={styles.profileBioSection}>
           <View style={styles.avatarWrapper}>
-            <Image source={PROFILE_AVATAR} style={styles.profileAvatar} />
-            <View style={styles.avatarCameraBadge}>
+            <AvatarImage uri={user?.avatarUrl} style={styles.profileAvatar} />
+            <TouchableOpacity
+              style={styles.avatarCameraBadge}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('EditProfile')}>
               <Feather name="camera" size={12} color="#0D9488" />
-            </View>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.bioTextContainer}>
@@ -597,7 +602,7 @@ export function MyProfileScreen({navigation}: Props) {
 
         <Text style={styles.sectionTitleLabel}>Assigned Doctor</Text>
         <View style={styles.assignedDoctorCard}>
-          <Image source={DOCTOR_AVATAR} style={styles.doctorAvatarThumb} />
+          <AvatarImage uri={doctorAvatarUrl} style={styles.doctorAvatarThumb} />
           <View style={styles.doctorCardMeta}>
             <Text style={styles.doctorCardNameText}>{doctorName}</Text>
             <Text style={styles.doctorCardSpecText}>{specialty}</Text>
@@ -619,7 +624,7 @@ export function MyProfileScreen({navigation}: Props) {
         </View>
 
         <View style={styles.sectionTitleHeaderRow}>
-          <Text style={styles.sectionTitleLabelNoMargin}>Emergency Contract</Text>
+          <Text style={styles.sectionTitleLabelNoMargin}>Emergency Contact</Text>
           <TouchableOpacity
             style={styles.sectionInlineEditRow}
             activeOpacity={0.7}
@@ -680,7 +685,7 @@ export function MyProfileScreen({navigation}: Props) {
               style={styles.plusIconMargin}
             />
             <Text style={styles.addContractButtonText}>
-              Add Emergency Contract
+              Add Emergency Contact
             </Text>
           </TouchableOpacity>
         </View>
@@ -735,11 +740,18 @@ export function MyProfileScreen({navigation}: Props) {
                           memberName: member.name,
                         })
                       }>
-                      <View style={styles.familyAvatarPlaceholder}>
-                        <Text style={styles.familyAvatarInitial}>
-                          {member.name.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
+                      {member.avatarUrl || member.memberUser?.avatarUrl ? (
+                        <AvatarImage
+                          uri={member.avatarUrl ?? member.memberUser?.avatarUrl}
+                          style={styles.familyAvatarImage}
+                        />
+                      ) : (
+                        <View style={styles.familyAvatarPlaceholder}>
+                          <Text style={styles.familyAvatarInitial}>
+                            {member.name.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
                       <View style={styles.familyMemberMeta}>
                         <Text style={styles.familyMemberName} numberOfLines={1}>
                           {member.name}
@@ -1597,6 +1609,12 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   familyMemberAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#CBD5E1',
+  },
+  familyAvatarImage: {
     width: 36,
     height: 36,
     borderRadius: 18,
