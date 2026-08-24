@@ -1,3 +1,5 @@
+import type {MedicationSchedule} from '../api/medications';
+
 export type MedicationFrequency =
   | 'once_daily'
   | 'twice_daily'
@@ -137,6 +139,62 @@ export function formatMealTimingLabel(value?: string) {
   if (value === 'before') return 'Before Meal';
   if (value === 'after') return 'After Meal';
   return value ?? '—';
+}
+
+/** Frequency arrives as a free-form string; anything unknown reads as daily. */
+function toFrequency(value: string | null): MedicationFrequency {
+  return FREQUENCY_OPTIONS.some(option => option.value === value)
+    ? (value as MedicationFrequency)
+    : 'once_daily';
+}
+
+function toMealTiming(value: string | null): 'before' | 'after' {
+  return value?.toLowerCase().includes('after') ? 'after' : 'before';
+}
+
+/**
+ * The API may hand back a full timestamp where the form wants a plain date.
+ * `formatDisplayDate` splits on "-", so an unsliced ISO string renders as
+ * garbage rather than a date.
+ */
+function toDateOnly(value: string | null, fallback: string): string {
+  if (!value) return fallback;
+  const date = value.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : fallback;
+}
+
+/**
+ * Inverse of `draftToSchedulePayload` — turns a saved schedule back into an
+ * editable draft. Every nullable column falls back to the create-form default
+ * so the editor never opens on a blank or `undefined` field.
+ */
+export function scheduleToDraft(schedule: MedicationSchedule): MedicationDraft {
+  const base = createDefaultMedicationDraft();
+
+  return {
+    ...base,
+    medicineName: schedule.medicineName ?? '',
+    dose: schedule.dose ?? '',
+    instruction: schedule.instruction ?? base.instruction,
+    mealTiming: toMealTiming(schedule.mealTiming),
+    times: schedule.times?.length ? schedule.times : base.times,
+    frequency: toFrequency(schedule.frequency),
+    startDate: toDateOnly(schedule.startDate, base.startDate),
+    endDate: toDateOnly(schedule.endDate, base.endDate),
+    reminderEnabled: schedule.reminderEnabled,
+    reminderBeforeMinutes:
+      schedule.reminderBeforeMinutes ?? base.reminderBeforeMinutes,
+    followUpEnabled: schedule.followUpEnabled,
+    followUpMinutes: schedule.followUpMinutes ?? base.followUpMinutes,
+    followUpTime: schedule.followUpTime ?? base.followUpTime,
+    refillEnabled: schedule.refillEnabled,
+    inventoryCount: schedule.inventoryCount ?? base.inventoryCount,
+    refillDate: toDateOnly(schedule.refillDate, base.refillDate),
+    refillTime: schedule.refillTime ?? base.refillTime,
+    caregiverName: schedule.caregiverName ?? '',
+    prescriptionId: schedule.prescriptionId ?? undefined,
+    source: 'saved',
+  };
 }
 
 export function draftToSchedulePayload(draft: MedicationDraft) {

@@ -14,6 +14,8 @@ type MedicationDraftContextValue = {
   patchDraft: (patch: Partial<MedicationDraft>) => void;
   resetDraft: (overrides?: Partial<MedicationDraft>) => void;
   saveSchedule: () => Promise<void>;
+  /** Saves the current draft over an existing schedule instead of creating one. */
+  updateSchedule: (scheduleId: string) => Promise<void>;
   uploadAndScan: (
     uri: string,
     fileName: string,
@@ -47,6 +49,16 @@ export function MedicationDraftProvider({children}: {children: ReactNode}) {
   const saveSchedule = useCallback(async () => {
     await medicationSchedulesApi.create(draftToSchedulePayload(draft));
   }, [draft]);
+
+  const updateSchedule = useCallback(
+    async (scheduleId: string) => {
+      await medicationSchedulesApi.update(
+        scheduleId,
+        draftToSchedulePayload(draft),
+      );
+    },
+    [draft],
+  );
 
   const uploadAndScan = useCallback(
     async (
@@ -87,6 +99,7 @@ export function MedicationDraftProvider({children}: {children: ReactNode}) {
       patchDraft,
       resetDraft,
       saveSchedule,
+      updateSchedule,
       uploadAndScan,
       loadPrescriptionDraft,
     }),
@@ -96,6 +109,7 @@ export function MedicationDraftProvider({children}: {children: ReactNode}) {
       patchDraft,
       resetDraft,
       saveSchedule,
+      updateSchedule,
       uploadAndScan,
       loadPrescriptionDraft,
     ],

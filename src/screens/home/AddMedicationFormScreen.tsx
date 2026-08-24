@@ -36,11 +36,16 @@ const FONT = {
   bold: 'ProximaNova-Bold',
 } as const;
 
-export function AddMedicationFormScreen({ navigation }: Props) {
+export function AddMedicationFormScreen({ navigation, route }: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
-  const { draft, saveSchedule } = useMedicationDraft();
+  const { draft, saveSchedule, updateSchedule } = useMedicationDraft();
   const [saving, setSaving] = useState(false);
+
+  // Set by MedicineOverview. Its absence means this is the create flow, where
+  // the draft was already filled by AddMedicationScreen.
+  const scheduleId = route.params?.scheduleId;
+  const isEditing = Boolean(scheduleId);
 
   const handleSave = async () => {
     if (!draft.medicineName.trim()) {
@@ -49,12 +54,18 @@ export function AddMedicationFormScreen({ navigation }: Props) {
     }
     setSaving(true);
     try {
-      await saveSchedule();
-      navigation.navigate('MedicineList');
+      if (scheduleId) {
+        await updateSchedule(scheduleId);
+        // Overview replaced itself with this screen, so back is the list.
+        navigation.goBack();
+      } else {
+        await saveSchedule();
+        navigation.navigate('MedicineList');
+      }
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : 'Could not save medication';
-      Alert.alert('Save failed', message);
+      Alert.alert(isEditing ? 'Update failed' : 'Save failed', message);
     } finally {
       setSaving(false);
     }
@@ -108,7 +119,7 @@ export function AddMedicationFormScreen({ navigation }: Props) {
       <View
         style={{ marginTop: -16, justifyContent: 'center', marginBottom: 12 }}
       >
-        <WaveTitleBand title={'Add Medication'} color="#F5F2FE"  style={styles.paddingInWave}/>
+        <WaveTitleBand title={isEditing ? 'Edit Medication' : 'Add Medication'} color="#F5F2FE"  style={styles.paddingInWave}/>
       </View>
 
       <ScrollView
@@ -137,7 +148,9 @@ export function AddMedicationFormScreen({ navigation }: Props) {
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.saveButtonText}>Save Medication</Text>
+            <Text style={styles.saveButtonText}>
+              {isEditing ? 'Update Medication' : 'Save Medication'}
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>

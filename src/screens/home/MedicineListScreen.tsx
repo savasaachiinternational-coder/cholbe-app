@@ -95,6 +95,7 @@ export function MedicineListScreen({navigation}: Props) {
               isLast={index === items.length - 1}
               title={item.medicineName}
               time={formatScheduleTime(item.times[0])}
+              actionLabel='View Medicine'
               meta={[
                 {label: item.dose ?? '—'},
                 {label: formatMealTiming(item.mealTiming)},
@@ -107,7 +108,9 @@ export function MedicineListScreen({navigation}: Props) {
                   style={styles.rotatedPillIcon}
                 />
               }
-              onPressAction={() => navigation.navigate('ReportsList')}
+              onPressAction={() =>
+                navigation.navigate('MedicineOverview', {schedule: item})
+              }
             />
           ))
         )}

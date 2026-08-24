@@ -76,7 +76,14 @@ export const medicationSchedulesApi = {
     });
   },
 
-  update(scheduleId: string, payload: {isActive?: boolean}) {
+  /**
+   * Accepts any subset of the create fields plus the active toggle, so the
+   * edit form can PATCH a whole schedule rather than only flipping isActive.
+   */
+  update(
+    scheduleId: string,
+    payload: Partial<CreateMedicationSchedulePayload> & {isActive?: boolean},
+  ) {
     return apiRequest<MedicationSchedule>(`/medication-schedules/${scheduleId}`, {
       method: 'PATCH',
       auth: true,

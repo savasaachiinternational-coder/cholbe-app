@@ -45,6 +45,7 @@ import { FamilyMemberDetailScreen } from '../screens/home/FamilyMemberDetailScre
 import { DeliveriesScreen } from '../screens/home/DeliveriesScreen';
 import { AddMedicationScreen } from '../screens/home/AddMedicationScreen';
 import { AddMedicationFormScreen } from '../screens/home/AddMedicationFormScreen';
+import { MedicineOverviewScreen } from '../screens/home/MedicineOverviewScreen';
 import { UploadReportScreen } from '../screens/home/UploadReportScreen';
 import { AddFromCameraScreen } from '../screens/home/AddFromCameraScreen';
 import { ChooseFromGalleryScreen } from '../screens/home/ChooseFromGalleryScreen';
@@ -333,6 +334,11 @@ export function RootNavigator({
       <Stack.Screen
         name="AddMedicationForm"
         component={AddMedicationFormScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="MedicineOverview"
+        component={MedicineOverviewScreen}
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen

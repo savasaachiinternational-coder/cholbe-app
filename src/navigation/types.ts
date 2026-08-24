@@ -1,4 +1,5 @@
 import type {SymptomIntake} from '../screens/aisymptom/data/shared/symptomIntake';
+import type {MedicationSchedule} from '../api/medications';
 export type RootStackParamList = {
   Home: undefined;
   AHome: undefined;
@@ -40,6 +41,7 @@ export type RootStackParamList = {
   DWithdraw: undefined;
   DProfile: undefined;
   MedicineList: undefined;
+  MedicineOverview: {schedule: MedicationSchedule};
   ReportsList: undefined;
   DoctorList: undefined;
   BookVideoCall: {
@@ -84,7 +86,8 @@ export type RootStackParamList = {
   FamilyMemberDetail: {memberId: string; memberName?: string};
   Deliveries: undefined;
   AddMedication: undefined;
-  AddMedicationForm: undefined;
+  /** `scheduleId` switches the form into edit mode for that schedule. */
+  AddMedicationForm: {scheduleId?: string} | undefined;
   UploadReport: undefined;
   AddFromCamera: undefined;
   ChooseFromGallery: undefined;
