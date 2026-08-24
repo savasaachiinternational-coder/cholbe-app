@@ -2,6 +2,7 @@ import {Image, StyleSheet, Text, View} from 'react-native';
 import React from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {SymptomIntake} from '../../data/shared/symptomIntake';
+import { FONT } from '../../../../theme/typography';
 
 type Props = {
   intake: Partial<SymptomIntake>;
@@ -117,7 +118,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: '#1B2B3A',
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   bodyBlock: {
     marginTop: 10,
@@ -131,6 +133,7 @@ const styles = StyleSheet.create({
   bodyHeaderText: {
     color: '#1B2B3A',
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bulletRow: {
@@ -151,6 +154,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#374151',
     fontSize: 13,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 19,
   },
@@ -168,6 +172,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#374151',
     fontSize: 13,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
 });

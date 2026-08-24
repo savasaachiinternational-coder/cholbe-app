@@ -6,6 +6,7 @@ import {
   VideoSourceType,
 } from 'react-native-agora';
 import Feather from 'react-native-vector-icons/Feather';
+import { FONT } from '../theme/typography';
 
 type Props = {
   style?: ViewStyle;
@@ -69,6 +70,7 @@ const styles = StyleSheet.create({
   offLabel: {
     color: '#94A3B8',
     fontSize: 11,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

@@ -21,6 +21,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const {width} = Dimensions.get('window');
 
@@ -297,7 +298,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     marginBottom: 8,
     letterSpacing: -0.5,
@@ -308,6 +310,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   emailHighlight: {
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#444444',
   },
@@ -334,7 +337,8 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     padding: 0,
   },
@@ -362,6 +366,7 @@ const styles = StyleSheet.create({
   verifyButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   resendMessageRow: {
@@ -378,6 +383,7 @@ const styles = StyleSheet.create({
   resendHighlightLink: {
     fontSize: 14,
     color: '#333333',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     textDecorationLine: 'underline',
   },

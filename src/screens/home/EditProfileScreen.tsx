@@ -24,6 +24,7 @@ import {ApiError} from '../../api/client';
 import {useFocusEffect} from '@react-navigation/native';
 import {AddEmergencyContactModal} from '../../components/AddEmergencyContactModal';
 import {AvatarImage} from '../../components/AvatarImage';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditProfile'>;
 
@@ -427,7 +428,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     flex: 1,
     textAlign: 'center',
@@ -480,6 +482,7 @@ const styles = StyleSheet.create({
   },
   inputFieldLabel: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginBottom: 6,
@@ -496,6 +499,7 @@ const styles = StyleSheet.create({
   },
   blockSectionHeading: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginTop: 24,
@@ -536,7 +540,8 @@ const styles = StyleSheet.create({
   },
   contactAvatarInitial: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#475569',
   },
   contactTextMeta: {
@@ -545,18 +550,21 @@ const styles = StyleSheet.create({
   },
   contactNameTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   contactRelationLabel: {
     fontSize: 11,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 1,
   },
   contactPhoneText: {
     fontSize: 12,
     color: '#475569',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -577,6 +585,7 @@ const styles = StyleSheet.create({
   },
   addNewContactLinkText: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#14B8A6',
   },
@@ -596,7 +605,8 @@ const styles = StyleSheet.create({
   saveProfileButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   floatingScanButton: {
     position: 'absolute',

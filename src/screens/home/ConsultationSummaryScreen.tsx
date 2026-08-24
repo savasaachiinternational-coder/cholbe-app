@@ -24,6 +24,7 @@ import {toAppointmentDetail} from '../../api/utils/appointmentHelpers';
 import {ApiError} from '../../api/client';
 import {getStoredUser} from '../../api/tokenStorage';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ConsultationSummary'>;
 
@@ -150,7 +151,7 @@ export function ConsultationSummaryScreen({navigation, route}: Props) {
           <Text style={styles.successStatusText}>{successMessage}</Text>
         </View> */}
 
-        <WaveTitleBand title={successMessage} icon = 'check-circle' style={{fontSize: 14, fontWeight: '400', color: '#616161', flex: 1}}/>
+        <WaveTitleBand title={successMessage} icon = 'check-circle' style={{fontSize: 14, fontFamily: FONT.regular, fontWeight: '400', color: '#616161', flex: 1}}/>
 
         <View style={styles.summaryCard}>
           <View style={styles.doctorMetaRow}>
@@ -293,7 +294,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F3FC',
   },
   backButton: {padding: 4, width: 32},
-  headerTitle: {fontSize: 18, fontWeight: '600', color: '#424242', flex: 1,},
+  headerTitle: {fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#424242', flex: 1,},
   headerSpacer: {width: 32},
   scrollContent: {paddingHorizontal: 16},
   successStatusRibbon: {
@@ -309,7 +310,7 @@ const styles = StyleSheet.create({
     borderColor: '#CCFBF1',
   },
   successIconMargin: {marginRight: 8},
-  successStatusText: {fontSize: 13, fontWeight: '500', color: '#334155', flex: 1},
+  successStatusText: {fontSize: 13, fontFamily: FONT.medium, fontWeight: '500', color: '#334155', flex: 1},
   summaryCard: {
     marginTop:24,
     backgroundColor: '#F5F4FD',
@@ -333,12 +334,12 @@ const styles = StyleSheet.create({
   },
   doctorAvatar: {width: 60, height: 60, borderRadius: 30, backgroundColor: '#E2E8F0'},
   doctorInfoTextContainer: {marginLeft: 14},
-  doctorName: {fontSize: 18, fontWeight: '600', color: '#212121'},
-  doctorSpecialty: {fontSize: 14, color: '#616161', fontWeight: '400', marginTop: 2},
+  doctorName: {fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#212121'},
+  doctorSpecialty: {fontSize: 14, color: '#616161', fontFamily: FONT.regular, fontWeight: '400', marginTop: 2},
   metricsListBlock: {paddingVertical: 14, gap: 8},
-  metricItemText: {fontSize: 13, fontWeight: '500', color: '#64748B'},
-  metricValueComplete: {color: '#0D9488', fontWeight: '600'},
-  metricValueText: {color: '#1E293B', fontWeight: '700'},
+  metricItemText: {fontSize: 13, fontFamily: FONT.medium, fontWeight: '500', color: '#64748B'},
+  metricValueComplete: {color: '#0D9488', fontFamily: FONT.semibold, fontWeight: '600'},
+  metricValueText: {color: '#1E293B', fontFamily: FONT.semibold, fontWeight: '600'},
   chatDoctorButton: {
     backgroundColor: '#408E91',
     borderRadius: 40,
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   chatIconMargin: {marginRight: 8},
-  chatDoctorButtonText: {color: '#FFFFFF', fontSize: 12, fontWeight: '400'},
+  chatDoctorButtonText: {color: '#FFFFFF', fontSize: 12, fontFamily: FONT.regular, fontWeight: '400'},
   feedbackCard: {
     backgroundColor: '#F5F4FD',
     borderRadius: 24,
@@ -363,9 +364,9 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   submittedRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8},
-  submittedText: {fontSize: 14, color: '#0D9488', fontWeight: '600'},
+  submittedText: {fontSize: 14, color: '#0D9488', fontFamily: FONT.semibold, fontWeight: '600'},
   submittedComment: {fontSize: 13, color: '#64748B', fontStyle: 'italic', marginTop: 4},
-  feedbackSectionHeading: {fontSize: 14, fontWeight: '600', color: '#616161', marginTop: 4},
+  feedbackSectionHeading: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#616161', marginTop: 4},
   ratingStarsRow: {flexDirection: 'row', marginTop: 12, marginBottom: 16},
   starTouch: {marginRight: 6},
   feedbackTextInput: {
@@ -387,11 +388,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  submitFeedbackButtonText: {color: '#FFFFFF', fontSize: 14, fontWeight: '600'},
+  submitFeedbackButtonText: {color: '#FFFFFF', fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600'},
   noApptNote: {fontSize: 11, color: '#EF4444', textAlign: 'center', marginTop: 8},
   footerPolicyNoticeText: {
     fontSize: 12,
     color: '#9E9E9E',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     textAlign: 'center',
     marginTop: 32,

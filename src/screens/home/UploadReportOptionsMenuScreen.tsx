@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import type { RootStackParamList } from '../../navigation/types';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -238,12 +239,14 @@ const styles = StyleSheet.create({
   },
   logoTextMain: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
     marginLeft: 4,
   },
   logoTextSub: {
     fontSize: 9,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#49739B',
     letterSpacing: 2,
@@ -256,6 +259,7 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },
@@ -263,6 +267,7 @@ const styles = StyleSheet.create({
     color: '#424242',
     fontSize: 18,
     paddingBottom:30,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   contentCard: {
@@ -316,6 +321,7 @@ const styles = StyleSheet.create({
   cardLabelText: {
     fontSize: 16,
     color: '#7D8797',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -330,6 +336,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   footerActionContainer: {
@@ -367,10 +374,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {
     color: '#45A096',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

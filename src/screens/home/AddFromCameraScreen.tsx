@@ -19,6 +19,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import {useMedicationDraft} from '../../context/MedicationDraftContext';
 import {ApiError} from '../../api/client';
 import {pickedFileFromAsset} from '../../utils/fileAsset';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddFromCamera'>;
 
@@ -162,6 +163,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },

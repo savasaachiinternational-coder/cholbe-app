@@ -20,6 +20,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -448,7 +449,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     marginBottom: 8,
     letterSpacing: -0.5,
@@ -467,7 +469,8 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     lineHeight: 22,
     marginBottom: 16,
@@ -492,23 +495,27 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 14,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#555555',
   },
   chipTextSelected: {
     color: '#FFFFFF',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   mealSectionHeading: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     lineHeight: 22,
     marginBottom: 14,
   },
   requiredMark: {
     color: '#E06D6D',
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   mealField: {
     flexDirection: 'row',
@@ -525,10 +532,12 @@ const styles = StyleSheet.create({
   mealFieldText: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#333333',
   },
   mealFieldPlaceholder: {
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#A0A0A0',
   },
@@ -555,7 +564,8 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     letterSpacing: 0.5,
   },
   buttonDisabled: {
@@ -577,6 +587,7 @@ const styles = StyleSheet.create({
   },
   pickerTitle: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#3B3B3B',
     marginBottom: 12,
@@ -599,6 +610,7 @@ const styles = StyleSheet.create({
   },
   pickerOptionTextSelected: {
     color: '#4A8B95',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

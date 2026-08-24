@@ -16,6 +16,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { HomeBottomNav } from './HomeBottomNav';
 import type { BottomTabKey } from './homeData';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UploadReport'>;
 type UploadOption = 'camera' | 'gallery' | 'saved';
@@ -211,19 +212,21 @@ const styles = StyleSheet.create({
   logoPlaceholder: { flexDirection: 'row', alignItems: 'center' },
   logoTextMain: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
     marginLeft: 4,
   },
   logoTextSub: {
     fontSize: 9,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#49739B',
     letterSpacing: 2,
     marginTop: -2,
   },
   titleContainer: { alignItems: 'center', marginTop: 24, marginBottom: 16 },
-  screenTitle: { fontSize: 20, fontWeight: '600', color: '#333333' },
+  screenTitle: { fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#333333' },
   contentCard: {
     flex: 1,
     backgroundColor: '#F4F1FD',
@@ -267,10 +270,11 @@ const styles = StyleSheet.create({
   cardText: {
     fontSize: 16,
     color: '#5A6578',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 14,
   },
-  activeCardText: { color: '#3B4859', fontWeight: '600' },
+  activeCardText: { color: '#3B4859', fontFamily: FONT.semibold, fontWeight: '600' },
   continueButton: {
     backgroundColor: '#418B93',
     width: '100%',
@@ -279,7 +283,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  continueButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
+  continueButtonText: { color: '#FFFFFF', fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600' },
   footerActionContainer: {
     position: 'absolute',
     left: 0,

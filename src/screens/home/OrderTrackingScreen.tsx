@@ -12,6 +12,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderTracking'>;
 
@@ -210,6 +211,7 @@ const styles = StyleSheet.create({
   },
   headerTitleText: {
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },
@@ -290,7 +292,8 @@ const styles = StyleSheet.create({
   },
   stepTitleText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     marginBottom: 4,
   },
   completedTitleText: {
@@ -302,11 +305,13 @@ const styles = StyleSheet.create({
   stepSubtitleText: {
     fontSize: 13,
     color: '#8A94A6',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   timestampText: {
     fontSize: 11,
     color: '#8A94A6',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     paddingTop: 3,
     textAlign: 'right',
@@ -330,7 +335,8 @@ const styles = StyleSheet.create({
   },
   sectionHeadingTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
   },
   mapSelectButton: {
@@ -347,6 +353,7 @@ const styles = StyleSheet.create({
   mapSelectText: {
     fontSize: 12,
     color: '#45A096',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   addressLineRow: {
@@ -357,12 +364,14 @@ const styles = StyleSheet.create({
   addressLabel: {
     fontSize: 14,
     color: '#8A94A6',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     width: 90,
   },
   addressValue: {
     fontSize: 14,
     color: '#495057',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     flex: 1,
   },
@@ -384,6 +393,7 @@ const styles = StyleSheet.create({
   backToShopButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bottomTabBar: {
@@ -408,10 +418,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {
     color: '#45A096',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

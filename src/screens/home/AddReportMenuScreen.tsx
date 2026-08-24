@@ -14,17 +14,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import type { RootStackParamList } from '../../navigation/types';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddReportMenu'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 const { width } = Dimensions.get('window');
 
@@ -223,8 +215,8 @@ const styles = StyleSheet.create({
   },
   logoTextMain: {
     fontSize: 22,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
     marginLeft: 4,
   },
@@ -240,7 +232,7 @@ const styles = StyleSheet.create({
     color:'#424242',
     fontSize:18,
     fontFamily: FONT.semibold,
-    fontWeight:'600'
+    fontWeight: '600'
   },
   titleContainer: {
     alignItems: 'center',
@@ -331,15 +323,15 @@ const styles = StyleSheet.create({
   browseHereText: {
     fontSize: 16,
     color: '#4DA69F',
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   dividerText: {
     textAlign: 'center',
     fontSize: 12,
     color: '#7D8797',
-    fontWeight:'400',
     fontFamily: FONT.regular,
+    fontWeight: '400',
     marginVertical: 24,
   },
   continueButton: {

@@ -12,6 +12,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderCompletedDetails'>;
 
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9F9FE',
   },
   backButton: {padding: 2},
-  headerTitleText: {fontSize: 20, fontWeight: '600', color: '#333333'},
+  headerTitleText: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#333333'},
   headerSpacer: {width: 28},
   scrollCanvasContent: {paddingHorizontal: 20, paddingTop: 8},
   trackingMainCard: {
@@ -214,14 +215,14 @@ const styles = StyleSheet.create({
   verticalTracerLine: {position: 'absolute', top: 24, bottom: -10, width: 2, zIndex: 1},
   completedTracer: {backgroundColor: '#45A096'},
   infoColumn: {flex: 1, paddingTop: 1},
-  stepTitleText: {fontSize: 15, fontWeight: '700', color: '#212529', marginBottom: 4},
-  stepSubtitleText: {fontSize: 13, color: '#8A94A6', fontWeight: '400'},
-  timestampText: {fontSize: 11, color: '#8A94A6', fontWeight: '400', paddingTop: 3, textAlign: 'right'},
+  stepTitleText: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#212529', marginBottom: 4},
+  stepSubtitleText: {fontSize: 13, color: '#8A94A6', fontFamily: FONT.regular, fontWeight: '400'},
+  timestampText: {fontSize: 11, color: '#8A94A6', fontFamily: FONT.regular, fontWeight: '400', paddingTop: 3, textAlign: 'right'},
   horizontalDivider: {height: 1, backgroundColor: '#F1F3F7', marginVertical: 16},
   addressSectionBlock: {width: '100%', paddingHorizontal: 4},
   sectionHeaderRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 16},
   sectionIcon: {marginRight: 8},
-  sectionHeadingTitle: {fontSize: 16, fontWeight: '700', color: '#1E3A60'},
+  sectionHeadingTitle: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E3A60'},
   mapSelectButton: {
     marginLeft: 'auto',
     flexDirection: 'row',
@@ -233,10 +234,10 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     gap: 4,
   },
-  mapSelectText: {fontSize: 12, color: '#45A096', fontWeight: '600'},
+  mapSelectText: {fontSize: 12, color: '#45A096', fontFamily: FONT.semibold, fontWeight: '600'},
   addressLineRow: {flexDirection: 'row', alignItems: 'center', marginVertical: 6},
-  addressLabel: {fontSize: 14, color: '#8A94A6', fontWeight: '500', width: 90},
-  addressValue: {fontSize: 14, color: '#495057', fontWeight: '600', flex: 1},
+  addressLabel: {fontSize: 14, color: '#8A94A6', fontFamily: FONT.medium, fontWeight: '500', width: 90},
+  addressValue: {fontSize: 14, color: '#495057', fontFamily: FONT.semibold, fontWeight: '600', flex: 1},
   invoiceDownloadButtonBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   invoiceIcon: {marginRight: 10},
-  invoiceButtonLabelText: {fontSize: 15, color: '#45A096', fontWeight: '700'},
+  invoiceButtonLabelText: {fontSize: 15, color: '#45A096', fontFamily: FONT.semibold, fontWeight: '600'},
   backToShopButton: {
     backgroundColor: '#45A096',
     width: '100%',
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  backToShopButtonText: {color: '#FFFFFF', fontSize: 18, fontWeight: '600'},
+  backToShopButtonText: {color: '#FFFFFF', fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600'},
   bottomTabBar: {
     flexDirection: 'row',
     minHeight: 74,
@@ -281,6 +282,6 @@ const styles = StyleSheet.create({
     right: 0,
   },
   tabItem: {alignItems: 'center', justifyContent: 'center', width: width / 5},
-  tabLabel: {fontSize: 11, color: '#9CA3AF', marginTop: 5, fontWeight: '500'},
-  activeTabLabel: {color: '#45A096', fontWeight: '600'},
+  tabLabel: {fontSize: 11, color: '#9CA3AF', marginTop: 5, fontFamily: FONT.medium, fontWeight: '500'},
+  activeTabLabel: {color: '#45A096', fontFamily: FONT.semibold, fontWeight: '600'},
 });

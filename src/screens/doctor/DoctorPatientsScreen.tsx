@@ -16,6 +16,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {DoctorBottomNav} from './DoctorBottomNav';
 import {formatAppointmentDate, formatAppointmentStatus, statusColor} from './doctorNav';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DPatients'>;
 
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backBtn: {width: 32, height: 32, justifyContent: 'center'},
-  title: {fontSize: 17, fontWeight: '600', color: '#1A2332'},
+  title: {fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   list: {padding: 16},
   emptyCard: {
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  emptyTitle: {fontSize: 16, fontWeight: '600', color: '#1A2332'},
+  emptyTitle: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   emptyText: {fontSize: 13, color: '#7E8B97', textAlign: 'center'},
   card: {
     flexDirection: 'row',
@@ -157,9 +158,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {fontSize: 18, fontWeight: '700', color: '#4E929D'},
+  avatarText: {fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#4E929D'},
   cardBody: {flex: 1},
-  name: {fontSize: 15, fontWeight: '600', color: '#1A2332'},
+  name: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   meta: {fontSize: 12, color: '#7E8B97', marginTop: 2},
   footer: {flexDirection: 'row', justifyContent: 'space-between', marginTop: 8},
   footerText: {fontSize: 11, color: '#9AA6B2'},
@@ -170,5 +171,5 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginTop: 6,
   },
-  badgeText: {fontSize: 11, fontWeight: '600'},
+  badgeText: {fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600'},
 });

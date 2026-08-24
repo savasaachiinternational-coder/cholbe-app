@@ -38,6 +38,7 @@ import {performLogout} from '../../auth/sessionControl';
 import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 import {AddEmergencyContactModal} from '../../components/AddEmergencyContactModal';
 import {AvatarImage} from '../../components/AvatarImage';
+import { FONT } from '../../theme/typography';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - 44) / 2;
@@ -54,15 +55,6 @@ type SummaryCarouselItem =
   | {id: 'vitals'; type: 'vitals'};
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MyProfile'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 export function MyProfileScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
@@ -1051,7 +1043,7 @@ const cpStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  title: {fontSize: 16, fontFamily: FONT.bold, fontWeight: '700', color: '#1E293B'},
+  title: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   field: {marginBottom: 14},
   label: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569', marginBottom: 6},
   input: {
@@ -1074,7 +1066,7 @@ const cpStyles = StyleSheet.create({
     marginTop: 8,
   },
   btnDisabled: {opacity: 0.6},
-  btnText: {color: '#FFFFFF', fontSize: 15, fontFamily: FONT.bold, fontWeight: '700'},
+  btnText: {color: '#FFFFFF', fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600'},
 });
 
 function QuickActionIcon({type}: {type: QuickAction['icon']}) {
@@ -1162,8 +1154,8 @@ const styles = StyleSheet.create({
   },
   profileSubTabText: {
     fontSize: 13,
-    fontFamily: FONT.semibold,
     lineHeight: Platform.OS === 'android' ? 18 : undefined,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#64748B',
     ...(Platform.OS === 'android' ? {includeFontPadding: false} : {}),
@@ -1241,22 +1233,22 @@ const styles = StyleSheet.create({
   },
   userNameText: {
     fontSize: 18,
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#212121',
   },
   userDemographicsText: {
     fontSize: 10,
-    fontFamily: FONT.medium,
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginTop: 2,
     marginBottom: 4,
   },
   guardianHintText: {
     fontSize: 11,
-    fontFamily: FONT.semibold,
     color: '#0D9488',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     marginTop: 2,
     marginBottom: 2,
@@ -1312,8 +1304,8 @@ const styles = StyleSheet.create({
   },
   summaryEmptyText: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#94A3B8',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   vitalRow: {
@@ -1324,14 +1316,14 @@ const styles = StyleSheet.create({
   },
   vitalLabel: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   vitalValue: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   summaryCardHeader: {
@@ -1342,8 +1334,8 @@ const styles = StyleSheet.create({
   },
   summaryCardTitle: {
     fontSize: 13,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     marginLeft: 6,
     paddingRight: 18,
@@ -1373,8 +1365,8 @@ const styles = StyleSheet.create({
   },
   medicationQuantityText: {
     fontSize: 13,
-    fontFamily: FONT.medium,
     color: '#475569',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   viewDetailsChipLink: {
@@ -1387,8 +1379,8 @@ const styles = StyleSheet.create({
   },
   viewDetailsChipText: {
     fontSize: 11,
-    fontFamily: FONT.semibold,
     color: '#0D9488',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   sectionTitleLabel: {
@@ -1426,8 +1418,8 @@ const styles = StyleSheet.create({
   },
   sectionInlineEditText: {
     fontSize: 13,
-    fontFamily: FONT.medium,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   assignedDoctorCard: {
@@ -1452,14 +1444,14 @@ const styles = StyleSheet.create({
   },
   doctorCardNameText: {
     fontSize: 15,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   doctorCardSpecText: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   doctorActionButtonsRow: {
@@ -1475,8 +1467,8 @@ const styles = StyleSheet.create({
   },
   doctorInlineChatText: {
     fontSize: 12,
-    fontFamily: FONT.semibold,
     color: '#475569',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   doctorInlineBookButton: {
@@ -1487,8 +1479,8 @@ const styles = StyleSheet.create({
   },
   doctorInlineBookText: {
     fontSize: 12,
-    fontFamily: FONT.semibold,
     color: '#FFFFFF',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   emergencyContractsContainer: {
@@ -1526,8 +1518,8 @@ const styles = StyleSheet.create({
   },
   contactAvatarInitial: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#475569',
   },
   contactBaseMeta: {
@@ -1536,20 +1528,20 @@ const styles = StyleSheet.create({
   },
   contactNameTitle: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   contactRelationLabel: {
     fontSize: 11,
-    fontFamily: FONT.medium,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   contactPhoneText: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#475569',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     flex: 1,
   },
@@ -1569,8 +1561,8 @@ const styles = StyleSheet.create({
   },
   contactActionText: {
     fontSize: 11,
-    fontFamily: FONT.semibold,
     color: '#475569',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   addContractButton: {
@@ -1588,8 +1580,8 @@ const styles = StyleSheet.create({
   addContractButtonText: {
     color: '#FFFFFF',
     fontSize: 13,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   familyCarouselScroll: {
     marginHorizontal: -16,
@@ -1630,8 +1622,8 @@ const styles = StyleSheet.create({
   },
   familyAvatarInitial: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#475569',
   },
   emptySummaryText: {
@@ -1646,14 +1638,14 @@ const styles = StyleSheet.create({
   },
   familyMemberName: {
     fontSize: 13,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   familyMemberRelation: {
     fontSize: 11,
-    fontFamily: FONT.medium,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   familyMemberLogin: {
@@ -1664,9 +1656,9 @@ const styles = StyleSheet.create({
   },
   familyTapHint: {
     fontSize: 9,
-    fontFamily: FONT.semibold,
     color: '#0D9488',
     marginTop: 4,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   familyAddPlaceholder: {
@@ -1708,8 +1700,8 @@ const styles = StyleSheet.create({
   },
   viewAllTextLink: {
     fontSize: 12,
-    fontFamily: FONT.semibold,
     color: '#64748B',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     marginRight: 2,
   },
@@ -1729,14 +1721,14 @@ const styles = StyleSheet.create({
   },
   gridSummaryLabel: {
     fontSize: 11,
-    fontFamily: FONT.medium,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   gridSummaryValue: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     marginTop: 2,
   },
@@ -1772,8 +1764,8 @@ const styles = StyleSheet.create({
   },
   actionButtonTitleText: {
     fontSize: 12,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   actionButtonSubText: {
@@ -1822,14 +1814,14 @@ const styles = StyleSheet.create({
   },
   settingsTitleText: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   settingsTitleTextLogout: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#DC2626',
   },
   settingsSubText: {

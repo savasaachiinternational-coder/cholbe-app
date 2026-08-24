@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../navigation/types';
 import Feather from 'react-native-vector-icons/Feather';
@@ -37,6 +38,7 @@ import { profileApi } from '../../api/profile';
 import { medicationSchedulesApi } from '../../api/medications';
 import { cartApi } from '../../api/cart';
 import { ApiError } from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PRODUCT_CARD_WIDTH = SCREEN_WIDTH * 0.43;
@@ -116,8 +118,9 @@ export function HomeScreen() {
           id: `${s.id}-${tIdx}`,
           name: s.medicineName,
           detail:
-            [s.dose, s.mealTiming].filter(Boolean).join(' • ') ||
-            'Scheduled dose',
+            [s.dose, formatMealTiming(s.mealTiming)]
+              .filter(Boolean)
+              .join(' • ') || 'Scheduled dose',
           icon: 'pill',
           active: !!(isNext && !taken),
           taken,
@@ -728,6 +731,23 @@ export function HomeScreen() {
   );
 }
 
+/** The API returns "before"/"after"; the row spells it out. */
+function formatMealTiming(value?: string | null) {
+  if (!value) return null;
+  const normalized = value.toLowerCase();
+  if (normalized.includes('before')) return 'Before Eating';
+  if (normalized.includes('after')) return 'After Eating';
+  return value;
+}
+
+/** "20mg • Before Eating" -> the orange-bulleted chips in the design. */
+function detailParts(detail: string) {
+  return detail
+    .split('•')
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
 function ScheduleRow({
   item,
   onTaken,
@@ -737,6 +757,7 @@ function ScheduleRow({
 }) {
   const active = item.active;
   const taken = item.taken;
+  const parts = detailParts(item.detail);
 
   return (
     <View
@@ -746,6 +767,15 @@ function ScheduleRow({
         taken && styles.medicationTakenCard,
       ]}
     >
+      {active ? (
+        <LinearGradient
+          colors={['#2E8F92', '#57BCBE']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
+
       {item.icon === 'insulin' ? (
         <Feather
           name="activity"
@@ -753,12 +783,13 @@ function ScheduleRow({
           color={active ? '#FFFFFF' : '#94A3B8'}
         />
       ) : (
-        <MaterialCommunityIcons 
+        <MaterialCommunityIcons
           name="pill"
           size={20}
           color={active ? '#FFFFFF' : '#94A3B8'}
         />
       )}
+
       <View style={styles.medicationRowMeta}>
         <Text
           style={[
@@ -768,37 +799,53 @@ function ScheduleRow({
         >
           {item.name}
         </Text>
-        <Text
-          style={[
-            styles.medicationRowSub,
-            active && styles.medicationRowSubActive,
-          ]}
-        >
-          {item.detail}
-        </Text>
+        <View style={styles.medicationRowSubRow}>
+          {parts.map(part => (
+            <View key={part} style={styles.medicationRowSubItem}>
+              <View style={styles.medicationRowDot} />
+              <Text
+                style={[
+                  styles.medicationRowSub,
+                  active && styles.medicationRowSubActive,
+                ]}
+              >
+                {part}
+              </Text>
+            </View>
+          ))}
+        </View>
       </View>
+
       <View style={styles.actionIconsRight}>
         {item.showDismiss !== false && !taken && (
-          <Feather
-            name="x-circle"
-            size={22}
-            color={active ? '#FFFFFF' : '#CBD5E1'}
-            style={styles.dismissIcon}
-          />
+          <View
+            style={[
+              styles.dismissCircle,
+              active && styles.dismissCircleActive,
+            ]}
+          >
+            <Feather
+              name="x"
+              size={13}
+              color={active ? 'rgba(255, 255, 255, 0.9)' : '#CBD5E1'}
+            />
+          </View>
         )}
         {taken ? (
-          <Feather name="check-circle" size={22} color="#22C55E" />
+          <View style={[styles.checkCircle, styles.checkCircleActive]}>
+            <Feather name="check" size={15} color="#FFFFFF" />
+          </View>
         ) : item.showCheck !== false ? (
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={onTaken}
             disabled={!onTaken}
           >
-            <Feather
-              name="check-circle"
-              size={22}
-              color={active ? '#FFFFFF' : '#000000'}
-            />
+            <View
+              style={[styles.checkCircle, active && styles.checkCircleActive]}
+            >
+              <Feather name="check" size={15} color="#FFFFFF" />
+            </View>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -809,11 +856,11 @@ function ScheduleRow({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F5F2FE',
   },
   loadingWrap: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F5F2FE',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -859,11 +906,13 @@ const styles = StyleSheet.create({
   },
   logoTextPrimary: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#0284C7',
   },
   logoTextSecondary: {
     fontSize: 10,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#64748B',
     marginLeft: 4,
@@ -937,7 +986,8 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   locationRow: {
@@ -965,26 +1015,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  waveDecorator1: {
-    position: 'absolute',
-    right: -20,
-    top: -20,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: '#BAE6FD',
-    opacity: 0.4,
-  },
-  waveDecorator2: {
-    position: 'absolute',
-    right: 20,
-    bottom: -40,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#BAE6FD',
-    opacity: 0.3,
-  },
   heroHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -992,13 +1022,15 @@ const styles = StyleSheet.create({
   },
   heroLabel: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginLeft: 6,
   },
   medicationTitle: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#0F172A',
   },
   medicationSubtitle: {
@@ -1018,6 +1050,7 @@ const styles = StyleSheet.create({
   },
   timeTagText: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#0EA5E9',
     marginLeft: 4,
@@ -1034,15 +1067,17 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   markTakenButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+    color: '#FFF',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   snoozeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
+    marginBottom:3,
   },
   snoozeText: {
     fontSize: 13,
@@ -1068,7 +1103,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F1F0F9',
     paddingVertical: 12,
     borderRadius: 20,
     borderWidth: 1,
@@ -1084,14 +1119,16 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#1E293B',
   },
   statusCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    backgroundColor: '#F5F4FD',
+    borderRadius: 10,
     padding: 16,
     marginTop: 16,
+    elevation:1,
   },
   statusHeader: {
     flexDirection: 'row',
@@ -1101,13 +1138,15 @@ const styles = StyleSheet.create({
   statusTitle: {
     flex: 1,
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginLeft: 6,
   },
   updateVitalsLink: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#0D9488',
   },
   metricsRow: {
@@ -1134,7 +1173,8 @@ const styles = StyleSheet.create({
   },
   metricValue: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   metricTimestamp: {
@@ -1152,6 +1192,7 @@ const styles = StyleSheet.create({
   viewReportsText: {
     color: '#0D9488',
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   viewReportsSpaced: {
@@ -1176,12 +1217,14 @@ const styles = StyleSheet.create({
   },
   alertText: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginLeft: 6,
   },
   alertSubtext: {
     fontSize: 13,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#10B981',
     marginLeft: 6,
@@ -1207,6 +1250,7 @@ const styles = StyleSheet.create({
   viewMedicineText: {
     color: '#0D9488',
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   statSummaryCard: {
@@ -1233,6 +1277,7 @@ const styles = StyleSheet.create({
   },
   statSummaryText: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     marginLeft: 6,
   },
@@ -1278,6 +1323,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   statLabelTaken: {
@@ -1294,7 +1340,8 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     marginTop: 8,
   },
@@ -1313,7 +1360,8 @@ const styles = StyleSheet.create({
   addMedicineButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   tabsContainer: {
     marginTop: 20,
@@ -1333,6 +1381,7 @@ const styles = StyleSheet.create({
   inactiveTabText: {
     fontSize: 14,
     color: '#94A3B8',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   waitingRoomTab: {
@@ -1347,6 +1396,7 @@ const styles = StyleSheet.create({
   waitingRoomTabText: {
     fontSize: 14,
     color: '#0D9488',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   activeTab: {
@@ -1368,11 +1418,13 @@ const styles = StyleSheet.create({
   activeTabText: {
     fontSize: 13,
     color: '#F3F2FB',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   timeSectionHeader: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     marginTop: 12,
     marginBottom: 8,
@@ -1380,15 +1432,18 @@ const styles = StyleSheet.create({
   medicationRowCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     borderRadius: 16,
     padding: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#EEF0F6',
+    elevation: 1,
+    // Clips the active row's gradient to the rounded corners.
+    overflow: 'hidden',
   },
+  // No background here on purpose — the gradient paints it.
   medicationActiveCard: {
-    backgroundColor: '#38A3A5',
     borderColor: '#38A3A5',
   },
   medicationTakenCard: {
@@ -1400,27 +1455,66 @@ const styles = StyleSheet.create({
   },
   medicationRowTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   medicationRowTitleActive: {
     color: '#FFFFFF',
   },
+  medicationRowSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: 5,
+  },
+  medicationRowSubItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  // Stays orange on the active row too, as in the design.
+  medicationRowDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF9F43',
+    marginRight: 6,
+  },
   medicationRowSub: {
     fontSize: 12,
     color: '#64748B',
-    marginTop: 2,
   },
   medicationRowSubActive: {
-    color: '#E2E8F0',
+    color: '#FFFFFF',
   },
   actionIconsRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  dismissIcon: {
+  dismissCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 10,
-    opacity: 0.8,
+  },
+  dismissCircleActive: {
+    borderColor: 'rgba(255, 255, 255, 0.75)',
+  },
+  checkCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#0F172A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkCircleActive: {
+    backgroundColor: '#22C55E',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -1431,7 +1525,8 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   viewAllRow: {
@@ -1447,7 +1542,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   productCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 20,
     padding: 12,
     width: PRODUCT_CARD_WIDTH,
@@ -1455,6 +1550,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
     borderWidth: 1,
     borderColor: '#F1F5F9',
+    elevation:1,
   },
   productCardBody: {
     flex: 1,
@@ -1472,7 +1568,8 @@ const styles = StyleSheet.create({
   discountText: {
     color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   productImage: {
     width: '100%',
@@ -1483,7 +1580,8 @@ const styles = StyleSheet.create({
   },
   productTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     marginTop: 8,
     minHeight: 36,
@@ -1513,7 +1611,8 @@ const styles = StyleSheet.create({
   },
   currentPrice: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   addToCartButton: {
@@ -1527,6 +1626,7 @@ const styles = StyleSheet.create({
   addToCartText: {
     color: '#0D9488',
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

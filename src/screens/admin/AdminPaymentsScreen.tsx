@@ -21,18 +21,12 @@ import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {NotificationBell} from '../../components/NotificationBell';
 import {AvatarImage} from '../../components/AvatarImage';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'APayments'>;
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 type PaymentStatus = 'Paid' | 'failed';
 
 type ApiPayment = {
@@ -332,8 +326,8 @@ const styles = StyleSheet.create({
   // Figma body/small/regular: 12px / 400, 0.2px tracking, Greyscale-700.
   dateText: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     letterSpacing: 0.2,
     marginTop: 2,

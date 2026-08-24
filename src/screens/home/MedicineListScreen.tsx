@@ -19,17 +19,9 @@ import {ApiError} from '../../api/client';
 import {PassportListScreenLayout} from '../../components/PassportListScreenLayout';
 import {PassportTimelineCard} from '../../components/PassportTimelineCard';
 import {navigateCustomerTab} from './customerTabNavigation';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MedicineList'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 function formatMealTiming(value: string | null) {
   if (!value) return '—';

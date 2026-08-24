@@ -25,6 +25,7 @@ import {
 } from '../navigation/roleMenus';
 import {getStoredUser} from '../api/tokenStorage';
 import {performLogout} from '../auth/sessionControl';
+import { FONT } from '../theme/typography';
 
 const PANEL_WIDTH = Math.min(Dimensions.get('window').width * 0.82, 320);
 const OPEN_MS = 220;
@@ -254,12 +255,14 @@ const styles = StyleSheet.create({
   userName: {
     color: '#1A1C1E',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   menuTitle: {
     marginTop: 1,
     color: '#7E8B97',
     fontSize: 12,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   list: {
@@ -284,6 +287,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#1A1C1E',
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   rowLabelActive: {
@@ -303,6 +307,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#C62828',
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

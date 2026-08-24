@@ -33,6 +33,7 @@ import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
 import {getStoredUser} from '../../api/tokenStorage';
 import {API_ORIGIN} from '../../config/api';
+import { FONT } from '../../theme/typography';
 import {
   imageUri,
   pickedFileFromAsset,
@@ -839,12 +840,14 @@ const styles = StyleSheet.create({
   },
   doctorName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   doctorSpecialty: {
     fontSize: 12,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   statusRow: {
@@ -867,6 +870,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   headerSpacer: {
@@ -883,7 +887,8 @@ const styles = StyleSheet.create({
   endConsultationText: {
     color: '#DC2626',
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   completedBanner: {
     flexDirection: 'row',
@@ -902,6 +907,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: '#0F766E',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   scrollContent: {
@@ -936,13 +942,15 @@ const styles = StyleSheet.create({
   },
   attachmentTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     flex: 1,
   },
   attachmentSource: {
     fontSize: 13,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginLeft: 42,
   },
@@ -962,6 +970,7 @@ const styles = StyleSheet.create({
   },
   dateBadgeText: {
     fontSize: 11,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#0D9488',
   },
@@ -1043,6 +1052,7 @@ const styles = StyleSheet.create({
   chatFileLabel: {
     fontSize: 13,
     color: '#0D9488',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   timestampRight: {
@@ -1123,6 +1133,7 @@ const styles = StyleSheet.create({
   recordingText: {
     flex: 1,
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#B91C1C',
   },
@@ -1136,6 +1147,7 @@ const styles = StyleSheet.create({
   },
   recordingActionCancelText: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#B91C1C',
   },
@@ -1150,7 +1162,8 @@ const styles = StyleSheet.create({
   },
   recordingActionSendText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
   emojiBackdrop: {

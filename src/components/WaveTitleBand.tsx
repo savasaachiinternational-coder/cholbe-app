@@ -1,6 +1,7 @@
 // src/components/WaveTitleBand.tsx
 import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { FONT } from '../theme/typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -66,11 +67,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   successIconMargin: {marginRight: 8},
-  successStatusText: {fontSize: 13, fontWeight: '500', color: '#334155', flex: 1},
+  successStatusText: {fontSize: 13, fontFamily: FONT.medium, fontWeight: '500', color: '#334155', flex: 1},
 
   bandTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     textAlign: 'center',
     includeFontPadding: false,

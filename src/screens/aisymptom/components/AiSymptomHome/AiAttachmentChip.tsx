@@ -10,6 +10,7 @@ import React from 'react';
 import Feather from 'react-native-vector-icons/Feather';
 import type {PickedFile} from '../../../../utils/fileAsset';
 import {isImageFile} from '../../../../utils/fileAsset';
+import { FONT } from '../../../../theme/typography';
 
 type Props = {
   file: PickedFile;
@@ -81,11 +82,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
     color: '#454F5B',
     fontSize: 11,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   fileName: {
     color: '#091B27',
     fontSize: 13,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
 });

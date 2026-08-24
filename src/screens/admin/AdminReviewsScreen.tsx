@@ -18,6 +18,7 @@ import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AReviews'>;
 
@@ -204,7 +205,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E2E8F0',
   },
   iconBtn: {width: 32, alignItems: 'center'},
-  title: {flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#1E293B'},
+  title: {flex: 1, textAlign: 'center', fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   content: {padding: 16},
   summaryCard: {
     backgroundColor: '#FFF',
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   summaryLeft: {alignItems: 'center', justifyContent: 'center', width: 90},
-  bigRating: {fontSize: 36, fontWeight: '800', color: '#1E293B'},
+  bigRating: {fontSize: 36, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   totalReviews: {fontSize: 11, color: '#94A3B8', marginTop: 2},
   summaryRight: {flex: 1},
   barRow: {
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#CCFBF1',
   },
-  activeFilterText: {fontSize: 13, color: '#0D9488', fontWeight: '600'},
+  activeFilterText: {fontSize: 13, color: '#0D9488', fontFamily: FONT.semibold, fontWeight: '600'},
   card: {
     backgroundColor: '#FFF',
     borderRadius: 14,
@@ -265,7 +266,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  patientName: {fontSize: 13, fontWeight: '700', color: '#1E293B'},
+  patientName: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   doctorName: {fontSize: 11, color: '#64748B'},
   deleteBtn: {padding: 4},
   commentText: {

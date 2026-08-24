@@ -29,6 +29,7 @@ import {specialtiesApi, type Specialty} from '../../api/specialties';
 import {ApiError} from '../../api/client';
 import {formatBdt} from '../../utils/pharmacyHelpers';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { FONT } from '../../theme/typography';
 
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -390,6 +391,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     paddingLeft:10,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
@@ -442,11 +444,13 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#616161',
   },
   sectionHeadingLarge: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#616161',
   },
@@ -492,6 +496,7 @@ const styles = StyleSheet.create({
   },
   categoryTileLabel: {
     fontSize: 11,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     textAlign: 'center',
@@ -523,6 +528,7 @@ const styles = StyleSheet.create({
   },
   categoryLabel: {
     fontSize: 11,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     textAlign: 'center',
@@ -565,22 +571,26 @@ const styles = StyleSheet.create({
   },
   specialtyBadgeText: {
     fontSize: 10,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#F7FBFE',
   },
   doctorNameText: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
   doctorDegreeText: {
     fontSize: 10,
-    fontWeight:'400',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     color: '#616161',
     marginBottom:4,
   },
   feeText: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     marginBottom: 4,
@@ -606,6 +616,7 @@ const styles = StyleSheet.create({
   appointmentButtonText: {
     color: '#4DA69F',
     fontSize: 12,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   floatingScanButton: {

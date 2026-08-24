@@ -25,6 +25,7 @@ import {
   type ReminderItem,
 } from '../../api/utils/reminderHelpers';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Reminders'>;
 
@@ -332,7 +333,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     flex: 1,
     textAlign: 'center',
@@ -350,6 +352,7 @@ const styles = StyleSheet.create({
   },
   addReminderTopText: {
     fontSize: 11,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
   },
@@ -375,7 +378,8 @@ const styles = StyleSheet.create({
   },
   emptyButtonText: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   tabsSegmentContainer: {
     flexDirection: 'row',
@@ -398,6 +402,7 @@ const styles = StyleSheet.create({
   segmentButtonText: {
     fontSize: 14,
     color: '#64748B',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   activeSegmentButtonText: {
@@ -411,11 +416,13 @@ const styles = StyleSheet.create({
   notificationSettingsLinkText: {
     color: '#14B8A6',
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   timePeriodLabelHeader: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#475569',
     marginTop: 12,
     marginBottom: 10,
@@ -458,19 +465,22 @@ const styles = StyleSheet.create({
   },
   medicineNameTitleText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     lineHeight: 18,
   },
   timeScheduleSubtext: {
     fontSize: 12,
     color: '#64748B',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     marginTop: 4,
   },
   frequencyIntervalSubtext: {
     fontSize: 11,
     color: '#94A3B8',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -496,7 +506,8 @@ const styles = StyleSheet.create({
   alarmBadgeText: {
     fontSize: 11,
     color: '#0D9488',
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   masterSettingsBannerCard: {
     backgroundColor: '#FFFFFF',
@@ -531,12 +542,14 @@ const styles = StyleSheet.create({
   },
   masterTitleMainHeadingText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   masterDescriptionBodyText: {
     fontSize: 11,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 2,
   },

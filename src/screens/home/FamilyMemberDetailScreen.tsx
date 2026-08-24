@@ -17,6 +17,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {profileApi, type FamilyMemberDetails} from '../../api/profile';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FamilyMemberDetail'>;
 
@@ -245,7 +246,8 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   headerSpacer: {width: 32},
@@ -269,11 +271,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 10,
   },
-  avatarInitial: {fontSize: 24, fontWeight: '700', color: '#475569'},
-  memberName: {fontSize: 20, fontWeight: '700', color: '#1E293B'},
-  memberRelation: {fontSize: 13, color: '#0D9488', fontWeight: '600', marginTop: 2},
+  avatarInitial: {fontSize: 24, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569'},
+  memberName: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
+  memberRelation: {fontSize: 13, color: '#0D9488', fontFamily: FONT.semibold, fontWeight: '600', marginTop: 2},
   memberMeta: {fontSize: 12, color: '#64748B', marginTop: 6},
-  memberLogin: {fontSize: 12, color: '#475569', marginTop: 4, fontWeight: '500'},
+  memberLogin: {fontSize: 12, color: '#475569', marginTop: 4, fontFamily: FONT.medium, fontWeight: '500'},
   memberAddress: {fontSize: 11, color: '#64748B', marginTop: 6, textAlign: 'center'},
   metricsRow: {flexDirection: 'row', gap: 10, marginBottom: 8},
   metricBox: {
@@ -285,10 +287,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  metricValue: {fontSize: 18, fontWeight: '700', color: '#0D9488'},
+  metricValue: {fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488'},
   metricLabel: {fontSize: 10, color: '#64748B', marginTop: 2},
   sectionTitle: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginTop: 16,
@@ -308,12 +311,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rowLabel: {fontSize: 13, color: '#64748B'},
-  rowValue: {fontSize: 14, fontWeight: '700', color: '#1E293B'},
+  rowValue: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   listItem: {flexDirection: 'row', alignItems: 'flex-start', gap: 10},
   listItemBody: {flex: 1},
-  itemTitle: {fontSize: 14, fontWeight: '600', color: '#1E293B'},
+  itemTitle: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   itemSub: {fontSize: 12, color: '#64748B', marginTop: 2},
-  inactiveTag: {fontSize: 10, color: '#EF4444', marginTop: 2, fontWeight: '600'},
+  inactiveTag: {fontSize: 10, color: '#EF4444', marginTop: 2, fontFamily: FONT.semibold, fontWeight: '600'},
   emptyText: {fontSize: 13, color: '#94A3B8', paddingVertical: 4},
   chipsRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
   chip: {
@@ -322,5 +325,5 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  chipText: {fontSize: 11, fontWeight: '600', color: '#EF4444'},
+  chipText: {fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600', color: '#EF4444'},
 });

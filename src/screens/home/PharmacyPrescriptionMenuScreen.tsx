@@ -12,6 +12,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyPrescriptionMenu'>;
 
@@ -143,10 +144,10 @@ const styles = StyleSheet.create({
   backButton: {padding: 4},
   logoContainer: {alignItems: 'center', justifyContent: 'center'},
   logoPlaceholder: {flexDirection: 'row', alignItems: 'center'},
-  logoTextMain: {fontSize: 22, fontWeight: '700', color: '#1E3A60', marginLeft: 4},
-  logoTextSub: {fontSize: 9, fontWeight: '600', color: '#49739B', letterSpacing: 2, marginTop: -2},
+  logoTextMain: {fontSize: 22, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E3A60', marginLeft: 4},
+  logoTextSub: {fontSize: 9, fontFamily: FONT.semibold, fontWeight: '600', color: '#49739B', letterSpacing: 2, marginTop: -2},
   titleContainer: {alignItems: 'center', marginTop: 24, marginBottom: 16},
-  screenTitle: {fontSize: 20, fontWeight: '600', color: '#333333'},
+  screenTitle: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#333333'},
   contentCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -181,9 +182,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  selectionText: {fontSize: 16, color: '#8A94A6', fontWeight: '500'},
-  uploadTitleText: {fontSize: 15, color: '#7D8797', fontWeight: '400', marginBottom: 4},
-  browseHereText: {fontSize: 17, color: '#45A096', fontWeight: '700'},
+  selectionText: {fontSize: 16, color: '#8A94A6', fontFamily: FONT.medium, fontWeight: '500'},
+  uploadTitleText: {fontSize: 15, color: '#7D8797', fontFamily: FONT.regular, fontWeight: '400', marginBottom: 4},
+  browseHereText: {fontSize: 17, color: '#45A096', fontFamily: FONT.semibold, fontWeight: '600'},
   dividerText: {textAlign: 'center', fontSize: 15, color: '#7D8797', marginVertical: 24},
   continueButton: {
     backgroundColor: '#418B93',
@@ -196,7 +197,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   continueButtonDisabled: {opacity: 0.85},
-  continueButtonText: {color: '#FFFFFF', fontSize: 18, fontWeight: '600'},
+  continueButtonText: {color: '#FFFFFF', fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600'},
   bottomTabBar: {
     flexDirection: 'row',
     minHeight: 74,
@@ -207,6 +208,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabItem: {alignItems: 'center', justifyContent: 'center', width: width / 5},
-  tabLabel: {fontSize: 11, color: '#9CA3AF', marginTop: 5, fontWeight: '500'},
-  activeTabLabel: {color: '#45A096', fontWeight: '600'},
+  tabLabel: {fontSize: 11, color: '#9CA3AF', marginTop: 5, fontFamily: FONT.medium, fontWeight: '500'},
+  activeTabLabel: {color: '#45A096', fontFamily: FONT.semibold, fontWeight: '600'},
 });

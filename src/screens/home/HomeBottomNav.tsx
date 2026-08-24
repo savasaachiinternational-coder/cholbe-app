@@ -1,6 +1,7 @@
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import {BOTTOM_TABS, type BottomTabKey} from './homeData';
+import { FONT } from '../../theme/typography';
 
 const ACTIVE_COLOR = '#14B8A6';
 const INACTIVE_COLOR = '#94A3B8';
@@ -55,12 +56,14 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 10,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: INACTIVE_COLOR,
     marginTop: 4,
   },
   tabLabelActive: {
     color: ACTIVE_COLOR,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

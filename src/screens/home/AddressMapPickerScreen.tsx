@@ -15,6 +15,7 @@ import MapView, {PROVIDER_GOOGLE, type Region} from 'react-native-maps';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import { FONT } from '../../theme/typography';
 import {
   mergeDeliveryAddress,
   regionFallbackAddress,
@@ -243,7 +244,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9F9FE',
   },
   backButton: {padding: 2},
-  title: {fontSize: 20, fontWeight: '600', color: '#333333'},
+  title: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#333333'},
   myLocationButton: {
     width: 36,
     height: 36,
@@ -283,6 +284,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#1A1C1E',
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     lineHeight: 20,
     marginBottom: 6,
@@ -303,5 +305,5 @@ const styles = StyleSheet.create({
   confirmButtonDisabled: {
     opacity: 0.7,
   },
-  confirmText: {color: '#FFFFFF', fontSize: 16, fontWeight: '600'},
+  confirmText: {color: '#FFFFFF', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600'},
 });

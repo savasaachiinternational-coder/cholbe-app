@@ -24,6 +24,7 @@ import {
   ORDER_STATUS_LABEL,
 } from '../../utils/pharmacyHelpers';
 import {NotificationBell} from '../../components/NotificationBell';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderListHistory'>;
 
@@ -127,10 +128,10 @@ const styles = StyleSheet.create({
   backButton: {padding: 4},
   logoContainer: {alignItems: 'center', justifyContent: 'center'},
   logoPlaceholder: {flexDirection: 'row', alignItems: 'center'},
-  logoTextMain: {fontSize: 22, fontWeight: '700', color: '#1E3A60', marginLeft: 4},
-  logoTextSub: {fontSize: 9, fontWeight: '600', color: '#49739B', letterSpacing: 2, marginTop: -2},
+  logoTextMain: {fontSize: 22, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E3A60', marginLeft: 4},
+  logoTextSub: {fontSize: 9, fontFamily: FONT.semibold, fontWeight: '600', color: '#49739B', letterSpacing: 2, marginTop: -2},
   titleContainer: {alignItems: 'center', marginTop: 24, marginBottom: 16},
-  screenTitle: {fontSize: 20, fontWeight: '600', color: '#333333'},
+  screenTitle: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#333333'},
   scrollCanvasContent: {paddingHorizontal: 20, paddingTop: 8},
   loader: {marginVertical: 32},
   emptyText: {textAlign: 'center', color: '#8A94A6', marginTop: 24},
@@ -143,9 +144,9 @@ const styles = StyleSheet.create({
     borderColor: '#ECEFF7',
   },
   orderCardTop: {flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8},
-  orderIdText: {fontSize: 15, fontWeight: '700', color: '#212529'},
-  statusText: {fontSize: 13, fontWeight: '600'},
+  orderIdText: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#212529'},
+  statusText: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600'},
   orderCardBottom: {flexDirection: 'row', justifyContent: 'space-between'},
   itemsCountText: {fontSize: 13, color: '#7D8797'},
-  priceText: {fontSize: 14, fontWeight: '700', color: '#45A096'},
+  priceText: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#45A096'},
 });

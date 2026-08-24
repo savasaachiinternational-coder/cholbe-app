@@ -28,6 +28,7 @@ import {
 import { notificationsApi, type Notification } from '../../api/notifications';
 import { ApiError } from '../../api/client';
 import { useNotificationBadge } from '../../context/NotificationContext';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
 
@@ -41,13 +42,6 @@ const FILTER_TABS: NotificationFilterTab[] = [
   'vendor',
 ];
 const FILTER_TAB_SCROLL_STEP = 140;
-
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 const SEGMENT_ACTIVE_COLORS = ['#307887', '#74ACB3'];
 const SEGMENT_ACTIVE_START = { x: 0.98, y: 0.64 };
@@ -620,8 +614,8 @@ const styles = StyleSheet.create({
   markAllText: {
     fontSize: 10,
     paddingLeft: 4,
-    fontFamily: FONT.semibold,
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     includeFontPadding: false,
     textAlignVertical: 'center',
@@ -650,15 +644,15 @@ const styles = StyleSheet.create({
   },
   segmentTabText: {
     fontSize: 14,
-    fontFamily: FONT.semibold,
     color: '#64748B',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   segmentActiveTabText: { color: '#FFFFFF' },
   settingsLinkText: {
     marginTop: 14,
     fontSize: 14,
-    fontFamily: FONT.semibold,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#4DA69F',
     textAlign: 'center',
@@ -731,16 +725,16 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: '#0D9488' },
   filterChipText: {
     fontSize: 13,
-    fontFamily: FONT.semibold,
     color: '#64748B',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   filterChipTextActive: { color: '#FFFFFF' },
   scrollContent: { paddingHorizontal: 16 },
   sectionTitle: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#64748B',
     marginBottom: 10,
     marginTop: 8,
@@ -767,8 +761,8 @@ const styles = StyleSheet.create({
   reminderBody: { flex: 1 },
   reminderTitle: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   reminderTime: {
@@ -836,7 +830,7 @@ const styles = StyleSheet.create({
   alertTitle: {
     flex: 1,
     fontSize: 12,
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
@@ -849,7 +843,7 @@ const styles = StyleSheet.create({
   },
   viewHistoryText: {
     fontSize: 10,
-    fontFamily: FONT.semibold,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#4DA69F',
     includeFontPadding: false,
@@ -884,8 +878,8 @@ const styles = StyleSheet.create({
   notificationBody: { flex: 1 },
   notificationTitle: {
     fontSize: 15,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   notificationMessage: {

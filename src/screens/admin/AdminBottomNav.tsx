@@ -4,14 +4,10 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../navigation/types';
 import {ADMIN_TABS, type AdminTabKey} from './adminNav';
+import { FONT } from '../../theme/typography';
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  semibold: 'ProximaNova-Semibold',
-} as const;
-
 type Props = {
   activeTab: AdminTabKey;
   bottomInset: number;
@@ -119,8 +115,8 @@ const styles = StyleSheet.create({
   },
   navText: {
     fontSize: 9,
-    fontFamily: FONT.regular,
     color: '#9E9E9E',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     textAlign: 'center',
   },

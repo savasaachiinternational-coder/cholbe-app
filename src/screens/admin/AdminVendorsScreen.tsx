@@ -23,18 +23,12 @@ import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {ADMIN_VENDOR_FILTERS, type AdminVendorFilter} from './adminNav';
 import {NotificationBell} from '../../components/NotificationBell';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AVendors'>;
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 type ApiVendor = {
   id: string;
   pharmacyName: string;
@@ -537,8 +531,8 @@ const styles = StyleSheet.create({
     top: 16,
     right: 16,
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#9E9E9E',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     zIndex: 2,
   },
@@ -571,8 +565,8 @@ const styles = StyleSheet.create({
   },
   subRowText: {
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     flexShrink: 1,
   },
@@ -584,6 +578,7 @@ const styles = StyleSheet.create({
   },
   statusChipText: {
     fontSize: 10,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   // Content-sized pills sitting under the text column, as in the mockup.
@@ -633,7 +628,8 @@ const styles = StyleSheet.create({
   },
   detailTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   detailAvatarRow: {
@@ -653,7 +649,8 @@ const styles = StyleSheet.create({
   },
   detailName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   detailRow: {
@@ -666,11 +663,13 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 13,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   detailValue: {
     fontSize: 13,
     color: '#1A1C1E',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     maxWidth: '60%',
     textAlign: 'right',
@@ -692,6 +691,7 @@ const styles = StyleSheet.create({
   detailActionBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   deleteBtn: {
@@ -709,6 +709,7 @@ const styles = StyleSheet.create({
   deleteBtnText: {
     color: '#E26D6D',
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

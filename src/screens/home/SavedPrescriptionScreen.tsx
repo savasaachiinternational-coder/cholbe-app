@@ -23,6 +23,7 @@ import {useMedicationDraft} from '../../context/MedicationDraftContext';
 import {API_ORIGIN} from '../../config/api';
 import {ApiError} from '../../api/client';
 import {imageUri} from '../../utils/fileAsset';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SavedPrescription'>;
 
@@ -202,6 +203,7 @@ const styles = StyleSheet.create({
   backButton: {padding: 2},
   headerTitleText: {
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },
@@ -275,6 +277,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bottomNavWrap: {

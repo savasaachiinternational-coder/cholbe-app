@@ -24,18 +24,12 @@ import type {RootStackParamList} from '../../navigation/types';
 import {VendorBottomNav} from './VendorBottomNav';
 import {ORDER_FILTER_CHIPS, type VendorOrderStatus} from './vendorNav';
 import {NotificationBell} from '../../components/NotificationBell';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VOrders'>;
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 // Figma "Card/Shadow 1": 0 4px 60px 0 rgba(4, 6, 15, 0.08).
 const CARD_SHADOW = {
   shadowColor: '#04060F',
@@ -726,7 +720,7 @@ const styles = StyleSheet.create({
   },
   chipItemActive: {backgroundColor: '#E26D6D'},
   chipText: {fontSize: 12, fontFamily: FONT.medium, fontWeight: '500', color: '#4F5E6D'},
-  chipTextActive: {color: '#FFFFFF', fontWeight: '600', fontFamily: FONT.semibold},
+  chipTextActive: {color: '#FFFFFF',  fontWeight: '600', fontFamily: FONT.semibold},
   sectionHeaderRow: {paddingHorizontal: 16, marginTop: 12, marginBottom: 12},
   sectionTitle: {
     fontSize: 16,
@@ -897,7 +891,7 @@ const detailStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ECEFF3',
   },
-  sheetTitle: {fontSize: 17, fontFamily: FONT.bold, fontWeight: '700', color: '#1A1C1E'},
+  sheetTitle: {fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A1C1E'},
   sheetScroll: {paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8},
   orderIdRow: {
     flexDirection: 'row',
@@ -906,10 +900,10 @@ const detailStyles = StyleSheet.create({
     marginBottom: 16,
     marginTop: 8,
   },
-  orderIdText: {fontSize: 16, fontFamily: FONT.bold, fontWeight: '800', color: '#1A1C1E'},
+  orderIdText: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A1C1E'},
   statusChip: {backgroundColor: '#E8F4F6', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4},
   statusChipRed: {backgroundColor: '#FEE2E2'},
-  statusChipText: {fontSize: 12, fontFamily: FONT.bold, fontWeight: '700', color: '#4E929D'},
+  statusChipText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#4E929D'},
   statusChipTextRed: {color: '#DC2626'},
   section: {
     marginBottom: 16,
@@ -919,8 +913,8 @@ const detailStyles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 12,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#9AA6B2',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -939,13 +933,13 @@ const detailStyles = StyleSheet.create({
   itemImage: {width: 44, height: 44, borderRadius: 8, marginRight: 12},
   itemImageFallback: {backgroundColor: '#E8F4F6', alignItems: 'center', justifyContent: 'center'},
   itemInfo: {flex: 1},
-  itemName: {fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: '#1A1C1E'},
+  itemName: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A1C1E'},
   itemQty: {fontSize: 11, fontFamily: FONT.regular, color: '#7E8B97', marginTop: 2},
-  itemPrice: {fontSize: 13, fontFamily: FONT.bold, fontWeight: '700', color: '#4E929D'},
+  itemPrice: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#4E929D'},
   payRow: {flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8},
   payLabel: {fontSize: 13, fontFamily: FONT.regular, color: '#7E8B97'},
   payValue: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#333D47'},
-  payTotal: {fontSize: 15, fontFamily: FONT.bold, fontWeight: '800', color: '#1A1C1E'},
+  payTotal: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A1C1E'},
   paidText: {color: '#16A34A'},
   timelineRow: {
     flexDirection: 'row',
@@ -974,7 +968,7 @@ const detailStyles = StyleSheet.create({
   },
   timelineLineActive: {backgroundColor: '#4E929D'},
   timelineLabel: {fontSize: 13, fontFamily: FONT.regular, color: '#9AA6B2', marginBottom: 16},
-  timelineLabelActive: {color: '#333D47', fontWeight: '600', fontFamily: FONT.semibold},
+  timelineLabelActive: {color: '#333D47',  fontWeight: '600', fontFamily: FONT.semibold},
   actionsRow: {flexDirection: 'row', gap: 12, marginTop: 8, marginBottom: 8},
   actionBtn: {
     flex: 1,
@@ -999,7 +993,7 @@ const detailStyles = StyleSheet.create({
     borderColor: '#4E929D',
     backgroundColor: '#E6F3F5',
   },
-  btnPickupText: {color: '#4E929D', fontSize: 13, fontFamily: FONT.bold, fontWeight: '700'},
+  btnPickupText: {color: '#4E929D', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600'},
   btnDeliver: {backgroundColor: '#16A34A'},
-  btnTextWhite: {color: '#FFFFFF', fontSize: 13, fontFamily: FONT.bold, fontWeight: '700'},
+  btnTextWhite: {color: '#FFFFFF', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600'},
 });

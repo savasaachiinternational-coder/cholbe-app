@@ -18,6 +18,7 @@ import {NotificationBell} from '../../components/NotificationBell';
 import {DoctorBottomNav} from './DoctorBottomNav';
 import {formatAppointmentDate, formatAppointmentStatus, statusColor} from './doctorNav';
 import {openDoctorConsultation} from './doctorConsultationHelpers';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DHome'>;
 
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   greeting: {fontSize: 13, color: '#7E8B97'},
-  title: {fontSize: 22, fontWeight: '700', color: '#1A2332', marginTop: 2},
+  title: {fontSize: 22, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332', marginTop: 2},
   subtitle: {fontSize: 14, color: '#4E929D', marginTop: 2},
   centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   content: {padding: 16, gap: 12},
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ECEFF3',
   },
-  statValue: {fontSize: 22, fontWeight: '700', color: '#1A2332'},
+  statValue: {fontSize: 22, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   statLabel: {fontSize: 12, color: '#7E8B97'},
   sectionHeader: {
     flexDirection: 'row',
@@ -216,8 +217,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  sectionTitle: {fontSize: 16, fontWeight: '600', color: '#1A2332'},
-  linkText: {fontSize: 13, color: '#4E929D', fontWeight: '600'},
+  sectionTitle: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
+  linkText: {fontSize: 13, color: '#4E929D', fontFamily: FONT.semibold, fontWeight: '600'},
   emptyCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -236,10 +237,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   apptTop: {flexDirection: 'row', justifyContent: 'space-between', gap: 8},
-  patientName: {fontSize: 15, fontWeight: '600', color: '#1A2332'},
+  patientName: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   apptMeta: {fontSize: 12, color: '#7E8B97', marginTop: 2},
   statusBadge: {borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start'},
-  statusText: {fontSize: 11, fontWeight: '600'},
+  statusText: {fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600'},
   apptFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -253,7 +254,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  joinBtnText: {color: '#FFFFFF', fontSize: 12, fontWeight: '600'},
+  joinBtnText: {color: '#FFFFFF', fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600'},
   quickActions: {gap: 8, marginTop: 8},
   quickAction: {
     flexDirection: 'row',
@@ -265,5 +266,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ECEFF3',
   },
-  quickActionText: {flex: 1, fontSize: 14, fontWeight: '500', color: '#1A2332'},
+  quickActionText: {flex: 1, fontSize: 14, fontFamily: FONT.medium, fontWeight: '500', color: '#1A2332'},
 });

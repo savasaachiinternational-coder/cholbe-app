@@ -20,6 +20,7 @@ import {cartApi, type CartItem} from '../../api/cart';
 import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
 import {ApiError} from '../../api/client';
 import {ProductImage} from '../../components/ProductImage';
+import { FONT } from '../../theme/typography';
 import {
   discountPercent,
   formatBdt,
@@ -35,13 +36,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyCartOverlay'>;
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 const {width} = Dimensions.get('window');
 const CARD_SPACING = 12;
 const CARD_WIDTH = (width - 32 - CARD_SPACING) / 2;
@@ -345,7 +339,7 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   backButton: {padding: 2},
-  headerTitleText: {fontSize: 20, fontWeight: '600', color: '#333333'},
+  headerTitleText: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#333333'},
   cartIconButton: {padding: 4, position: 'relative'},
   cartBadge: {
     position: 'absolute',
@@ -373,17 +367,17 @@ const styles = StyleSheet.create({
   },
   productThumb: {width: '100%', height: 80, borderRadius: 8, marginBottom: 6},
   productInfoBlock: {},
-  productNameText: {fontSize: 12, fontWeight: '600', color: '#333'},
+  productNameText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#333'},
   productTypeText: {fontSize: 10, color: '#7E8B97'},
   priceCounterRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4},
-  productPriceText: {fontSize: 12, fontWeight: '700', color: '#45A096'},
+  productPriceText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#45A096'},
   inlineAddButton: {
     backgroundColor: '#45A096',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  inlineAddButtonText: {color: '#FFF', fontSize: 10, fontWeight: '600'},
+  inlineAddButtonText: {color: '#FFF', fontSize: 10, fontFamily: FONT.semibold, fontWeight: '600'},
   dimmedBackdropFilm: {
     position: 'absolute',
     left: 0,
@@ -570,8 +564,8 @@ const styles = StyleSheet.create({
   },
   itemDiscount: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#4DA69F',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   totalsBlock: {gap: 6},
@@ -579,8 +573,8 @@ const styles = StyleSheet.create({
   totalsLabel: {fontSize: 12, fontFamily: FONT.regular, color: '#616161'},
   totalsValue: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#212121',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   grandTotalText: {
@@ -592,8 +586,8 @@ const styles = StyleSheet.create({
   },
   grandTotalValue: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
   },
   trustRow: {
@@ -651,6 +645,6 @@ const styles = StyleSheet.create({
     right: 0,
   },
   tabItem: {alignItems: 'center', justifyContent: 'center', width: width / 5},
-  tabLabel: {fontSize: 11, color: '#9CA3AF', marginTop: 5, fontWeight: '500'},
-  activeTabLabel: {color: '#45A096', fontWeight: '600'},
+  tabLabel: {fontSize: 11, color: '#9CA3AF', marginTop: 5, fontFamily: FONT.medium, fontWeight: '500'},
+  activeTabLabel: {color: '#45A096', fontFamily: FONT.semibold, fontWeight: '600'},
 });

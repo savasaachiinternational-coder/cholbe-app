@@ -20,18 +20,12 @@ import { AdminBottomNav } from './AdminBottomNav';
 import { formatBdt } from '../../utils/pharmacyHelpers';
 import { NotificationBell } from '../../components/NotificationBell';
 import { ProductImage } from '../../components/ProductImage';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AReports'>;
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 type MedicineItem = {
   name: string;
   price: string;
@@ -329,8 +323,8 @@ const styles = StyleSheet.create({
   datePickerText: {
     flex: 1,
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#9E9E9E',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   metricsRowGrid: {
@@ -355,14 +349,14 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   metricValue: {
     fontSize: 24,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
   },
   // Figma: 12px padding, 16px gap, 12px radius, Card/Shadow 1.
@@ -403,8 +397,8 @@ const styles = StyleSheet.create({
   },
   timeframeDropdownText: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   graphBodyWrapperRow: {
@@ -420,8 +414,8 @@ const styles = StyleSheet.create({
   },
   axisText: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   chartCanvasArea: {
@@ -509,8 +503,8 @@ const styles = StyleSheet.create({
   },
   medicinePriceText: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
 });

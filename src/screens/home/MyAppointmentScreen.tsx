@@ -27,19 +27,11 @@ import {
 } from '../../api/utils/appointmentHelpers';
 import { appointmentsApi, type Appointment } from '../../api/appointments';
 import { ApiError } from '../../api/client';
+import { FONT } from '../../theme/typography';
 type Props = NativeStackScreenProps<RootStackParamList, 'MyAppointment'>;
 type AppointmentTab = 'upcoming' | 'past';
 
 const DOCTOR_AVATAR = require('../../assets/b2.png');
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 export function MyAppointmentScreen({ navigation }: Props) {
   useEdgeToEdgeStatusBar();
@@ -521,7 +513,7 @@ const styles = StyleSheet.create({
   segmentTabText: {
     fontSize: 12,
     color: '#616161',
-    fontFamily: FONT.semibold,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   segmentActiveTabText: {
@@ -588,14 +580,14 @@ const styles = StyleSheet.create({
   },
   doctorNameText: {
     fontSize: 18,
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#212121',
   },
   doctorSpecialtyText: {
     fontSize: 14,
     color: '#616161',
-    fontFamily: FONT.medium,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginTop: 2,
   },
@@ -604,7 +596,7 @@ const styles = StyleSheet.create({
   },
   dateTimestampLabelText: {
     fontSize: 12,
-    fontFamily: FONT.medium,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#616161',
   },
@@ -629,7 +621,7 @@ const styles = StyleSheet.create({
   specDetailMainText: {
     fontSize: 12,
     color: '#616161',
-    fontFamily: FONT.medium,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   smallSeparatingDot: {
@@ -729,12 +721,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#616161',
     lineHeight: 18,
-    fontFamily: FONT.medium,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   reminderBoldHeadingText: {
     color: '#616161',
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   feedbackActionSubmitButton: {
@@ -797,7 +789,7 @@ const styles = StyleSheet.create({
   },
   bookNowButtonText: {
     color: '#FFFFFF',
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
 });

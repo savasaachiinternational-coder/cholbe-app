@@ -24,6 +24,7 @@ import {DatePickerField} from '../../components/MedicationPickers';
 import {ReportFilePreview} from '../../components/ReportFilePreview';
 import {isImageFile, isPdfFile} from '../../utils/fileAsset';
 import {formatLongReportDate, toIsoDateString} from '../../utils/reportFormat';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ViewReportDetails'>;
 
@@ -367,6 +368,7 @@ const styles = StyleSheet.create({
   },
   headerTitleText: {
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },
@@ -412,6 +414,7 @@ const styles = StyleSheet.create({
   alertPillText: {
     fontSize: 14,
     color: '#5A6578',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginRight: 6,
   },
@@ -424,13 +427,15 @@ const styles = StyleSheet.create({
   },
   reportNameText: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#333333',
     marginBottom: 4,
   },
   editTitleInput: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#333333',
     marginBottom: 4,
     backgroundColor: '#F1F2F7',
@@ -443,6 +448,7 @@ const styles = StyleSheet.create({
   reportSubtext: {
     fontSize: 14,
     color: '#8A94A6',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   embeddedDocumentCard: {
@@ -468,6 +474,7 @@ const styles = StyleSheet.create({
   documentCardLabelText: {
     fontSize: 14,
     color: '#7D8797',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 8,
   },
@@ -487,16 +494,19 @@ const styles = StyleSheet.create({
   sectionLabelText: {
     fontSize: 15,
     color: '#7D8797',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginBottom: 8,
   },
   inlineInfoValueText: {
     fontSize: 15,
     color: '#7D8797',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   boldSpan: {
     color: '#5A6578',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   editDatePicker: {
@@ -541,6 +551,7 @@ const styles = StyleSheet.create({
   timelineContentText: {
     fontSize: 14,
     color: '#5A6578',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     lineHeight: 20,
     flex: 1,
@@ -565,6 +576,7 @@ const styles = StyleSheet.create({
   outlinedEditButtonText: {
     color: '#45A096',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   footerActionContainer: {
@@ -591,6 +603,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bottomTabBar: {
@@ -616,10 +629,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {
     color: '#45A096',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

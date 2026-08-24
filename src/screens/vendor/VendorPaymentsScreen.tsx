@@ -24,6 +24,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import {VendorBottomNav} from './VendorBottomNav';
 import {NotificationBell} from '../../components/NotificationBell';
 import {AvatarImage} from '../../components/AvatarImage';
+import { FONT } from '../../theme/typography';
 import {
   PAYMENT_DATE_FILTERS,
   PAYMENT_STATUS_FILTERS,
@@ -35,12 +36,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'VPayments'>;
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 type PickerField = 'date' | 'status' | null;
 
 type TransactionIconType = 'bkash' | 'nagad' | 'card' | 'cod' | 'fee';
@@ -513,14 +508,14 @@ const styles = StyleSheet.create({
   },
   balanceLabel: {
     fontSize: 13,
-    fontFamily: FONT.medium,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   mainBalanceValue: {
     fontSize: 32,
-    fontFamily: FONT.bold,
-    fontWeight: '800',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3A3F47',
     marginVertical: 6,
   },
@@ -576,14 +571,14 @@ const styles = StyleSheet.create({
   },
   earningBoxLabel: {
     fontSize: 11,
-    fontFamily: FONT.medium,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   earningBoxValue: {
     fontSize: 15,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
     marginTop: 4,
   },
@@ -640,8 +635,8 @@ const styles = StyleSheet.create({
   dropdownSelectorText: {
     flex: 1,
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#4F5E6D',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   transactionsStack: {
@@ -696,13 +691,13 @@ const styles = StyleSheet.create({
   miniBrandText: {
     color: '#FFFFFF',
     fontSize: 9,
-    fontFamily: FONT.bold,
-    fontWeight: 'bold',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   methodLabelText: {
     fontSize: 13,
-    fontFamily: FONT.medium,
     color: '#5C6470',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   feeBadge: {
@@ -741,8 +736,8 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     fontSize: 10,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   textPaid: {
     color: '#00A884',
@@ -752,14 +747,14 @@ const styles = StyleSheet.create({
   },
   amountText: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   processingSubtext: {
     fontSize: 10,
-    fontFamily: FONT.medium,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   pickerOverlay: {
@@ -776,8 +771,8 @@ const styles = StyleSheet.create({
   },
   pickerTitle: {
     fontSize: 16,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -798,7 +793,7 @@ const styles = StyleSheet.create({
   },
   pickerOptionTextSelected: {
     color: '#3F8694',
-    fontWeight: '600',
     fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
 });

@@ -22,19 +22,11 @@ import { MedicationFormFields } from '../../components/MedicationFormFields';
 import { useMedicationDraft } from '../../context/MedicationDraftContext';
 import { ApiError } from '../../api/client';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddMedicationForm'>;
 
 const SAVE_GRADIENT = ['#EE8E8C', '#E06B6A'];
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 export function AddMedicationFormScreen({ navigation, route }: Props) {
   useEdgeToEdgeStatusBar();
@@ -185,8 +177,8 @@ const styles = StyleSheet.create({
   logoPlaceholder: { flexDirection: 'row', alignItems: 'center' },
   logoTextMain: {
     fontSize: 22,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
     marginLeft: 4,
   },
@@ -205,7 +197,7 @@ const styles = StyleSheet.create({
     color:'#424242',
     fontSize:18,
     fontFamily: FONT.semibold,
-    fontWeight:'600',
+    fontWeight: '600',
   },
   contentCard: {
     flex: 1,

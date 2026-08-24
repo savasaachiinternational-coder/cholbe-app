@@ -1,6 +1,7 @@
 import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import React from 'react';
 import Feather from 'react-native-vector-icons/Feather';
+import { FONT } from '../../../../theme/typography';
 
 type Props = {
   title?: string;
@@ -79,12 +80,14 @@ const styles = StyleSheet.create({
   title: {
     color: '#091B27',
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   subtitle: {
     marginTop: 2,
     color: '#454F5B',
     fontSize: 14,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 20,
   },

@@ -18,6 +18,7 @@ import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {formatBdt} from '../../utils/pharmacyHelpers';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DWithdraw'>;
 
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backBtn: {width: 32, height: 32, justifyContent: 'center'},
-  title: {fontSize: 17, fontWeight: '600', color: '#1A2332'},
+  title: {fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   content: {padding: 16},
   balanceCard: {
@@ -193,9 +194,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   balanceLabel: {fontSize: 12, color: 'rgba(255,255,255,0.8)'},
-  balanceValue: {fontSize: 28, fontWeight: '700', color: '#FFFFFF', marginTop: 4},
+  balanceValue: {fontSize: 28, fontFamily: FONT.semibold, fontWeight: '600', color: '#FFFFFF', marginTop: 4},
   payoutInfo: {fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 8},
-  addPayoutLink: {fontSize: 13, color: '#FFFFFF', fontWeight: '600', marginTop: 8},
+  addPayoutLink: {fontSize: 13, color: '#FFFFFF', fontFamily: FONT.semibold, fontWeight: '600', marginTop: 8},
   fieldLabel: {fontSize: 13, color: '#7E8B97', marginBottom: 6},
   input: {
     backgroundColor: '#FFFFFF',
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   quickBtn: {alignSelf: 'flex-start', marginBottom: 16},
-  quickBtnText: {fontSize: 13, color: '#4E929D', fontWeight: '600'},
+  quickBtnText: {fontSize: 13, color: '#4E929D', fontFamily: FONT.semibold, fontWeight: '600'},
   submitBtn: {
     backgroundColor: '#4E929D',
     borderRadius: 10,
@@ -217,8 +218,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   submitDisabled: {opacity: 0.7},
-  submitText: {color: '#FFFFFF', fontSize: 15, fontWeight: '600'},
-  sectionTitle: {fontSize: 14, fontWeight: '600', color: '#7E8B97', marginBottom: 8},
+  submitText: {color: '#FFFFFF', fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600'},
+  sectionTitle: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#7E8B97', marginBottom: 8},
   emptyText: {fontSize: 13, color: '#7E8B97'},
   historyRow: {
     flexDirection: 'row',
@@ -231,8 +232,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ECEFF3',
   },
-  historyAmount: {fontSize: 15, fontWeight: '600', color: '#1A2332'},
+  historyAmount: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   historyDate: {fontSize: 11, color: '#7E8B97', marginTop: 2},
   statusBadge: {borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4},
-  statusText: {fontSize: 10, fontWeight: '600'},
+  statusText: {fontSize: 10, fontFamily: FONT.semibold, fontWeight: '600'},
 });

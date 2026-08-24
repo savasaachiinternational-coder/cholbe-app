@@ -21,6 +21,7 @@ import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ADoctors'>;
 
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E2E8F0',
   },
   iconBtn: {width: 32, alignItems: 'center'},
-  title: {flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#1E293B'},
+  title: {flex: 1, textAlign: 'center', fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   content: {padding: 16},
   filters: {marginBottom: 16},
   chip: {
@@ -385,7 +386,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chipActive: {backgroundColor: '#0D9488'},
-  chipText: {fontSize: 12, fontWeight: '600', color: '#475569'},
+  chipText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569'},
   chipTextActive: {color: '#FFF'},
   card: {
     backgroundColor: '#FFF',
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   cardInfo: {flex: 1},
-  cardTitle: {fontSize: 15, fontWeight: '700', color: '#1E293B'},
+  cardTitle: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   cardSub: {fontSize: 12, color: '#64748B', marginTop: 2},
   cardEmail: {fontSize: 11, color: '#94A3B8', marginTop: 1},
   ratingRow: {flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4},
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  statusText: {fontSize: 10, fontWeight: '700'},
+  statusText: {fontSize: 10, fontFamily: FONT.semibold, fontWeight: '600'},
   actions: {flexDirection: 'row', marginTop: 12, gap: 8},
   editBtn: {
     flexDirection: 'row',
@@ -429,7 +430,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     gap: 4,
   },
-  editBtnText: {fontSize: 12, fontWeight: '600', color: '#0D9488'},
+  editBtnText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488'},
   actionBtn: {
     borderWidth: 1,
     borderColor: '#CBD5E1',
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  actionBtnText: {fontSize: 12, fontWeight: '600', color: '#475569'},
+  actionBtnText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569'},
   dangerBtn: {borderColor: '#FECACA'},
   emptyText: {textAlign: 'center', color: '#94A3B8', marginTop: 40},
 });
@@ -461,8 +462,8 @@ const modal = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  sheetTitle: {fontSize: 16, fontWeight: '700', color: '#1E293B'},
-  label: {fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 4, marginTop: 10},
+  sheetTitle: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
+  label: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569', marginBottom: 4, marginTop: 10},
   input: {
     backgroundColor: '#F8FAFC',
     borderRadius: 10,
@@ -492,7 +493,7 @@ const modal = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  submitText: {color: '#FFF', fontWeight: '700', fontSize: 15},
+  submitText: {color: '#FFF', fontFamily: FONT.semibold, fontWeight: '600', fontSize: 15},
   specialtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -504,5 +505,5 @@ const modal = StyleSheet.create({
   },
   specialtyRowActive: {backgroundColor: '#F0FDFA', borderRadius: 8},
   specialtyName: {fontSize: 14, color: '#1E293B'},
-  specialtyNameActive: {color: '#0D9488', fontWeight: '600'},
+  specialtyNameActive: {color: '#0D9488', fontFamily: FONT.semibold, fontWeight: '600'},
 });

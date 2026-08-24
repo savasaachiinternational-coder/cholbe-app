@@ -26,6 +26,7 @@ import {performLogout} from '../../auth/sessionControl';
 import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 import {NotificationBell} from '../../components/NotificationBell';
 import {AvatarImage} from '../../components/AvatarImage';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AProfile'>;
 
@@ -330,6 +331,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     flex: 1,
@@ -369,12 +371,14 @@ const styles = StyleSheet.create({
   },
   adminNameText: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
   adminRoleText: {
     fontSize: 12,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -407,6 +411,7 @@ const styles = StyleSheet.create({
   },
   rowLabelText: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333D47',
   },
@@ -439,7 +444,8 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     color: '#E26D6D',
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   cpOverlay: {
     flex: 1,
@@ -461,7 +467,8 @@ const styles = StyleSheet.create({
   },
   cpTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   cpField: {
@@ -469,6 +476,7 @@ const styles = StyleSheet.create({
   },
   cpLabel: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#4F5E6D',
     marginBottom: 6,
@@ -504,6 +512,7 @@ const styles = StyleSheet.create({
   cpSaveBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
 });

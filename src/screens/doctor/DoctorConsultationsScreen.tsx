@@ -23,6 +23,7 @@ import {formatAppointmentDate, formatAppointmentStatus, statusColor} from './doc
 import {openDoctorConsultation} from './doctorConsultationHelpers';
 import {DoctorBottomNav} from './DoctorBottomNav';
 import {formatBdt} from '../../utils/pharmacyHelpers';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DConsultations'>;
 
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backBtn: {width: 32, height: 32, justifyContent: 'center'},
-  title: {fontSize: 17, fontWeight: '600', color: '#1A2332'},
+  title: {fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   list: {padding: 16},
   financeRow: {flexDirection: 'row', gap: 10, marginBottom: 16},
@@ -253,10 +254,10 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   withdrawCardLabel: {color: 'rgba(255,255,255,0.85)'},
-  cardLabel: {fontSize: 11, color: '#7E8B97', fontWeight: '500'},
-  cardValue: {fontSize: 20, fontWeight: '700', color: '#1A2332', marginTop: 4},
+  cardLabel: {fontSize: 11, color: '#7E8B97', fontFamily: FONT.medium, fontWeight: '500'},
+  cardValue: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332', marginTop: 4},
   cardSub: {fontSize: 11, color: '#7E8B97', marginTop: 4},
-  withdrawValue: {fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginTop: 4},
+  withdrawValue: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#FFFFFF', marginTop: 4},
   withdrawBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -268,9 +269,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
   },
-  withdrawBtnText: {fontSize: 11, fontWeight: '600', color: '#FFFFFF'},
+  withdrawBtnText: {fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600', color: '#FFFFFF'},
   sectionTitle: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#7E8B97',
     marginBottom: 8,
@@ -305,10 +307,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardBody: {flex: 1},
-  name: {fontSize: 14, fontWeight: '600', color: '#1A2332'},
+  name: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   meta: {fontSize: 12, color: '#7E8B97', marginTop: 2},
   badge: {borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4},
-  badgeText: {fontSize: 10, fontWeight: '600'},
+  badgeText: {fontSize: 10, fontFamily: FONT.semibold, fontWeight: '600'},
   setupRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -329,6 +331,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   setupBody: {flex: 1},
-  setupTitle: {fontSize: 15, fontWeight: '600', color: '#1A2332'},
+  setupTitle: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   setupSub: {fontSize: 12, color: '#7E8B97', marginTop: 2},
 });

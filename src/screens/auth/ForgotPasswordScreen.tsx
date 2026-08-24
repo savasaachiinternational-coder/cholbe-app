@@ -18,6 +18,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import { authApi } from '../../api/auth';
 import { ApiError } from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -195,6 +196,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     marginBottom: 8,
@@ -221,6 +223,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#555555',
     marginBottom: 10,
@@ -242,6 +245,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#333333',
     fontSize: 15,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   footerSection: {
@@ -267,6 +271,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   cancelButton: {
@@ -279,6 +284,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#E06D6D',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

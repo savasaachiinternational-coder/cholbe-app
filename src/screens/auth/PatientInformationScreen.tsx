@@ -20,6 +20,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -302,7 +303,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     marginBottom: 8,
   },
@@ -330,6 +332,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#555555',
     marginBottom: 10,
@@ -352,6 +355,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#333333',
     fontSize: 15,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   ageInput: {
@@ -359,6 +363,7 @@ const styles = StyleSheet.create({
   },
   suffixText: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#555555',
     marginLeft: 8,
@@ -378,6 +383,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#333333',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginRight: 8,
   },
@@ -404,6 +410,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   buttonDisabled: {
@@ -424,6 +431,7 @@ const styles = StyleSheet.create({
   },
   pickerTitle: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#3B3B3B',
     marginBottom: 12,
@@ -446,6 +454,7 @@ const styles = StyleSheet.create({
   },
   pickerOptionTextSelected: {
     color: '#4A8B95',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

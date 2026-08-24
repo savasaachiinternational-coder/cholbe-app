@@ -22,17 +22,9 @@ import type {BottomTabKey} from './homeData';
 import {useMedicationDraft} from '../../context/MedicationDraftContext';
 import {ApiError} from '../../api/client';
 import {pickedFileFromAsset} from '../../utils/fileAsset';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseFromGallery'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 const {width} = Dimensions.get('window');
 const NUM_COLUMNS = 4;
@@ -240,7 +232,7 @@ const styles = StyleSheet.create({
   backButton: {marginRight: 6},
   headerTitleText: {
     fontSize: 18,
-    fontFamily: FONT.semibold,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#424242',
   },
@@ -254,8 +246,8 @@ const styles = StyleSheet.create({
   },
   dropdownFilterText: {
     fontSize: 13,
-    fontFamily: FONT.medium,
     color: '#FFFFFF',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   dropdownIcon: {marginLeft: 4},

@@ -10,6 +10,7 @@ import {GradientPillButton} from '../../components/shared/GradientPillButton';
 import {IntakeSummary} from '../../components/shared/IntakeSummary';
 import {PainBodyDiagram} from '../../components/PainStatusScreen/PainBodyDiagram';
 import {PainLocationChip} from '../../components/PainStatusScreen/PainLocationChip';
+import { FONT } from '../../../../theme/typography';
 import {
   DEFAULT_BODY_DIAGRAM,
   PAIN_LOCATIONS,
@@ -90,6 +91,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     color: '#212121',
     fontSize: 32,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     lineHeight: 34,
   },

@@ -23,6 +23,7 @@ import {type PaymentMethod} from './bookVideoCallData';
 import {appointmentsApi} from '../../api/appointments';
 import {doctorsApi, type DoctorAvailabilityDate} from '../../api/doctors';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const SLOT_WIDTH = (SCREEN_WIDTH - 32 - 24) / 4;
@@ -593,6 +594,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
@@ -618,12 +620,14 @@ const styles = StyleSheet.create({
   },
   doctorName: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#212121',
   },
   doctorSpecialty: {
     fontSize: 14,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginTop: 1,
   },
@@ -642,6 +646,7 @@ const styles = StyleSheet.create({
   onlineStatusText: {
     fontSize: 12,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   segmentContainer: {
@@ -731,6 +736,7 @@ const styles = StyleSheet.create({
   segmentTabText: {
     fontSize: 13,
     color: '#64748B',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   segmentActiveTabText: {
@@ -747,6 +753,7 @@ const styles = StyleSheet.create({
   },
   pricingValue: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#616161',
   },
@@ -772,11 +779,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     marginLeft: 6,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   // Owns the 16dp gap above every section heading, per the design annotations.
   blockSectionTitle: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginTop: 16,
@@ -802,6 +811,7 @@ const styles = StyleSheet.create({
   slotBadgeText: {
     fontSize: 11,
     color: '#475569',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   slotActiveBadgeText: {
@@ -835,11 +845,13 @@ const styles = StyleSheet.create({
   },
   brandLogoInitial: {
     color: '#FFFFFF',
-    fontWeight: '800',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     fontSize: 14,
   },
   paymentMethodLabel: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#1E293B',
   },
@@ -880,6 +892,7 @@ const styles = StyleSheet.create({
   confirmCheckoutButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   floatingScanButton: {

@@ -23,18 +23,12 @@ import { AdminBottomNav } from './AdminBottomNav';
 import { ADMIN_MEDICINE_FILTERS, type AdminMedicineFilter } from './adminNav';
 import { NotificationBell } from '../../components/NotificationBell';
 import { ProductImage } from '../../components/ProductImage';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AMedicines'>;
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 function filterMedicines(items: Medicine[], filter: AdminMedicineFilter) {
   if (filter === 'All') return items;
   if (filter === 'Active') return items.filter(m => m.status === 'ACTIVE');
@@ -539,8 +533,8 @@ const styles = StyleSheet.create({
   },
   medicineTypeText: {
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   medicineBottomRow: {
@@ -550,14 +544,14 @@ const styles = StyleSheet.create({
   },
   medicineStockText: {
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   medicinePriceText: {
     fontSize: 18,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
   },
   detailActionRow: {
@@ -608,7 +602,8 @@ const styles = StyleSheet.create({
   },
   detailModalTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   detailImage: {
@@ -628,11 +623,13 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 13,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   detailValue: {
     fontSize: 13,
     color: '#1A1C1E',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     maxWidth: '60%',
     textAlign: 'right',

@@ -7,6 +7,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
+import { FONT } from '../../theme/typography';
 import {
   DELIVERY_ACTIONS,
   DELIVERY_COLORS,
@@ -201,6 +202,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: C.textDark,
     flex: 1,
@@ -233,6 +235,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: C.textDark,
   },
@@ -262,10 +265,12 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     color: C.primaryMint,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   sectionLabel: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: C.textMuted,
     marginTop: 24,
@@ -301,6 +306,7 @@ const styles = StyleSheet.create({
   },
   medicineName: {
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: C.textDark,
   },
@@ -330,6 +336,7 @@ const styles = StyleSheet.create({
   },
   boldLabel: {
     color: C.textDark,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   actionContainer: {
@@ -361,6 +368,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 15,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: C.textDark,
   },
@@ -374,6 +382,7 @@ const styles = StyleSheet.create({
   previousDeliveriesText: {
     fontSize: 13,
     color: C.primaryMint,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginRight: 4,
   },

@@ -1,6 +1,7 @@
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import {useVoicePlayer} from '../hooks/useVoicePlayer';
+import { FONT } from '../theme/typography';
 
 type Props = {
   messageId: string;
@@ -98,6 +99,7 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 11,
     color: '#64748B',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   stopButton: {

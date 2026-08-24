@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import React from 'react';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { FONT } from '../theme/typography';
 
 /**
  * The doctor card used on DoctorListScreen, extracted so other screens can
@@ -100,16 +101,19 @@ const styles = StyleSheet.create({
   },
   specialtyBadgeText: {
     fontSize: 10,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#F7FBFE',
   },
   doctorNameText: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
   doctorDegreeText: {
     fontSize: 10,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#616161',
     marginBottom: 4,
@@ -124,6 +128,7 @@ const styles = StyleSheet.create({
   ratingText: {fontSize: 10, color: '#64748B'},
   feeText: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     marginBottom: 4,
@@ -141,6 +146,7 @@ const styles = StyleSheet.create({
   appointmentButtonText: {
     color: '#4DA69F',
     fontSize: 12,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
 });

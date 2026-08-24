@@ -18,6 +18,7 @@ import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AAppointments'>;
 
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E2E8F0',
   },
   iconBtn: {width: 32, alignItems: 'center'},
-  title: {flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#1E293B'},
+  title: {flex: 1, textAlign: 'center', fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   filterBar: {
     backgroundColor: '#FFF',
     paddingHorizontal: 16,
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chipActive: {backgroundColor: '#0D9488'},
-  chipText: {fontSize: 11, fontWeight: '600', color: '#475569'},
+  chipText: {fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569'},
   chipTextActive: {color: '#FFF'},
   content: {padding: 16},
   card: {
@@ -255,11 +256,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  statusText: {fontSize: 10, fontWeight: '700'},
-  typeText: {fontSize: 11, color: '#64748B', fontWeight: '500'},
+  statusText: {fontSize: 10, fontFamily: FONT.semibold, fontWeight: '600'},
+  typeText: {fontSize: 11, color: '#64748B', fontFamily: FONT.medium, fontWeight: '500'},
   row: {flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginBottom: 6},
   rowText: {fontSize: 13, color: '#475569', flex: 1},
-  bold: {fontWeight: '700', color: '#1E293B'},
+  bold: {fontFamily: FONT.semibold,fontWeight: '600', color: '#1E293B'},
   feedbackRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, marginBottom: 2},
   feedbackComment: {fontSize: 11, color: '#64748B', fontStyle: 'italic', flex: 1},
   advanceBtn: {
@@ -273,12 +274,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginTop: 10,
   },
-  advanceBtnText: {fontSize: 13, fontWeight: '600', color: '#0D9488'},
+  advanceBtnText: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488'},
   cancelBtn: {
     alignItems: 'center',
     paddingVertical: 6,
     marginTop: 6,
   },
-  cancelBtnText: {fontSize: 12, color: '#EF4444', fontWeight: '500'},
+  cancelBtnText: {fontSize: 12, color: '#EF4444', fontFamily: FONT.medium, fontWeight: '500'},
   emptyText: {textAlign: 'center', color: '#94A3B8', marginTop: 40},
 });

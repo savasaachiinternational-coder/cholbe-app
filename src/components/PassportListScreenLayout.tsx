@@ -17,19 +17,13 @@ import { navigateCustomerTab } from '../screens/home/customerTabNavigation';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
+import { FONT } from '../theme/typography';
 const { width } = Dimensions.get('window');
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 // Android resolves a weight by the exact font file name, so each weight is
 // referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 type Props = {
   title: string;
   subtitle?: string;
@@ -261,7 +255,7 @@ export const passportListLayoutStyles = StyleSheet.create({
   uploadText: {
     color: '#EDF7F6',
     fontSize: 12,
-    fontFamily: FONT.regular,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
 });
@@ -288,8 +282,8 @@ const styles = StyleSheet.create({
   logoPlaceholder: { flexDirection: 'row', alignItems: 'center' },
   logoTextMain: {
     fontSize: 22,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
     marginLeft: 4,
   },
@@ -308,15 +302,15 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     fontSize: 18,
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
   screenSubtitle: {
     fontSize: 14,
-    fontFamily: FONT.medium,
     color: '#8A94A6',
     marginTop: 4,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   body: {
@@ -366,9 +360,9 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
-    fontFamily: FONT.medium,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {

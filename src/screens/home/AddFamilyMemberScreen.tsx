@@ -24,6 +24,7 @@ import {uploadAvatarAsset} from '../../api/uploads';
 import {imageUri} from '../../utils/fileAsset';
 import {API_ORIGIN} from '../../config/api';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddFamilyMember'>;
 
@@ -351,7 +352,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
     flex: 1,
     textAlign: 'center',
@@ -385,12 +387,14 @@ const styles = StyleSheet.create({
   },
   uploadPhotoHeadingText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   uploadPhotoSubtext: {
     fontSize: 11,
     color: '#94A3B8',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -410,6 +414,7 @@ const styles = StyleSheet.create({
   },
   fieldLabelText: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginBottom: 6,
@@ -467,12 +472,14 @@ const styles = StyleSheet.create({
   },
   radioLabelText: {
     fontSize: 13,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#475569',
     flexShrink: 1,
   },
   radioActiveLabelText: {
     color: '#0D9488',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   saveMemberPrimaryButton: {
@@ -491,7 +498,8 @@ const styles = StyleSheet.create({
   saveMemberPrimaryButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   loginHintText: {
     fontSize: 12,

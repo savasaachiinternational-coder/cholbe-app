@@ -3,6 +3,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import type {NavigationProp} from '@react-navigation/native';
 import type {RootStackParamList} from '../../navigation/types';
 import {DOCTOR_TABS, type DoctorTabKey} from './doctorNav';
+import { FONT } from '../../theme/typography';
 
 type Props = {
   activeTab: DoctorTabKey;
@@ -72,10 +73,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#9AA6B2',
     marginTop: 3,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeNavText: {
     color: '#4E929D',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

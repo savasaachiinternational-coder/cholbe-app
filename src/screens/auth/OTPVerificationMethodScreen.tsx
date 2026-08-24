@@ -14,6 +14,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -179,7 +180,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     textAlign: 'center',
     marginBottom: 12,
@@ -211,6 +213,7 @@ const styles = StyleSheet.create({
   smsButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   emailButton: {
@@ -226,6 +229,7 @@ const styles = StyleSheet.create({
   emailButtonText: {
     color: '#1E293B',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   buttonIcon: {

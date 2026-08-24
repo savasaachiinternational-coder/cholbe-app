@@ -20,17 +20,9 @@ import {MedicationReviewContent} from '../../components/MedicationReviewContent'
 import {useMedicationDraft} from '../../context/MedicationDraftContext';
 import {ApiError} from '../../api/client';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewMedication'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 const {width} = Dimensions.get('window');
 
@@ -186,8 +178,8 @@ const styles = StyleSheet.create({
   },
   logoTextMain: {
     fontSize: 22,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
     marginLeft: 4,
   },
@@ -239,15 +231,15 @@ const styles = StyleSheet.create({
   },
   medicineNameText: {
     fontSize: 16,
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     marginBottom: 4,
   },
   medicineSubtext: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   // Centred so the icon lines up with the text's midline. lineHeight 22 makes the
@@ -269,15 +261,15 @@ const styles = StyleSheet.create({
   },
   sectionLabelText: {
     fontSize: 15,
-    fontFamily: FONT.medium,
     color: '#8A94A6',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginBottom: 12,
   },
   inlineInfoValueText: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     lineHeight: 22,
     verticalAlign:'middle'
@@ -301,8 +293,8 @@ const styles = StyleSheet.create({
   },
   timelineContentText: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     flex: 1,
   },
@@ -378,9 +370,9 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
-    fontFamily: FONT.medium,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {

@@ -24,6 +24,7 @@ import { ApiError } from '../../api/client';
 import { pickedFileFromAsset } from '../../utils/fileAsset';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
 import { GradientWaveBand } from '../../components/GradientWaveBand';
+import { FONT } from '../../theme/typography';
 
 const { width } = Dimensions.get('window');
 
@@ -254,12 +255,14 @@ const styles = StyleSheet.create({
   },
   logoTextMain: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
     marginLeft: 4,
   },
   logoTextSub: {
     fontSize: 9,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#49739B',
     letterSpacing: 2,
@@ -267,6 +270,7 @@ const styles = StyleSheet.create({
   },
   gradientBandTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     textAlign: 'center',
@@ -279,6 +283,7 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
@@ -335,11 +340,13 @@ const styles = StyleSheet.create({
   selectionText: {
     fontSize: 16,
     color: '#8A94A6',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   uploadTitleText: {
     fontSize: 14,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginBottom: 4,
   },
@@ -347,6 +354,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom:24,
     color: '#4DA69F',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   dividerText: {
@@ -370,6 +378,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   footerActionContainer: {

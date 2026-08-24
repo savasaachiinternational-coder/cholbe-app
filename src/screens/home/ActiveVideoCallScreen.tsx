@@ -18,6 +18,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {appointmentsApi} from '../../api/appointments';
 import {getStoredUser} from '../../api/tokenStorage';
+import { FONT } from '../../theme/typography';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_HEIGHT * 0.58;
@@ -376,7 +377,8 @@ const styles = StyleSheet.create({
   },
   doctorOverlayName: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   specialtyRow: {
@@ -394,10 +396,12 @@ const styles = StyleSheet.create({
   specialtyText: {
     fontSize: 11,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   callTimer: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     paddingRight: 6,
@@ -471,6 +475,7 @@ const styles = StyleSheet.create({
   diagnosticLabel: {
     fontSize: 12,
     color: '#64748B',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   statusCheckRow: {
@@ -482,6 +487,7 @@ const styles = StyleSheet.create({
   statusCheckText: {
     fontSize: 11,
     color: '#0D9488',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   statusCheckTextWarn: {
@@ -491,6 +497,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     lineHeight: 16,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginBottom: 24,
   },
@@ -541,6 +548,7 @@ const styles = StyleSheet.create({
   },
   controlActionLabel: {
     fontSize: 11,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#64748B',
     textAlign: 'center',

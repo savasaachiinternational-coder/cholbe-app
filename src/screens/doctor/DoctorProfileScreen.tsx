@@ -20,6 +20,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import {DoctorBottomNav} from './DoctorBottomNav';
 import {performLogout} from '../../auth/sessionControl';
 import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DProfile'>;
 
@@ -243,7 +244,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerTitle: {fontSize: 20, fontWeight: '700', color: '#1A2332'},
+  headerTitle: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   editBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#4E929D',
   },
-  editBtnText: {fontSize: 12, fontWeight: '600', color: '#4E929D'},
+  editBtnText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#4E929D'},
   centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   content: {padding: 16, gap: 10},
   profileCard: {
@@ -274,8 +275,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 10,
   },
-  avatarText: {fontSize: 28, fontWeight: '700', color: '#4E929D'},
-  name: {fontSize: 20, fontWeight: '700', color: '#1A2332'},
+  avatarText: {fontSize: 28, fontFamily: FONT.semibold, fontWeight: '600', color: '#4E929D'},
+  name: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   specialty: {fontSize: 14, color: '#4E929D', marginTop: 4},
   degree: {fontSize: 13, color: '#7E8B97', marginTop: 4},
   contact: {fontSize: 13, color: '#7E8B97', marginTop: 4},
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   feeLabel: {fontSize: 13, color: '#7E8B97'},
-  feeValue: {fontSize: 15, fontWeight: '600', color: '#1A2332'},
+  feeValue: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   experience: {fontSize: 12, color: '#9AA6B2', marginTop: 8, textAlign: 'center'},
   chamber: {fontSize: 12, color: '#7E8B97', marginTop: 6, textAlign: 'center'},
   qualList: {marginTop: 10, gap: 4, alignSelf: 'stretch'},
@@ -301,10 +302,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ECEFF3',
   },
-  onlineTitle: {fontSize: 14, fontWeight: '600', color: '#1A2332'},
+  onlineTitle: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   onlineSub: {fontSize: 12, color: '#7E8B97', marginTop: 2},
   sectionTitle: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#7E8B97',
     marginTop: 8,
@@ -330,7 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   manageBody: {flex: 1},
-  manageTitle: {fontSize: 15, fontWeight: '600', color: '#1A2332'},
+  manageTitle: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   manageSub: {fontSize: 12, color: '#7E8B97', marginTop: 2},
   earningsBanner: {
     flexDirection: 'row',
@@ -343,14 +345,14 @@ const styles = StyleSheet.create({
     borderColor: '#B8DDE4',
   },
   earningsBannerLabel: {fontSize: 12, color: '#7E8B97'},
-  earningsBannerValue: {fontSize: 20, fontWeight: '700', color: '#1A2332', marginTop: 2},
+  earningsBannerValue: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332', marginTop: 2},
   earningsBannerBtn: {
     backgroundColor: '#4E929D',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  earningsBannerBtnText: {fontSize: 12, fontWeight: '600', color: '#FFFFFF'},
+  earningsBannerBtnText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#FFFFFF'},
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -375,5 +377,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFCDD2',
   },
-  logoutText: {fontSize: 14, fontWeight: '600', color: '#C62828'},
+  logoutText: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#C62828'},
 });

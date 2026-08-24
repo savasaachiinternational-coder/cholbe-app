@@ -21,6 +21,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import {NotificationBell} from '../../components/NotificationBell';
 import {ProductImage} from '../../components/ProductImage';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AInventory'>;
 
@@ -369,7 +370,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
     flex: 1,
     marginLeft: 12,
@@ -414,11 +416,13 @@ const styles = StyleSheet.create({
   metricLabelText: {
     fontSize: 12,
     color: '#4F5E6D',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   metricValueText: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
     marginTop: 6,
   },
@@ -440,7 +444,8 @@ const styles = StyleSheet.create({
   },
   analyticsTitleText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   timeframeDropdown: {
@@ -455,6 +460,7 @@ const styles = StyleSheet.create({
   timeframeDropdownText: {
     fontSize: 12,
     color: '#4F5E6D',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   chartBodyFlexLayoutRow: {
@@ -501,12 +507,14 @@ const styles = StyleSheet.create({
   },
   legendMainLabel: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#212121',
   },
   legendSubValue: {
     fontSize: 14,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     paddingLeft: 18,
   },
@@ -526,6 +534,7 @@ const styles = StyleSheet.create({
   },
   sectionHeadingText: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#616161',
   },
@@ -571,21 +580,25 @@ const styles = StyleSheet.create({
   },
   alertItemName: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
   alertItemType: {
     fontSize: 11,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   stockCountText: {
     fontSize: 12,
     color: '#424242',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   boldStockNum: {
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
 });

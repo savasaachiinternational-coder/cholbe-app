@@ -9,6 +9,7 @@ import {AiSymptomHeaderCard} from '../../components/shared/AiSymptomHeaderCard';
 import {GradientPillButton} from '../../components/shared/GradientPillButton';
 import {IntakeSummary} from '../../components/shared/IntakeSummary';
 import {IDEATION_MESSAGE} from '../../data/IdeationScreen/ideationCopy';
+import { FONT } from '../../../../theme/typography';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'Ideation'>;
 type Route = RouteProp<RootStackParamList, 'Ideation'>;
@@ -75,6 +76,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     color: '#091B27',
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     lineHeight: 24,
   },

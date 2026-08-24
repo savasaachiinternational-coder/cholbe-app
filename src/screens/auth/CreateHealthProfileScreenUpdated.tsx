@@ -25,6 +25,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const AUTH = {
   gradient: ['#F5F8FC', '#E3F2F9', '#DDF0F7'],
@@ -410,7 +411,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     marginBottom: 6,
   },
@@ -435,6 +437,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 16,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#424242',
     marginBottom: 10,
@@ -458,6 +461,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#212121',
     fontSize: 16,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   checkboxContainer: {
@@ -489,6 +493,7 @@ const styles = StyleSheet.create({
   linkText: {
     textDecorationLine: 'underline',
     color: AUTH.inkSoft,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   footerSection: {
@@ -513,6 +518,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: AUTH.white,
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   dividerRow: {
@@ -528,6 +534,7 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: 14,
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: AUTH.ink,
   },
@@ -553,7 +560,8 @@ const styles = StyleSheet.create({
   },
   socialTextGoogle: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#EA4335',
   },
   loginRedirectButton: {
@@ -566,6 +574,7 @@ const styles = StyleSheet.create({
   },
   loginHighlight: {
     color: AUTH.accent,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     textDecorationLine: 'underline',
   },

@@ -15,6 +15,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import Feather from 'react-native-vector-icons/Feather';
+import { FONT } from '../theme/typography';
 import {
   FREQUENCY_OPTIONS,
   INVENTORY_OPTIONS,
@@ -663,10 +664,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 6,
   },
-  dateText: {fontSize: 15, color: '#333333', fontWeight: '500'},
-  datePlaceholderText: {color: '#94A3B8', fontWeight: '400'},
+  dateText: {fontSize: 15, color: '#333333', fontFamily: FONT.medium, fontWeight: '500'},
+  datePlaceholderText: {color: '#94A3B8', fontFamily: FONT.regular, fontWeight: '400'},
   smallIcon: {marginRight: 6},
-  smallDateTimeText: {fontSize: 13, color: '#333333', fontWeight: '500'},
+  smallDateTimeText: {fontSize: 13, color: '#333333', fontFamily: FONT.medium, fontWeight: '500'},
   timeSelectorRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -687,7 +688,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timeIcon: {marginRight: 10},
-  timeText: {fontSize: 15, color: '#333333', fontWeight: '500'},
+  timeText: {fontSize: 15, color: '#333333', fontFamily: FONT.medium, fontWeight: '500'},
   dropdownTrigger: {
     flex:1,
     flexDirection: 'row',
@@ -711,7 +712,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E6E9F0',
   },
-  dropdownValue: {fontSize: 15, color: '#333333', fontWeight: '500'},
+  dropdownValue: {fontSize: 15, color: '#333333', fontFamily: FONT.medium, fontWeight: '500'},
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -736,6 +737,7 @@ const styles = StyleSheet.create({
   optionSheetScroll: {maxHeight: 320},
   modalTitle: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
     marginBottom: 12,
@@ -748,10 +750,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  modalDoneText: {color: '#FFFFFF', fontSize: 16, fontWeight: '600'},
+  modalDoneText: {color: '#FFFFFF', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600'},
   optionRow: {paddingHorizontal: 18, paddingVertical: 14},
   optionText: {fontSize: 16, color: '#5A6578'},
-  optionTextActive: {color: '#45A096', fontWeight: '600'},
+  optionTextActive: {color: '#45A096', fontFamily: FONT.semibold, fontWeight: '600'},
   chipsSectionWrap: {marginTop: 12},
   chipsRowWithCustom: {
     flexDirection: 'row',
@@ -783,8 +785,8 @@ const styles = StyleSheet.create({
   chipButtonLast: {marginRight: 0},
   chipButtonActive: {backgroundColor: ACTIVE_SOLID},
   chipButtonActiveShape: {borderColor: 'transparent'},
-  chipButtonText: {fontSize: 12, color: '#5A6578', fontWeight: '500'},
-  chipButtonTextActive: {color: '#FFFFFF', fontWeight: '600'},
+  chipButtonText: {fontSize: 12, color: '#5A6578', fontFamily: FONT.medium, fontWeight: '500'},
+  chipButtonTextActive: {color: '#FFFFFF', fontFamily: FONT.semibold, fontWeight: '600'},
   customWideButton: {
     height: 38,
     borderRadius: 20,
@@ -794,7 +796,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: ACTIVE_SOLID,
   },
-  customWideButtonText: {fontSize: 14, color: '#FFFFFF', fontWeight: '600'},
+  customWideButtonText: {fontSize: 14, color: '#FFFFFF', fontFamily: FONT.semibold, fontWeight: '600'},
   // 'segmented' variant — one connected bar, Custom as the last cell.
   minuteSegmentBar: {
     flexDirection: 'row',
@@ -812,7 +814,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   minuteSegmentDivider: {borderLeftWidth: 1, borderLeftColor: '#E6E9F0'},
-  minuteSegmentText: {fontSize: 11, color: '#5A6578', fontWeight: '500'},
+  minuteSegmentText: {fontSize: 11, color: '#5A6578', fontFamily: FONT.medium, fontWeight: '500'},
   inlineCustomButton: {
     backgroundColor: ACTIVE_SOLID,
     borderRadius: 18,
@@ -820,7 +822,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 8,
   },
-  inlineCustomButtonText: {fontSize: 13, color: '#FFFFFF', fontWeight: '600'},
+  inlineCustomButtonText: {fontSize: 13, color: '#FFFFFF', fontFamily: FONT.semibold, fontWeight: '600'},
   customInput: {
     backgroundColor: '#F4F6FA',
     borderRadius: 12,

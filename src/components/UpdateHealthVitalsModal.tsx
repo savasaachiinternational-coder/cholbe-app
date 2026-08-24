@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { FONT } from '../theme/typography';
 
 type Props = {
   visible: boolean;
@@ -122,11 +123,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   label: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     marginBottom: 6,
@@ -152,6 +155,7 @@ const styles = StyleSheet.create({
   },
   percentLabel: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#475569',
     minWidth: 20,
@@ -170,6 +174,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
 });

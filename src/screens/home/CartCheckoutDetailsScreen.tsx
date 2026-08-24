@@ -25,19 +25,13 @@ import { getStoredUser, hasSession } from '../../api/tokenStorage';
 import { ApiError } from '../../api/client';
 import { formatBdt } from '../../utils/pharmacyHelpers';
 import { looksLikeCoordinates, reverseGeocode } from '../../utils/geocoding';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CartCheckoutDetails'>;
 type AddressCategory = 'Home' | 'Office';
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 const DEFAULT_LAT = 23.874;
 const DEFAULT_LNG = 90.3695;
 
@@ -747,9 +741,9 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#424242',
     marginTop: 8,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   guestBanner: {
@@ -823,8 +817,8 @@ const styles = StyleSheet.create({
   textInputStyle: {
     flex: 1,
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     padding: 0,
   },
@@ -845,14 +839,14 @@ const styles = StyleSheet.create({
   },
   chipFormLabel: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   chipInput: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     padding: 0,
     minWidth: 72,
@@ -893,8 +887,8 @@ const styles = StyleSheet.create({
   addressInput: {
     flex: 1,
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 20,
     padding: 0,
@@ -912,8 +906,8 @@ const styles = StyleSheet.create({
   },
   radioLabelText: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   promoInputWrapper: {
@@ -990,8 +984,8 @@ const styles = StyleSheet.create({
   summaryUnitText: {
     flex: 1,
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   summaryControlRow: {
@@ -1039,18 +1033,21 @@ const styles = StyleSheet.create({
   },
   invoiceProductTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   invoiceCurrencyValue: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   invoiceDiscountsText: {
     fontSize: 11,
     color: '#7E8B97',
     marginTop: 2,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   lineThroughText: {
@@ -1058,8 +1055,8 @@ const styles = StyleSheet.create({
   },
   invoiceLabelStandard: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginTop: 3,
   },
@@ -1078,8 +1075,8 @@ const styles = StyleSheet.create({
   },
   grandTotalValue: {
     fontSize: 16,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
   },
   trustCard: {
@@ -1114,8 +1111,8 @@ const styles = StyleSheet.create({
   },
   trustBadgeText: {
     fontSize: 13,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 18,
     flex: 1,
@@ -1133,6 +1130,7 @@ const styles = StyleSheet.create({
   primaryActionButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   stickyFooterContainer: {
@@ -1160,8 +1158,8 @@ const styles = StyleSheet.create({
   },
   footerTotalCaption: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginTop: 2,
   },
@@ -1170,8 +1168,8 @@ const styles = StyleSheet.create({
   },
   footerTotalValue: {
     fontSize: 24,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#4DA69F',
   },
   footerTotalStrike: {
@@ -1226,13 +1224,14 @@ const styles = StyleSheet.create({
   },
   footerTotalLabel: {
     fontSize: 28,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
   },
   footerTaxSubtitle: {
     fontSize: 13,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   footerValueBlock: {
@@ -1241,11 +1240,13 @@ const styles = StyleSheet.create({
   },
   footerTotalCurrency: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#4E929D',
   },
   footerCentFraction: {
     fontSize: 11,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#4E929D',
     marginTop: 3,

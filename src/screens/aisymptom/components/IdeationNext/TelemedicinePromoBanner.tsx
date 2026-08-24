@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import React from 'react';
 import LinearGradient from 'react-native-linear-gradient';
+import { FONT } from '../../../../theme/typography';
 
 type Props = {
   badge: string;
@@ -70,11 +71,13 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#1B2B3A',
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   caption: {
     color: '#FFFFFF',
     fontSize: 11,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
 });

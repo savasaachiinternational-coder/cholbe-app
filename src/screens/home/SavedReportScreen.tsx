@@ -19,6 +19,7 @@ import type {RootStackParamList} from '../../navigation/types';
 import {reportsApi, type HealthReport} from '../../api/reports';
 import {ApiError} from '../../api/client';
 import {ReportFilePreview} from '../../components/ReportFilePreview';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SavedReport'>;
 
@@ -212,6 +213,7 @@ const styles = StyleSheet.create({
   },
   headerTitleText: {
     fontSize: 20,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },
@@ -291,6 +293,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bottomTabBar: {
@@ -315,10 +318,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {
     color: '#45A096',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

@@ -23,6 +23,7 @@ import { type PublicUser } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { NotificationBell } from '../../components/NotificationBell';
 import { AvatarImage } from '../../components/AvatarImage';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AUsers'>;
 
@@ -747,6 +748,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     flex: 1,
@@ -799,11 +801,13 @@ const styles = StyleSheet.create({
   },
   chipItemText: {
     fontSize: 10,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#424242',
   },
   chipItemActiveText: {
     color: '#FFF',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   directoryContainerCard: {
@@ -827,7 +831,8 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
     marginBottom: 10,
   },
@@ -868,7 +873,8 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   loader: { marginVertical: 32 },
   emptyText: {
@@ -921,12 +927,14 @@ const styles = StyleSheet.create({
   },
   userNameText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   userEmailText: {
     fontSize: 12,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 1,
   },
@@ -939,6 +947,7 @@ const styles = StyleSheet.create({
   userPhoneText: {
     fontSize: 12,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -948,6 +957,7 @@ const styles = StyleSheet.create({
     right: 14,
     fontSize: 10,
     color: '#9AA6B2',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   doctorActions: {
@@ -967,6 +977,7 @@ const styles = StyleSheet.create({
   },
   actionChipText: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#4E929D',
   },
@@ -987,6 +998,7 @@ const styles = StyleSheet.create({
   },
   statusDotText: {
     fontSize: 10,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     marginRight: 4,
   },

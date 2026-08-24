@@ -2,6 +2,7 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import React from 'react';
 import Feather from 'react-native-vector-icons/Feather';
 import {useVoicePlayer} from '../../../../hooks/useVoicePlayer';
+import { FONT } from '../../../../theme/typography';
 
 type Props = {
   id: string;
@@ -85,6 +86,7 @@ const styles = StyleSheet.create({
   timeLabel: {
     color: '#454F5B',
     fontSize: 11,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
 });

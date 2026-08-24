@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+import { FONT } from '../../theme/typography';
 
 const {width} = Dimensions.get('window');
 
@@ -135,7 +136,8 @@ const styles = StyleSheet.create({
   dotSize3: {width: 6, height: 6},
   modalTitle: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#4B9F9A',
     textAlign: 'center',
     lineHeight: 38,
@@ -165,6 +167,7 @@ const styles = StyleSheet.create({
   doneButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

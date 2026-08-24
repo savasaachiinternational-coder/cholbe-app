@@ -16,17 +16,9 @@ import type {RootStackParamList} from '../../navigation/types';
 import {WaveTitleBand} from '../../components/WaveTitleBand';
 import {isPdfFile} from '../../utils/fileAsset';
 import {formatLongReportDate} from '../../utils/reportFormat';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReportUploadedSuccess'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 const {width} = Dimensions.get('window');
 
@@ -350,16 +342,16 @@ const styles = StyleSheet.create({
   },
   successHeadlineText: {
     fontSize: 20,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
     marginBottom: 6,
     textAlign: 'center',
   },
   successSubheadText: {
     fontSize: 13,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     textAlign: 'center',
     lineHeight: 20,
@@ -394,8 +386,8 @@ const styles = StyleSheet.create({
   pillIcon: {marginRight: 6},
   pillText: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#5A6578',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   metaTitleBlock: {
@@ -404,15 +396,15 @@ const styles = StyleSheet.create({
   },
   reportTitleText: {
     fontSize: 16,
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     marginBottom: 4,
   },
   reportSubtext: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   infoBlockRow: {
@@ -431,15 +423,15 @@ const styles = StyleSheet.create({
   },
   sectionLabelText: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#616161',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginBottom: 10,
   },
   inlineInfoValueText: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 22,
   },
@@ -462,8 +454,8 @@ const styles = StyleSheet.create({
   },
   timelineContentText: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     flex: 1,
   },
@@ -538,9 +530,9 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
-    fontFamily: FONT.medium,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {

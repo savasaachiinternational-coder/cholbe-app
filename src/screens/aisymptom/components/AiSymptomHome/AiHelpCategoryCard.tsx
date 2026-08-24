@@ -7,6 +7,7 @@ import {
   type ImageSourcePropType,
 } from 'react-native';
 import React from 'react';
+import { FONT } from '../../../../theme/typography';
 
 // The grid is two columns with a 16px gutter inside a 16px screen padding, so
 // the card width is pinned rather than left to a percentage.
@@ -64,6 +65,7 @@ const styles = StyleSheet.create({
   title: {
     color: '#091B27',
     fontSize: 13,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     textAlign: 'center',
   },

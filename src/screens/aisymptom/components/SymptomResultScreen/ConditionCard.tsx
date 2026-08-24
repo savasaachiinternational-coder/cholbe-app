@@ -1,6 +1,7 @@
 import {StyleSheet, Text, View, type DimensionValue} from 'react-native';
 import React from 'react';
 import type {ConditionSuggestion} from '../../data/SymptomResultScreen/symptomResults';
+import { FONT } from '../../../../theme/typography';
 
 /** Confidence reads green when it is high and red as it drops. */
 function confidenceColors(confidence: number) {
@@ -56,6 +57,7 @@ const styles = StyleSheet.create({
   title: {
     color: '#091B27',
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   track: {
@@ -72,6 +74,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     color: '#8A939C',
     fontSize: 12,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 18,
   },
@@ -84,12 +87,14 @@ const styles = StyleSheet.create({
     width: 92,
     color: '#8A939C',
     fontSize: 14,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   detailValue: {
     flex: 1,
     color: '#091B27',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
 });

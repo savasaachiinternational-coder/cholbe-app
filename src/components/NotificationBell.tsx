@@ -1,6 +1,7 @@
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import {useNotificationBadge} from '../context/NotificationContext';
+import { FONT } from '../theme/typography';
 
 type Props = {
   onPress: () => void;
@@ -46,7 +47,8 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFFFFF',
     fontSize: 9,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     lineHeight: 11,
   },
 });

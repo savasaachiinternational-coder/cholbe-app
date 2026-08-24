@@ -34,6 +34,7 @@ import {
   unitTypeToVariant,
 } from '../../utils/pharmacyHelpers';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyShop'>;
 
@@ -329,6 +330,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     textAlign: 'center',
@@ -353,7 +355,8 @@ const styles = StyleSheet.create({
   cartBadgeText: {
     color: '#FFFFFF',
     fontSize: 9,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   scrollContainer: {
     paddingTop: 4,
@@ -404,10 +407,12 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 10,
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   activeChipText: {
     color: '#FFF',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   loader: {marginVertical: 40},
@@ -429,6 +434,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#616161',
   },
@@ -439,7 +445,8 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 12,
     color: '#424242',
-    fontWeight:'400',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     marginRight: 2,
   },
   grid: {
@@ -472,7 +479,8 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   // Proportional rather than a fixed 103px so the tile keeps the mockup's
   // ratio while the card width stays responsive.
@@ -485,13 +493,15 @@ const styles = StyleSheet.create({
   infoContainer: {},
   productTitle: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
   productSubtitle: {
     fontSize: 12,
     color: '#616161',
-    fontWeight:'400',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     marginTop: 2,
   },
   metaRow: {
@@ -507,7 +517,8 @@ const styles = StyleSheet.create({
   },
   sizeText: {
     fontSize: 12,
-    fontWeight:'400',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     color: '#424242',
   },
   priceContainer: {
@@ -518,11 +529,13 @@ const styles = StyleSheet.create({
   oldPrice: {
     fontSize: 12,
     color: '#9E9E9E',
-    fontWeight:'400',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     textDecorationLine: 'line-through',
   },
   newPrice: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
@@ -537,6 +550,7 @@ const styles = StyleSheet.create({
   addToCartText: {
     color: '#4DA69F',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   fab: {
@@ -579,10 +593,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9AA6B2',
     marginTop: 4,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeNavText: {
     color: '#00A884',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

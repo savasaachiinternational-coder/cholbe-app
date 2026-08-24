@@ -1,6 +1,7 @@
 import {StyleSheet, Text, TouchableOpacity} from 'react-native';
 import React from 'react';
 import LinearGradient from 'react-native-linear-gradient';
+import { FONT } from '../../../../theme/typography';
 
 type Props = {
   label: string;
@@ -39,6 +40,7 @@ const styles = StyleSheet.create({
   label: {
     color: '#FFFFFF',
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

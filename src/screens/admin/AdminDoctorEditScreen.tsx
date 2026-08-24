@@ -21,6 +21,7 @@ import {ApiError} from '../../api/client';
 import {DatePickerField, TimePickerField} from '../../components/MedicationPickers';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ADoctorEdit'>;
 
@@ -917,7 +918,7 @@ const styles = StyleSheet.create({
   },
   iconBtn: {width: 36, alignItems: 'center'},
   headerCenter: {flex: 1, alignItems: 'center'},
-  headerTitle: {fontSize: 16, fontWeight: '700', color: '#1E293B'},
+  headerTitle: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   headerSub: {fontSize: 12, color: '#64748B'},
   ratingBadge: {alignItems: 'center'},
   ratingCount: {fontSize: 10, color: '#64748B', marginTop: 2},
@@ -944,10 +945,11 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 10,
     color: '#94A3B8',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     textAlign: 'center',
   },
-  tabTextActive: {color: '#0D9488', fontWeight: '700'},
+  tabTextActive: {color: '#0D9488', fontFamily: FONT.semibold, fontWeight: '600'},
   content: {padding: 16},
   tabPanel: {
     backgroundColor: '#FFF',
@@ -956,9 +958,9 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     padding: 14,
   },
-  sectionTitle: {fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 12},
+  sectionTitle: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B', marginBottom: 12},
   sectionHeader: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12},
-  fieldLabel: {fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 4, marginTop: 10},
+  fieldLabel: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569', marginBottom: 4, marginTop: 10},
   input: {
     backgroundColor: '#FFF',
     borderRadius: 10,
@@ -991,7 +993,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   statusChipActive: {backgroundColor: '#0D9488', borderColor: '#0D9488'},
-  statusChipText: {fontSize: 12, color: '#475569', fontWeight: '600'},
+  statusChipText: {fontSize: 12, color: '#475569', fontFamily: FONT.semibold, fontWeight: '600'},
   statusChipTextActive: {color: '#FFF'},
   saveBtn: {
     backgroundColor: '#0D9488',
@@ -1000,7 +1002,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  saveBtnText: {color: '#FFF', fontWeight: '700', fontSize: 15},
+  saveBtnText: {color: '#FFF', fontFamily: FONT.semibold, fontWeight: '600', fontSize: 15},
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1011,7 +1013,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     gap: 4,
   },
-  addBtnText: {fontSize: 12, fontWeight: '600', color: '#0D9488'},
+  addBtnText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488'},
   listCard: {
     backgroundColor: '#FFF',
     borderRadius: 12,
@@ -1023,7 +1025,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   listCardLeft: {flex: 1},
-  listCardTitle: {fontSize: 14, fontWeight: '700', color: '#1E293B'},
+  listCardTitle: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   listCardSub: {fontSize: 12, color: '#475569', marginTop: 2},
   listCardMeta: {fontSize: 11, color: '#94A3B8', marginTop: 2},
   listCardActions: {flexDirection: 'row', gap: 6, marginLeft: 8},
@@ -1045,7 +1047,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginTop: 4,
   },
-  durationText: {fontSize: 10, color: '#0D9488', fontWeight: '600'},
+  durationText: {fontSize: 10, color: '#0D9488', fontFamily: FONT.semibold, fontWeight: '600'},
   emptyText: {textAlign: 'center', color: '#94A3B8', marginTop: 20, marginBottom: 10},
   scheduleHint: {
     fontSize: 12,
@@ -1067,7 +1069,8 @@ const styles = StyleSheet.create({
   },
   daySectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   addSlotBtn: {
@@ -1080,7 +1083,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  addSlotBtnText: {fontSize: 12, fontWeight: '600', color: '#0D9488'},
+  addSlotBtnText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488'},
   slotRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1092,7 +1095,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   slotInfo: {flex: 1},
-  slotTimeText: {fontSize: 14, fontWeight: '600', color: '#1E293B'},
+  slotTimeText: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   slotMetaText: {fontSize: 11, color: '#64748B', marginTop: 2},
   slotMinutesRow: {
     flexDirection: 'row',
@@ -1125,7 +1128,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  dayLabel: {fontSize: 14, fontWeight: '600', color: '#1E293B', marginLeft: 10, width: 40},
+  dayLabel: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B', marginLeft: 10, width: 40},
   dayTime: {fontSize: 12, color: '#64748B', flex: 1},
   dayOff: {fontSize: 12, color: '#CBD5E1', flex: 1},
 });
@@ -1140,8 +1143,8 @@ const mst = StyleSheet.create({
     maxHeight: '85%',
   },
   header: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16},
-  title: {fontSize: 16, fontWeight: '700', color: '#1E293B'},
-  label: {fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 4, marginTop: 10},
+  title: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
+  label: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569', marginBottom: 4, marginTop: 10},
   input: {
     backgroundColor: '#F8FAFC',
     borderRadius: 10,
@@ -1161,7 +1164,7 @@ const mst = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  saveBtnText: {color: '#FFF', fontWeight: '700', fontSize: 15},
+  saveBtnText: {color: '#FFF', fontFamily: FONT.semibold, fontWeight: '600', fontSize: 15},
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1173,5 +1176,5 @@ const mst = StyleSheet.create({
   },
   rowActive: {backgroundColor: '#F0FDFA', borderRadius: 8},
   rowText: {fontSize: 14, color: '#1E293B'},
-  rowTextActive: {color: '#0D9488', fontWeight: '600'},
+  rowTextActive: {color: '#0D9488', fontFamily: FONT.semibold, fontWeight: '600'},
 });

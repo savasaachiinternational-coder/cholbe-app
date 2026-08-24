@@ -20,6 +20,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import { authApi } from '../../api/auth';
 import { ApiError } from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -335,7 +336,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     marginBottom: 6,
   },
@@ -359,6 +361,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#555555',
     marginBottom: 10,
@@ -382,6 +385,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#333333',
     fontSize: 15,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   checkboxContainer: {
@@ -413,6 +417,7 @@ const styles = StyleSheet.create({
   linkText: {
     textDecorationLine: 'underline',
     color: '#555555',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   footerSection: {
@@ -437,6 +442,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   dividerRow: {
@@ -452,6 +458,7 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: 14,
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },
@@ -477,7 +484,8 @@ const styles = StyleSheet.create({
   },
   socialTextFallback: {
     fontSize: 22,
-    fontWeight: '800',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   loginRedirectButton: {
     alignItems: 'center',
@@ -489,6 +497,7 @@ const styles = StyleSheet.create({
   },
   loginHighlight: {
     color: '#4A8B95',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     textDecorationLine: 'underline',
   },

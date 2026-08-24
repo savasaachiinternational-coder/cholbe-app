@@ -25,6 +25,7 @@ import {
   type AppointmentStatusFilter,
 } from './doctorNav';
 import {openDoctorConsultation} from './doctorConsultationHelpers';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DAppointments'>;
 
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backBtn: {width: 32, height: 32, justifyContent: 'center'},
-  title: {fontSize: 17, fontWeight: '600', color: '#1A2332'},
+  title: {fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   filterScroll: {maxHeight: 48, backgroundColor: '#FFFFFF'},
   filterRow: {paddingHorizontal: 16, paddingBottom: 12, gap: 8},
   filterChip: {
@@ -182,7 +183,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F3F6',
   },
   filterChipActive: {backgroundColor: '#4E929D'},
-  filterText: {fontSize: 12, color: '#7E8B97', fontWeight: '500'},
+  filterText: {fontSize: 12, color: '#7E8B97', fontFamily: FONT.medium, fontWeight: '500'},
   filterTextActive: {color: '#FFFFFF'},
   centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   list: {padding: 16, gap: 10},
@@ -202,10 +203,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   cardTop: {flexDirection: 'row', justifyContent: 'space-between', gap: 8},
-  patientName: {fontSize: 15, fontWeight: '600', color: '#1A2332'},
+  patientName: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   meta: {fontSize: 12, color: '#7E8B97', marginTop: 2},
   badge: {borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start'},
-  badgeText: {fontSize: 11, fontWeight: '600'},
+  badgeText: {fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600'},
   actions: {flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap'},
   secondaryBtn: {
     flexDirection: 'row',
@@ -217,12 +218,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#4E929D',
   },
-  secondaryBtnText: {fontSize: 12, color: '#4E929D', fontWeight: '600'},
+  secondaryBtnText: {fontSize: 12, color: '#4E929D', fontFamily: FONT.semibold, fontWeight: '600'},
   primaryBtn: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     backgroundColor: '#4E929D',
   },
-  primaryBtnText: {fontSize: 12, color: '#FFFFFF', fontWeight: '600'},
+  primaryBtnText: {fontSize: 12, color: '#FFFFFF', fontFamily: FONT.semibold, fontWeight: '600'},
 });

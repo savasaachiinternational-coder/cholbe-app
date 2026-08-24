@@ -10,6 +10,7 @@ import {GradientPillButton} from '../../components/shared/GradientPillButton';
 import {SecondaryPillButton} from '../../components/shared/SecondaryPillButton';
 import {AdviceCard} from '../../components/IdeationNext/AdviceCard';
 import {TelemedicinePromoBanner} from '../../components/IdeationNext/TelemedicinePromoBanner';
+import { FONT } from '../../../../theme/typography';
 import {
   BOOK_DOCTOR_LABEL,
   IDEATION_NEXT_HEADING,
@@ -107,7 +108,8 @@ const styles = StyleSheet.create({
     marginTop: 24,
     color: '#091B27',
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     lineHeight: 36,
   },
   bannerWrapper: {

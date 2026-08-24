@@ -6,6 +6,7 @@ import type {PickedFile} from '../../../../utils/fileAsset';
 import {AiAttachmentChip} from './AiAttachmentChip';
 import {AiVoiceNoteChip} from './AiVoiceNoteChip';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FONT } from '../../../../theme/typography';
 
 type VoiceNote = {
   id: string;
@@ -170,11 +171,13 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#091B27',
     fontSize: 13,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   recordingCancel: {
     color: '#5F6B76',
     fontSize: 13,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   inputActions: {

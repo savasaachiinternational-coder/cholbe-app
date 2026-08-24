@@ -27,16 +27,10 @@ import type { VendorOrderStatus } from './vendorNav';
 import { NotificationBell } from '../../components/NotificationBell';
 import { RoleMenuDrawer } from '../../components/RoleMenuDrawer';
 import { WaveWithChild } from '../../components/WaveWithChild';
+import { FONT } from '../../theme/typography';
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 // Figma "Card/Shadow 1": 0 4px 60px 0 rgba(4, 6, 15, 0.08).
 const CARD_SHADOW = {
   shadowColor: '#04060F',
@@ -740,8 +734,8 @@ const styles = StyleSheet.create({
   },
   logoTextMain: {
     fontSize: 18,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3F8694',
   },
   logoTextSub: {
@@ -855,8 +849,8 @@ const styles = StyleSheet.create({
   metricValue: {
     fontSize: 32,
     lineHeight: 38,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
     alignSelf: 'stretch',
   },

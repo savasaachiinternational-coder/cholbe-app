@@ -27,17 +27,9 @@ import {reportsApi, type HealthReport} from '../../api/reports';
 import {ApiError} from '../../api/client';
 import {formatPassportListTime} from '../../components/PassportTimelineCard';
 import {formatLongReportDate} from '../../utils/reportFormat';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReportDetailsView'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 const {width} = Dimensions.get('window');
 
@@ -782,8 +774,8 @@ const styles = StyleSheet.create({
   },
   pdfSheetAction: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#45A096',
     marginTop: 12,
   },
@@ -882,7 +874,7 @@ const styles = StyleSheet.create({
   },
   actionChipText: {
     fontSize: 10,
-    fontFamily: FONT.medium,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#424242',
   },
@@ -909,9 +901,9 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
-    fontFamily: FONT.medium,
     color: '#9CA3AF',
     marginTop: 5,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabLabel: {

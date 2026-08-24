@@ -1,5 +1,6 @@
 import {StyleSheet, Text, TouchableOpacity} from 'react-native';
 import React from 'react';
+import { FONT } from '../../../../theme/typography';
 
 type Props = {
   label: string;
@@ -40,10 +41,12 @@ const styles = StyleSheet.create({
   label: {
     color: '#454F5B',
     fontSize: 12,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   labelSelected: {
     color: '#FFFFFF',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

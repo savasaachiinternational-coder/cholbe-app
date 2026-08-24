@@ -17,17 +17,9 @@ import {MedicationReviewContent} from '../../components/MedicationReviewContent'
 import {useMedicationDraft} from '../../context/MedicationDraftContext';
 import {scheduleToDraft} from '../../utils/medicationDraft';
 import {WaveTitleBand} from '../../components/WaveTitleBand';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MedicineOverview'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 export function MedicineOverviewScreen({navigation, route}: Props) {
   useEdgeToEdgeStatusBar();
@@ -166,15 +158,15 @@ const styles = StyleSheet.create({
   },
   medicineNameText: {
     fontSize: 16,
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     marginBottom: 4,
   },
   medicineSubtext: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   // Centred so the icon lines up with the text's midline. lineHeight 22 makes
@@ -197,15 +189,15 @@ const styles = StyleSheet.create({
   },
   sectionLabelText: {
     fontSize: 15,
-    fontFamily: FONT.medium,
     color: '#8A94A6',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginBottom: 12,
   },
   inlineInfoValueText: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     lineHeight: 22,
     verticalAlign: 'middle',
@@ -229,8 +221,8 @@ const styles = StyleSheet.create({
   },
   timelineContentText: {
     fontSize: 12,
-    fontFamily: FONT.medium,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     flex: 1,
   },

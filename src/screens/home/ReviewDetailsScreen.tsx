@@ -17,17 +17,9 @@ import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {MedicationReviewContent} from '../../components/MedicationReviewContent';
 import {useMedicationDraft} from '../../context/MedicationDraftContext';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewDetails'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 const {width} = Dimensions.get('window');
 
@@ -191,8 +183,8 @@ const styles = StyleSheet.create({
   bellIcon: {marginRight: 6},
   alertPillText: {
     fontSize: 14,
-    fontFamily: FONT.medium,
     color: '#5A6578',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginRight: 6,
   },
@@ -205,15 +197,15 @@ const styles = StyleSheet.create({
   },
   medicineNameText: {
     fontSize: 20,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#333333',
     marginBottom: 4,
   },
   medicineSubtext: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#8A94A6',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   infoBlockRow: {
@@ -231,15 +223,15 @@ const styles = StyleSheet.create({
   },
   sectionLabelText: {
     fontSize: 15,
-    fontFamily: FONT.medium,
     color: '#7D8797',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginBottom: 10,
   },
   inlineInfoValueText: {
     fontSize: 15,
-    fontFamily: FONT.regular,
     color: '#7D8797',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   boldSpan: {
@@ -261,8 +253,8 @@ const styles = StyleSheet.create({
   },
   timelineContentText: {
     fontSize: 14,
-    fontFamily: FONT.medium,
     color: '#5A6578',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     flex: 1,
   },

@@ -18,6 +18,7 @@ import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ASpecialties'>;
 
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
   },
   iconBtn: {width: 32},
-  title: {flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '700', color: '#1E293B'},
+  title: {flex: 1, textAlign: 'center', fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   content: {padding: 16},
   createRow: {flexDirection: 'row', gap: 8, marginBottom: 16},
   input: {
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     justifyContent: 'center',
   },
-  addBtnText: {color: '#FFF', fontWeight: '700'},
+  addBtnText: {color: '#FFF', fontFamily: FONT.semibold, fontWeight: '600'},
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  cardTitle: {fontSize: 15, fontWeight: '700', color: '#1E293B'},
+  cardTitle: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
   cardSub: {fontSize: 12, color: '#64748B', marginTop: 2},
   smallBtn: {
     borderWidth: 1,
@@ -175,6 +176,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginLeft: 8,
   },
-  smallBtnText: {fontSize: 12, fontWeight: '600', color: '#0D9488'},
+  smallBtnText: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#0D9488'},
   dangerBtn: {borderColor: '#FECACA'},
 });

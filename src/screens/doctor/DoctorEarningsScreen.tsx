@@ -15,6 +15,7 @@ import {doctorPortalApi, type DoctorFinance} from '../../api/doctorPortal';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {formatBdt} from '../../utils/pharmacyHelpers';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DEarnings'>;
 
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backBtn: {width: 32, height: 32, justifyContent: 'center'},
-  title: {fontSize: 17, fontWeight: '600', color: '#1A2332'},
+  title: {fontSize: 17, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   centered: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   content: {padding: 16},
   summaryCard: {
@@ -119,12 +120,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   summaryLabel: {fontSize: 12, color: '#7E8B97'},
-  summaryValue: {fontSize: 28, fontWeight: '700', color: '#1A2332', marginTop: 4},
+  summaryValue: {fontSize: 28, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332', marginTop: 4},
   summaryRow: {flexDirection: 'row', gap: 16, marginTop: 14},
   summaryItem: {flex: 1},
   itemLabel: {fontSize: 11, color: '#7E8B97'},
-  itemValue: {fontSize: 15, fontWeight: '600', color: '#4E929D', marginTop: 2},
-  sectionTitle: {fontSize: 14, fontWeight: '600', color: '#7E8B97', marginBottom: 8},
+  itemValue: {fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600', color: '#4E929D', marginTop: 2},
+  sectionTitle: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#7E8B97', marginBottom: 8},
   emptyText: {fontSize: 13, color: '#7E8B97', paddingVertical: 12},
   row: {
     flexDirection: 'row',
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     borderColor: '#ECEFF3',
   },
   rowLeft: {flex: 1},
-  rowTitle: {fontSize: 14, fontWeight: '600', color: '#1A2332'},
+  rowTitle: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A2332'},
   rowSub: {fontSize: 11, color: '#7E8B97', marginTop: 2},
-  rowAmount: {fontSize: 14, fontWeight: '700', color: '#2E7D32'},
+  rowAmount: {fontSize: 14, fontFamily: FONT.semibold, fontWeight: '600', color: '#2E7D32'},
 });

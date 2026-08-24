@@ -11,6 +11,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {ONBOARDING_GRADIENT, onboardingSlides} from './onboardingData';
+import { FONT } from '../../theme/typography';
 
 const SLIDE_COUNT = onboardingSlides.length;
 
@@ -189,7 +190,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 34,
     color: '#333333',
-    fontWeight: '300',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   backIconDisabled: {
     opacity: 0.25,
@@ -213,7 +215,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     textAlign: 'center',
     lineHeight: 40,
@@ -262,6 +265,7 @@ const styles = StyleSheet.create({
   },
   floatingCardText: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333333',
   },
@@ -310,6 +314,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   signInLink: {
@@ -319,10 +324,12 @@ const styles = StyleSheet.create({
   signInText: {
     fontSize: 15,
     color: '#555555',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   signInHighlight: {
     color: '#4A8B95',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

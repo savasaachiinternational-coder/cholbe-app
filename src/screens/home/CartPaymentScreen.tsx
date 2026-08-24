@@ -24,19 +24,13 @@ import { checkoutSession } from '../../checkout/checkoutSession';
 import { ApiError } from '../../api/client';
 import { LEGAL_URLS } from '../../config/legal';
 import { formatBdt } from '../../utils/pharmacyHelpers';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CartPayment'>;
 type PaymentMethod = 'COD' | 'bKash' | 'Nagad' | 'Card';
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 const DELIVERY_CHARGE = 30;
 
 export function CartPaymentScreen({ navigation, route }: Props) {
@@ -445,15 +439,15 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#424242',
     marginTop: 8,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   deliveryNotice: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     textAlign: 'center',
     marginBottom: 20,
@@ -492,8 +486,8 @@ const styles = StyleSheet.create({
   },
   methodName: {
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   brandIconMock: {
@@ -506,7 +500,8 @@ const styles = StyleSheet.create({
   brandIconText: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: 'bold',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   instructionSection: {
     marginHorizontal: 16,
@@ -562,8 +557,8 @@ const styles = StyleSheet.create({
   },
   invoiceLabelMain: {
     fontSize: 24,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
   },
   invoiceValueMain: {
@@ -574,14 +569,14 @@ const styles = StyleSheet.create({
   },
   invoiceLabelStandard: {
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   invoiceValueStandard: {
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#212121',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   promoValue: {
@@ -589,11 +584,11 @@ const styles = StyleSheet.create({
   },
   termsAgreementText: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
     textAlign: 'center',
     marginTop: 4,
     marginBottom: 12,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     paddingHorizontal: 16,
   },
@@ -623,14 +618,14 @@ const styles = StyleSheet.create({
   },
   footerTotalLabel: {
     fontSize: 28,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
   },
   footerTaxSubtitle: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginTop: 2,
   },
@@ -639,8 +634,8 @@ const styles = StyleSheet.create({
   },
   footerTotalCurrency: {
     fontSize: 24,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#4DA69F',
   },
   footerCentFraction: {
@@ -756,8 +751,8 @@ const styles = StyleSheet.create({
   },
   congratsTitle: {
     fontSize: 26,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3BA697',
     marginBottom: 10,
     textAlign: 'center',
@@ -824,12 +819,14 @@ const styles = StyleSheet.create({
   },
   logoTextMain: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
     marginLeft: 4,
   },
   logoTextSub: {
     fontSize: 9,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#49739B',
     letterSpacing: 2,
@@ -865,7 +862,8 @@ const styles = StyleSheet.create({
   },
   successHeadlineText: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#333333',
     marginBottom: 6,
     textAlign: 'center',
@@ -873,6 +871,7 @@ const styles = StyleSheet.create({
   successSubheadText: {
     fontSize: 14,
     color: '#7D8797',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     textAlign: 'center',
     lineHeight: 20,
@@ -904,6 +903,7 @@ const styles = StyleSheet.create({
   },
   invoiceItemNameText: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#2D3142',
     marginBottom: 4,
@@ -911,11 +911,13 @@ const styles = StyleSheet.create({
   invoiceItemQtyText: {
     fontSize: 13,
     color: '#8A94A6',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   invoiceItemPriceText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#2D3142',
     textAlign: 'right',
   },
@@ -940,21 +942,25 @@ const styles = StyleSheet.create({
   costLabel: {
     fontSize: 14,
     color: '#8A94A6',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   costValue: {
     fontSize: 15,
     color: '#2D3142',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   costTotalLabel: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
   },
   costTotalValue: {
     fontSize: 20,
-    fontWeight: '800',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E3A60',
   },
   backToShopButton: {
@@ -975,6 +981,7 @@ const styles = StyleSheet.create({
   backToShopButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

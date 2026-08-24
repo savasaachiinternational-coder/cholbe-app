@@ -11,16 +11,10 @@ import {
   formatTimeLabel,
 } from './MedicationPickers';
 import {useMedicationDraft} from '../context/MedicationDraftContext';
+import { FONT } from '../theme/typography';
 
 // Android resolves a weight by the exact font file name, so each weight is
 // referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 // Follow-up Check offers only these two presets plus Custom, so all three fit on
 // one row. The reminder card above still uses the full REMINDER_MINUTE_OPTIONS.
 const FOLLOW_UP_MINUTE_OPTIONS = [
@@ -298,15 +292,15 @@ const styles = StyleSheet.create({
   halfLeft: {marginRight: 12},
   inputLabel: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginBottom: 8,
   },
   subInputLabel: {
     fontSize: 13,
-    fontFamily: FONT.regular,
     color: '#8A94A6',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginBottom: 6,
   },
@@ -320,7 +314,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E6E3EE',
   },
-  textInput: {flex: 1, fontSize: 15, fontFamily: FONT.medium, color: '#495057', fontWeight: '500'},
+  textInput: {flex: 1, fontSize: 15, color: '#495057', fontFamily: FONT.medium, fontWeight: '500'},
   searchIcon: {paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: '#E2E6EE'},
   segmentContainer: {
     flexDirection: 'row',
@@ -336,7 +330,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeSegmentButton: {backgroundColor: '#45A096'},
-  segmentButtonText: {fontSize: 13, fontFamily: FONT.medium, color: '#7D8797', fontWeight: '500'},
+  segmentButtonText: {fontSize: 13, color: '#7D8797', fontFamily: FONT.medium, fontWeight: '500'},
   activeSegmentText: {
     color: '#FFFFFF',
     fontFamily: FONT.semibold,
@@ -355,7 +349,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   activeMealButton: {backgroundColor: '#45A096', borderColor: '#45A096'},
-  mealButtonText: {fontSize: 14, fontFamily: FONT.medium, color: '#7D8797', fontWeight: '500'},
+  mealButtonText: {fontSize: 14, color: '#7D8797', fontFamily: FONT.medium, fontWeight: '500'},
   activeMealButtonText: {
     color: '#FFFFFF',
     fontFamily: FONT.semibold,
@@ -413,5 +407,5 @@ const styles = StyleSheet.create({
     borderColor: '#E6E9F0',
   },
   caregiverPlusIcon: {marginRight: 8},
-  caregiverCustomText: {fontSize: 15, fontFamily: FONT.medium, color: '#495057', fontWeight: '500'},
+  caregiverCustomText: {fontSize: 15, color: '#495057', fontFamily: FONT.medium, fontWeight: '500'},
 });

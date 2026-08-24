@@ -22,17 +22,9 @@ import {reportsApi, type ReportType} from '../../api/reports';
 import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
 import {DatePickerField} from '../../components/MedicationPickers';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UploadReportDetails'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 const {width} = Dimensions.get('window');
 
@@ -405,8 +397,8 @@ const styles = StyleSheet.create({
   browseHereText: {
     fontSize: 16,
     color: '#45A096',
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   inputGroup: {
     marginBottom: 14,
@@ -414,7 +406,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 12,
     color: '#616161',
-    fontFamily: FONT.medium,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginBottom: 6,
     paddingLeft: 2,
@@ -433,7 +425,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     color: '#616161',
-    fontFamily: FONT.medium,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     padding: 0,
   },
@@ -491,7 +483,7 @@ const styles = StyleSheet.create({
   tipIcon: {marginRight: 8},
   tipTitleText: {
     fontSize: 12,
-    fontFamily: FONT.bold,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#616161',
   },
@@ -504,9 +496,9 @@ const styles = StyleSheet.create({
   tipInput: {
     fontSize: 12,
     color: '#616161',
-    fontFamily: FONT.regular,
     lineHeight: 18,
     minHeight: 56,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     textAlignVertical: 'top',
     padding: 0,
@@ -552,7 +544,7 @@ const styles = StyleSheet.create({
   uploadButtonText: {
     color: '#FFF',
     fontSize: 16,
-    fontFamily: FONT.regular,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   buttonDisabled: {

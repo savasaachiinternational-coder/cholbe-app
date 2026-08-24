@@ -9,6 +9,7 @@ import {AiSymptomHeaderCard} from '../../components/shared/AiSymptomHeaderCard';
 import {ChoicePill} from '../../components/shared/ChoicePill';
 import {GradientPillButton} from '../../components/shared/GradientPillButton';
 import {IntakeSummary} from '../../components/shared/IntakeSummary';
+import { FONT } from '../../../../theme/typography';
 import {
   PREVIOUS_HISTORY_OPTIONS,
   PREVIOUS_HISTORY_QUESTION,
@@ -89,7 +90,8 @@ const styles = StyleSheet.create({
     marginTop: 40,
     color: '#091B27',
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     lineHeight: 36,
   },
   spacer: {

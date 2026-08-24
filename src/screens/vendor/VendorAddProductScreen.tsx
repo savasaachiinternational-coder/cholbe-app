@@ -27,6 +27,7 @@ import {ApiError} from '../../api/client';
 import {NotificationBell} from '../../components/NotificationBell';
 import {WaveWithChild} from '../../components/WaveWithChild';
 import {DatePickerField} from '../../components/MedicationPickers';
+import { FONT } from '../../theme/typography';
 import {
   PRODUCT_CATEGORIES,
   TEMPERATURE_OPTIONS,
@@ -42,13 +43,6 @@ type PickerField = 'category' | 'unitType' | 'temperature' | null;
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 // Figma "Card/Shadow 1": 0 4px 60px 0 rgba(4, 6, 15, 0.08).
 const CARD_SHADOW = {
   shadowColor: '#04060F',

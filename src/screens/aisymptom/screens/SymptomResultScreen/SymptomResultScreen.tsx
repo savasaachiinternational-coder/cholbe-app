@@ -26,6 +26,7 @@ import {
 import {formatBdt} from '../../../../utils/pharmacyHelpers';
 import {useSymptomAnalysis} from './useSymptomAnalysis';
 import {useSuggestedDoctors} from './useSuggestedDoctors';
+import { FONT } from '../../../../theme/typography';
 
 // Matches the two-column grid on DoctorListScreen.
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -173,13 +174,15 @@ const styles = StyleSheet.create({
     marginTop: 24,
     color: '#091B27',
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     lineHeight: 36,
   },
   subheading: {
     marginTop: 10,
     color: '#454F5B',
     fontSize: 13,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 19,
   },
@@ -195,6 +198,7 @@ const styles = StyleSheet.create({
   stateLabel: {
     color: '#454F5B',
     fontSize: 13,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   retryButton: {
@@ -207,13 +211,15 @@ const styles = StyleSheet.create({
   retryLabel: {
     color: '#45A096',
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   sectionHeading: {
     marginTop: 26,
     color: '#091B27',
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   doctorGrid: {
     marginTop: 14,

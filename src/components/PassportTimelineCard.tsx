@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FONT } from '../theme/typography';
 
 export function formatPassportListTime(value?: string | null) {
   if (!value) return '—';
@@ -198,12 +199,14 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#1A1919',
   },
   time: {
     fontSize: 12,
     color: '#1B1B1B',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginTop: 3,
   },
@@ -230,6 +233,7 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 13,
     color: '#5A6578',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     flexShrink: 1,
   },
@@ -247,6 +251,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     color: '#45A096',
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

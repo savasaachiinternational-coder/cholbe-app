@@ -22,6 +22,7 @@ import { ApiError } from '../../api/client';
 import { getStoredUser } from '../../api/tokenStorage';
 import { getAppointmentDateTime } from '../../api/utils/appointmentHelpers';
 import { requestCallPermissions } from '../../utils/callPermissions';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WaitingRoom'>;
 
@@ -426,6 +427,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
@@ -439,6 +441,7 @@ const styles = StyleSheet.create({
   },
   countdownTitle: {
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#1E293B',
     marginBottom: 6,
@@ -449,7 +452,8 @@ const styles = StyleSheet.create({
   },
   countdownTimer: {
     color: '#0D9488',
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   roomCard: {
     backgroundColor: '#FFFFFF',
@@ -470,7 +474,8 @@ const styles = StyleSheet.create({
   },
   doctorName: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1E293B',
   },
   specialtyRow: {
@@ -501,7 +506,8 @@ const styles = StyleSheet.create({
   joinCallButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   cardDivider: {
     height: 1,
@@ -541,6 +547,7 @@ const styles = StyleSheet.create({
   },
   diagnosticLabel: {
     fontSize: 13,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#334155',
   },
@@ -551,13 +558,15 @@ const styles = StyleSheet.create({
   },
   diagnosticStatus: {
     fontSize: 12,
+    fontFamily: FONT.medium,
     fontWeight: '500',
     color: '#22C55E',
     marginLeft: 4,
   },
   readyNote: {
     fontSize: 12,
-    fontWeight:'400',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     color: '#616161',
     lineHeight: 20,
   },
@@ -582,6 +591,7 @@ const styles = StyleSheet.create({
   actionLabel: {
     flex: 1,
     fontSize: 12,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#616161',
   },
@@ -589,7 +599,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 4,
     fontSize: 12,
-    fontWeight:'400',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     color: '#616161',
     lineHeight: 19,
   },

@@ -24,18 +24,12 @@ import { RoleMenuDrawer } from '../../components/RoleMenuDrawer';
 import { formatBdt } from '../../utils/pharmacyHelpers';
 import { NotificationBell } from '../../components/NotificationBell';
 import { WaveWithChild } from '../../components/WaveWithChild';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AHome'>;
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
-
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = width - 64;
 const CHART_PLOT_HEIGHT = 150;
@@ -504,9 +498,9 @@ const styles = StyleSheet.create({
   // Figma body/small/regular: 12px / 400, 0.2px tracking, Greyscale-700.
   welcomeSubtitle: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
     marginTop: 4,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     letterSpacing: 0.2,
   },
@@ -525,8 +519,8 @@ const styles = StyleSheet.create({
   },
   dateSelectorText: {
     fontSize: 14,
-    fontFamily: FONT.medium,
     color: '#424242',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   metricsGridRow: {
@@ -553,20 +547,20 @@ const styles = StyleSheet.create({
   },
   metricTitle: {
     fontSize: 16,
-    fontFamily: FONT.regular,
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   metricValue: {
     fontSize: 24,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#212121',
   },
   metricPercentage: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#00A651',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   quickLinksRow: {
@@ -634,8 +628,8 @@ const styles = StyleSheet.create({
   },
   chartTimeDropdownText: {
     fontSize: 14,
-    fontFamily: FONT.regular,
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   graphBodyContainer: {
@@ -651,8 +645,8 @@ const styles = StyleSheet.create({
   },
   axisLabelText: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   chartCanvasWrapper: {
@@ -717,8 +711,8 @@ const styles = StyleSheet.create({
   },
   xAxisLabelText: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     minWidth: 24,
     textAlign: 'center',

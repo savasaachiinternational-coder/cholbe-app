@@ -21,6 +21,7 @@ import {uploadFile} from '../../api/uploads';
 import {checkoutSession} from '../../checkout/checkoutSession';
 import {ApiError} from '../../api/client';
 import {pickedFileFromAsset} from '../../utils/fileAsset';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChooseFromPharmacyGallery'>;
 
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
   },
   headerLeftGroup: {flexDirection: 'row', alignItems: 'center'},
   backButton: {marginRight: 6},
-  headerTitleText: {fontSize: 20, fontWeight: '600', color: '#333333'},
+  headerTitleText: {fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#333333'},
   dropdownFilterPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 6,
   },
-  dropdownFilterText: {fontSize: 13, color: '#FFFFFF', fontWeight: '500'},
+  dropdownFilterText: {fontSize: 13, color: '#FFFFFF', fontFamily: FONT.medium, fontWeight: '500'},
   filterChevron: {marginLeft: 4},
   galleryGridContent: {paddingHorizontal: 16, paddingTop: 8},
   galleryRowWrapper: {justifyContent: 'flex-start', gap: GRID_SPACING, marginBottom: GRID_SPACING},
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   continueDisabled: {opacity: 0.5},
-  continueButtonText: {color: '#FFFFFF', fontSize: 18, fontWeight: '600'},
+  continueButtonText: {color: '#FFFFFF', fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600'},
   bottomTabBar: {
     flexDirection: 'row',
     minHeight: 74,
@@ -257,6 +258,6 @@ const styles = StyleSheet.create({
     right: 0,
   },
   tabItem: {alignItems: 'center', justifyContent: 'center', width: width / 5},
-  tabLabel: {fontSize: 11, color: '#9CA3AF', marginTop: 5, fontWeight: '500'},
-  activeTabLabel: {color: '#45A096', fontWeight: '600'},
+  tabLabel: {fontSize: 11, color: '#9CA3AF', marginTop: 5, fontFamily: FONT.medium, fontWeight: '500'},
+  activeTabLabel: {color: '#45A096', fontFamily: FONT.semibold, fontWeight: '600'},
 });

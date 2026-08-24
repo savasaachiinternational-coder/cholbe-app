@@ -10,6 +10,7 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {API_ORIGIN} from '../config/api';
 import {imageUri, isImageFile, isPdfFile} from '../utils/fileAsset';
+import { FONT } from '../theme/typography';
 
 type Props = {
   fileUrl?: string | null;
@@ -119,7 +120,8 @@ const styles = StyleSheet.create({
   },
   pdfLabel: {
     fontSize: 9,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#E53935',
     marginTop: 2,
   },

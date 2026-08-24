@@ -22,6 +22,7 @@ import {cartApi} from '../../api/cart';
 import {ApiError} from '../../api/client';
 import {ProductImage} from '../../components/ProductImage';
 import {WaveTitleBand} from '../../components/WaveTitleBand';
+import { FONT } from '../../theme/typography';
 import {
   discountPercent,
   formatBdt,
@@ -630,6 +631,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#1A1C1E',
     flex: 1,
@@ -729,10 +731,12 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 14,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   activeTabText: {
     color: '#47B39D',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   metaContainer: {
@@ -750,12 +754,14 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#091B27',
   },
   subTitleText: {
     fontSize: 14,
     color: '#454F5B',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     marginTop: 2,
   },
@@ -771,6 +777,7 @@ const styles = StyleSheet.create({
   categoryBadgeText: {
     color: '#EDF7F6',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   detailsBlock: {
@@ -783,6 +790,7 @@ const styles = StyleSheet.create({
   },
   blueLink: {
     color: '#4A69BD',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   infoContentContainer: {
@@ -791,7 +799,8 @@ const styles = StyleSheet.create({
   },
   contentHeading: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#2B2F36',
     marginTop: 20,
     marginBottom: 10,
@@ -824,6 +833,7 @@ const styles = StyleSheet.create({
   contentSubtext: {
     fontSize: 13,
     color: '#5C6470',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginBottom: 6,
   },
@@ -840,10 +850,12 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   boldText: {
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#2B2F36',
   },
   mediumText: {
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#3F444D',
   },
@@ -882,12 +894,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
   },
   sectionSubtitle: {
     fontSize: 10,
     color: '#616161',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   viewAllRow: {
@@ -926,6 +940,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFFFFF',
     fontSize: 10,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   productImage: {
@@ -937,6 +952,7 @@ const styles = StyleSheet.create({
   },
   productTitle: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#1A1C1E',
   },
@@ -963,13 +979,15 @@ const styles = StyleSheet.create({
   },
   priceText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   oldPrice: {
     fontSize: 10,
     color: '#9AA6B2',
     textDecorationLine: 'line-through',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   addToCartBtn: {
@@ -981,6 +999,7 @@ const styles = StyleSheet.create({
   },
   addToCartBtnText: {
     color: '#47B39D',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     fontSize: 12,
   },
@@ -990,6 +1009,7 @@ const styles = StyleSheet.create({
   },
   disclaimerTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#091B27',
     marginBottom: 8,
@@ -1071,6 +1091,7 @@ const styles = StyleSheet.create({
   },
   variantLabel: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333D47',
     flexShrink: 1,
@@ -1092,6 +1113,7 @@ const styles = StyleSheet.create({
   },
   counterValue: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#1A1C1E',
     minWidth: 18,
@@ -1117,7 +1139,8 @@ const styles = StyleSheet.create({
   },
   footerPrice: {
     fontSize: 26,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#4E929D',
   },
   footerOldPrice: {
@@ -1134,6 +1157,7 @@ const styles = StyleSheet.create({
   prescriptionText: {
     fontSize: 11,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   footerCheckoutBtn: {
@@ -1148,6 +1172,7 @@ const styles = StyleSheet.create({
   footerCheckoutBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

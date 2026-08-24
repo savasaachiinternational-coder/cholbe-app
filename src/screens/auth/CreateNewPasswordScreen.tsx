@@ -19,6 +19,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {PasswordChangeSuccessModal} from './PasswordChangeSuccessModal';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 const AUTH_GRADIENT = ['#F8FAFC', '#E4F2F4', '#C9E7EA', '#E9F4F6'] as const;
 
@@ -264,7 +265,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#3B3B3B',
     marginBottom: 8,
   },
@@ -290,6 +292,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#555555',
     marginBottom: 10,
@@ -312,6 +315,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#333333',
     fontSize: 15,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   footerSection: {
@@ -337,6 +341,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   cancelButton: {
@@ -349,6 +354,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#E06D6D',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

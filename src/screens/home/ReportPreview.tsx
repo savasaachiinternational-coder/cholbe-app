@@ -26,17 +26,9 @@ import {imageUri, isImageFile, isPdfFile} from '../../utils/fileAsset';
 import {reportsApi} from '../../api/reports';
 import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReportPreview'>;
-
-// Proxima Nova is applied on this screen only. Android resolves a weight by the
-// exact font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  medium: 'ProximaNova-Medium',
-  semibold: 'ProximaNova-Semibold',
-  bold: 'ProximaNova-Bold',
-} as const;
 
 const {width} = Dimensions.get('window');
 
@@ -611,7 +603,7 @@ const styles = StyleSheet.create({
   },
   fileBadgeText: {
     fontSize: 10,
-    fontFamily: FONT.bold,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#EDF7F6',
     letterSpacing: 0.5,
@@ -659,8 +651,8 @@ const styles = StyleSheet.create({
   metaText: {
     flex: 1,
     fontSize: 16,
-    fontFamily: FONT.regular,
-    fontWeight:'600',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#616161',
   },
   viewerCard: {
@@ -748,8 +740,8 @@ const styles = StyleSheet.create({
   },
   pdfSheetAction: {
     fontSize: 14,
-    fontFamily: FONT.bold,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#45A096',
     marginTop: 12,
   },
@@ -787,7 +779,7 @@ const styles = StyleSheet.create({
   },
   actionChipText: {
     fontSize: 10,
-    fontFamily: FONT.medium,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     color: '#424242',
   },

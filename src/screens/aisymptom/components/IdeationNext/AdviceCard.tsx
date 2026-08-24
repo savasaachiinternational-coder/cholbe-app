@@ -1,6 +1,7 @@
 import {StyleSheet, Text, View} from 'react-native';
 import React from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { FONT } from '../../../../theme/typography';
 
 type Props = {
   iconName: string;
@@ -45,6 +46,7 @@ const styles = StyleSheet.create({
   title: {
     color: '#424242',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   bulletRow: {
@@ -62,6 +64,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#616161',
     fontSize: 12,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 17,
   },
@@ -69,6 +72,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: '#616161',
     fontSize: 14,
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
 });

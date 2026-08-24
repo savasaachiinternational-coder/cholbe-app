@@ -14,6 +14,7 @@ import {
   SYMPTOM_DURATION_QUESTION,
 } from '../../data/SymptomDurationScreen/symptomDurations';
 import type {SymptomIntake} from '../../data/shared/symptomIntake';
+import { FONT } from '../../../../theme/typography';
 
 type Navigation = NativeStackNavigationProp<
   RootStackParamList,
@@ -109,7 +110,8 @@ const styles = StyleSheet.create({
     marginTop: 40,
     color: '#091B27',
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     lineHeight: 36,
   },
   spacer: {

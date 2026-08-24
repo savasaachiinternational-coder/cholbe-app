@@ -23,6 +23,7 @@ import {AiSymptomHeaderCard} from '../../components/shared/AiSymptomHeaderCard';
 import {AiSymptomComposer} from '../../components/AiSymptomHome/AiSymptomComposer';
 import {AI_HELP_CATEGORIES} from '../../data/AiSymptomHome/aiHelpCategories';
 import {useAiSymptomComposer} from './useAiSymptomComposer';
+import { FONT } from '../../../../theme/typography';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'AiSymptomHome'>;
 type Route = RouteProp<RootStackParamList, 'AiSymptomHome'>;
@@ -86,7 +87,7 @@ export function AiSymptomHome() {
           </Text>
         </View>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.docScannerLink}
           activeOpacity={0.85}
           onPress={() => navigation.navigate('DocScanner')}>
@@ -95,7 +96,7 @@ export function AiSymptomHome() {
             Scan a prescription or lab report
           </Text>
           <Feather name="chevron-right" size={18} color="#45A096" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <View style={styles.helpCardContainer}>
           {AI_HELP_CATEGORIES.map((item, index) => (
@@ -155,13 +156,15 @@ const styles = StyleSheet.create({
   greetingTitle: {
     color: '#091B27',
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   greetingSubtitle: {
     marginTop: 4,
     width: '100%',
     color: '#454F5B',
     fontSize: 15,
+    fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 22,
   },
@@ -182,6 +185,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#091B27',
     fontSize: 14,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   helpCardContainer: {

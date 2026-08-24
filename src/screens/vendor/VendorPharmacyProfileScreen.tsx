@@ -36,6 +36,7 @@ import {AvatarImage} from '../../components/AvatarImage';
 import {VendorBottomNav} from './VendorBottomNav';
 import {performLogout} from '../../auth/sessionControl';
 import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VProfile'>;
 
@@ -980,7 +981,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
     flex: 1,
     textAlign: 'center',
@@ -1013,7 +1015,8 @@ const styles = StyleSheet.create({
   },
   storeNameText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
     flex: 1,
     marginRight: 8,
@@ -1032,6 +1035,7 @@ const styles = StyleSheet.create({
   verifiedBadgeText: {
     fontSize: 10,
     color: '#47B39D',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   locationRow: {
@@ -1043,6 +1047,7 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 12,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   pharmacistCard: {
@@ -1057,6 +1062,7 @@ const styles = StyleSheet.create({
   pharmacistSectionLabel: {
     fontSize: 11,
     color: '#7E8B97',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
@@ -1080,13 +1086,15 @@ const styles = StyleSheet.create({
   },
   pharmacistName: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   pharmacistReg: {
     fontSize: 11,
     color: '#7E8B97',
     marginTop: 1,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   licenseFooterRow: {
@@ -1098,11 +1106,13 @@ const styles = StyleSheet.create({
   licenseNumberText: {
     fontSize: 12,
     color: '#4F5E6D',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   licenseStatusText: {
     fontSize: 12,
     color: '#00A884',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   metricsRowGroup: {
@@ -1122,18 +1132,21 @@ const styles = StyleSheet.create({
   },
   metricScoreValue: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#4E929D',
   },
   metricScoreLabel: {
     fontSize: 11,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 2,
   },
   groupSectionTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#4F5E6D',
     paddingHorizontal: 16,
     marginTop: 20,
@@ -1178,13 +1191,15 @@ const styles = StyleSheet.create({
   },
   settingRowMainTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   settingRowSubTitle: {
     fontSize: 11,
     color: '#7E8B97',
     marginTop: 1,
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   storeStatusToggleRow: {
@@ -1195,7 +1210,8 @@ const styles = StyleSheet.create({
   },
   toggleRowMainText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   statusOpenText: {
@@ -1207,6 +1223,7 @@ const styles = StyleSheet.create({
   toggleRowSubText: {
     fontSize: 11,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 1,
   },
@@ -1228,7 +1245,8 @@ const styles = StyleSheet.create({
   },
   operationalTitleMain: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#4F5E6D',
   },
   controlItemLineRow: {
@@ -1239,11 +1257,13 @@ const styles = StyleSheet.create({
   controlLabelText: {
     fontSize: 12,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   controlValueText: {
     fontSize: 12,
     color: '#1A1C1E',
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     flex: 1,
     textAlign: 'right',
@@ -1276,6 +1296,7 @@ const styles = StyleSheet.create({
   },
   addPayoutLinkText: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#4E929D',
   },
@@ -1298,6 +1319,7 @@ const styles = StyleSheet.create({
   },
   payoutTypeChipText: {
     fontSize: 11,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#64748B',
   },
@@ -1321,6 +1343,7 @@ const styles = StyleSheet.create({
   saveOperationsButtonText: {
     color: '#FFFFFF',
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   revenueBannerCyanCard: {
@@ -1333,11 +1356,13 @@ const styles = StyleSheet.create({
   revenueBannerLabel: {
     fontSize: 12,
     color: '#E6F3F5',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   revenueBannerValue: {
     fontSize: 26,
-    fontWeight: '800',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#FFFFFF',
     marginVertical: 4,
   },
@@ -1351,11 +1376,13 @@ const styles = StyleSheet.create({
   payoutNoticeText: {
     color: '#FFFFFF',
     fontSize: 11,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   payoutListHeaderLabel: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#4F5E6D',
     marginTop: 16,
     marginBottom: 4,
@@ -1373,12 +1400,14 @@ const styles = StyleSheet.create({
   },
   paymentMethodTitleName: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   paymentMethodMaskedId: {
     fontSize: 11,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 1,
   },
@@ -1393,6 +1422,7 @@ const styles = StyleSheet.create({
   primaryPaymentMethodBadgeText: {
     color: '#47B39D',
     fontSize: 10,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   miniBKashIconMock: {
@@ -1406,7 +1436,8 @@ const styles = StyleSheet.create({
   miniBrandLetter: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: 'bold',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   vaultDocumentLineItemRow: {
     flexDirection: 'row',
@@ -1425,6 +1456,7 @@ const styles = StyleSheet.create({
   },
   vaultDocumentTitleFileName: {
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#333D47',
     flex: 1,
@@ -1438,7 +1470,8 @@ const styles = StyleSheet.create({
   vaultDocumentVerifiedBadgeText: {
     color: '#47B39D',
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
   },
   uploadVaultDocumentButton: {
     flexDirection: 'row',
@@ -1455,6 +1488,7 @@ const styles = StyleSheet.create({
   uploadVaultDocumentButtonText: {
     color: '#1A1C1E',
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   appLinksCardContainer: {
@@ -1484,12 +1518,14 @@ const styles = StyleSheet.create({
   },
   appSettingsMainLabel: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   appSettingsSubLabel: {
     fontSize: 11,
     color: '#7E8B97',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginTop: 1,
   },
@@ -1521,7 +1557,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 10,
   },
-  logoutBtnText: {color: '#E26D6D', fontSize: 13, fontWeight: '700'},
+  logoutBtnText: {color: '#E26D6D', fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600'},
   cpOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
   cpModal: {
     backgroundColor: '#F5F4FD',
@@ -1536,9 +1572,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  cpTitle: {fontSize: 16, fontWeight: '700', color: '#1A1C1E'},
+  cpTitle: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A1C1E'},
   cpField: {marginBottom: 14},
-  cpLabel: {fontSize: 12, fontWeight: '600', color: '#4F5E6D', marginBottom: 6},
+  cpLabel: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#4F5E6D', marginBottom: 6},
   cpInput: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -1558,7 +1594,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   cpSaveBtnDisabled: {opacity: 0.6},
-  cpSaveBtnText: {color: '#FFFFFF', fontSize: 15, fontWeight: '700'},
+  cpSaveBtnText: {color: '#FFFFFF', fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600'},
   epOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
   epModal: {
     backgroundColor: '#F5F4FD',
@@ -1573,9 +1609,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  epTitle: {fontSize: 16, fontWeight: '700', color: '#1A1C1E'},
+  epTitle: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A1C1E'},
   epField: {marginBottom: 14},
-  epLabel: {fontSize: 12, fontWeight: '600', color: '#4F5E6D', marginBottom: 6},
+  epLabel: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#4F5E6D', marginBottom: 6},
   epInput: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -1605,6 +1641,7 @@ const styles = StyleSheet.create({
   epBannerBtnText: {
     color: '#4E929D',
     fontSize: 13,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   epSaveBtn: {
@@ -1616,5 +1653,5 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   epSaveBtnDisabled: {opacity: 0.6},
-  epSaveBtnText: {color: '#FFFFFF', fontSize: 15, fontWeight: '700'},
+  epSaveBtnText: {color: '#FFFFFF', fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600'},
 });

@@ -26,6 +26,7 @@ import {formatBdt} from '../../utils/pharmacyHelpers';
 import {VendorBottomNav} from './VendorBottomNav';
 import {FILTER_CATEGORIES} from './vendorNav';
 import {NotificationBell} from '../../components/NotificationBell';
+import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VInventory'>;
 
@@ -444,6 +445,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
     flex: 1,
@@ -467,6 +469,7 @@ const styles = StyleSheet.create({
   addProductBtnText: {
     color: '#FFF',
     fontSize: 16,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
   searchContainer: {
@@ -515,11 +518,13 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: '#424242',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     fontSize: 10,
   },
   activeChipText: {
     color: '#FFFFFF',
+    fontFamily: FONT.regular,
     fontWeight: '400',
     fontSize: 10,
   },
@@ -548,7 +553,8 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
   },
   itemMetaText: {
@@ -558,6 +564,7 @@ const styles = StyleSheet.create({
   },
   itemPriceText: {
     fontSize: 12,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#1A1C1E',
     marginTop: 2,
@@ -583,6 +590,7 @@ const styles = StyleSheet.create({
   editPillText: {
     fontSize: 12,
     color: '#424242',
+    fontFamily: FONT.medium,
     fontWeight: '500',
   },
   // Figma: 40 x 22 track, 16px knob, Primary-500 on / Greyscale-300 off.
@@ -640,13 +648,15 @@ const styles = StyleSheet.create({
   },
   editSheetTitle: {
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
     color: '#1A1C1E',
     marginBottom: 16,
   },
   editLabel: {
     fontSize: 12,
     color: '#6F767E',
+    fontFamily: FONT.medium,
     fontWeight: '500',
     marginBottom: 4,
     marginTop: 8,
@@ -675,6 +685,7 @@ const styles = StyleSheet.create({
   saveEditBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
+    fontFamily: FONT.semibold,
     fontWeight: '600',
   },
 });

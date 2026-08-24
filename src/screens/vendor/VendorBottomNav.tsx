@@ -3,6 +3,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../navigation/types';
 import {VENDOR_TABS, type VendorTabKey} from './vendorNav';
+import { FONT } from '../../theme/typography';
 
 type Props = {
   activeTab: VendorTabKey;
@@ -12,11 +13,6 @@ type Props = {
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
-const FONT = {
-  regular: 'ProximaNova-Regular',
-  semibold: 'ProximaNova-Semibold',
-} as const;
-
 export function VendorBottomNav({activeTab, bottomInset, navigation}: Props) {
   const handlePress = (tab: VendorTabKey) => {
     if (tab === activeTab) {
@@ -90,8 +86,8 @@ const styles = StyleSheet.create({
   },
   navText: {
     fontSize: 12,
-    fontFamily: FONT.regular,
     color: '#9E9E9E',
+    fontFamily: FONT.regular,
     fontWeight: '400',
   },
   activeNavText: {
