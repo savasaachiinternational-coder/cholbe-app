@@ -150,7 +150,11 @@ async function reverseGeocodeWithGoogle(
     if (data.status !== 'OK' || !data.results?.length) {
       return null;
     }
-    return buildFromComponents(result.components, result.formattedAddress);
+    const result = data.results[0];
+    return buildFromComponents(
+      result.address_components,
+      result.formatted_address,
+    );
   } catch {
     return null;
   }

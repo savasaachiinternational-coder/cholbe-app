@@ -480,6 +480,7 @@ const styles = StyleSheet.create({
   },
   segmentedControlContainer: {
     flexDirection: 'row',
+    marginTop:10,
     backgroundColor: '#F4F3FC',
     borderRadius: 40,
     padding: 4,
@@ -487,6 +488,7 @@ const styles = StyleSheet.create({
   },
   segmentTab: {
     flex: 1,
+    
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',

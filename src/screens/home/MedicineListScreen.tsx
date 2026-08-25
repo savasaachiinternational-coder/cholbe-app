@@ -17,7 +17,7 @@ import {
 } from '../../api/medications';
 import {ApiError} from '../../api/client';
 import {PassportListScreenLayout} from '../../components/PassportListScreenLayout';
-import {PassportTimelineCard} from '../../components/PassportTimelineCard';
+import {MedicineScheduleCard} from '../../components/MedicineScheduleCard';
 import {navigateCustomerTab} from './customerTabNavigation';
 import { FONT } from '../../theme/typography';
 
@@ -80,11 +80,9 @@ export function MedicineListScreen({navigation}: Props) {
         ) : items.length === 0 ? (
           <Text style={styles.emptyText}>No medications yet. Tap Upload Medicine.</Text>
         ) : (
-          items.map((item, index) => (
-            <PassportTimelineCard
+          items.map(item => (
+            <MedicineScheduleCard
               key={item.id}
-              isFirst={index === 0}
-              isLast={index === items.length - 1}
               title={item.medicineName}
               time={formatScheduleTime(item.times[0])}
               actionLabel='View Medicine'
@@ -95,7 +93,7 @@ export function MedicineListScreen({navigation}: Props) {
               icon={
                 <MaterialCommunityIcons
                   name="pill"
-                  size={22}
+                  size={30}
                   color="#7D8797"
                   style={styles.rotatedPillIcon}
                 />
@@ -125,6 +123,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   rotatedPillIcon: {
-    transform: [{rotate: '-45deg'}],
+    transform: [{rotate: '-90deg'}],
   },
 });

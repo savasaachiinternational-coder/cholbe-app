@@ -16,7 +16,7 @@ export function WaveTitleBand({ title, color, icon,style }: Props) {
   return (
     <View style={[styles.bandWrap]}>
       <Image
-        source={require('../assets/home_profile_bg.png')}
+        source={require('../assets/home_profile_bg4.png')}
         style={styles.bandArt}
         resizeMode="cover"
       />
@@ -42,11 +42,11 @@ const styles = StyleSheet.create({
   },
   bandArt: {
     position: 'absolute',
-    width: SCREEN_WIDTH * 1.6,
-    height: SCREEN_WIDTH * 1.6,
+    width: SCREEN_WIDTH * 1.4,
+    height: SCREEN_WIDTH * 1.2,
     left: -SCREEN_WIDTH * 0.3,
     top: -SCREEN_WIDTH * 0.62,
-    opacity: 0.4,
+    opacity: 0.8,
   },
   // the curve in the top center
   bandNotch: {

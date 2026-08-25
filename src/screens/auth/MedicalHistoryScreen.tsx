@@ -203,9 +203,9 @@ export function MedicalHistoryScreen({onBack, onComplete}: Props) {
             <Feather name="chevron-left" size={28} color="#333333" />
           </TouchableOpacity>
           <Image
-            source={require('../../assets/logo.png')}
+            source={require('../../assets/logoImage.png')}
             style={styles.headerLogo}
-            resizeMode="contain"
+            resizeMode="cover"
           />
           <TouchableOpacity
             style={styles.notificationButton}
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
   },
   headerLogo: {
     width: 120,
-    height: 40,
+    height: 50,
   },
   notificationButton: {
     padding: 4,

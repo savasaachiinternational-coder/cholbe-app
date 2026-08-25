@@ -21,6 +21,7 @@ import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import { authApi } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { FONT } from '../../theme/typography';
+import { LEGAL_URLS } from '../../config/legal';
 
 const SIGN_IN_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -68,7 +69,13 @@ export function SignInScreen({
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-
+       <View style={styles.logoSection}>
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -84,13 +91,7 @@ export function SignInScreen({
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.logoSection}>
-            <Image
-              source={require('../../assets/logo.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-          </View>
+         
 
           <View style={styles.headerSection}>
             <Text style={styles.title}>Welcome Back</Text>
@@ -187,7 +188,7 @@ export function SignInScreen({
             </Text>
           </TouchableOpacity>
 
-          {/* TODO(release): restore social login (Apple / Google / Facebook)
+          {/* TODO(release): restore social login (Apple / Google / Facebook) */}
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>Or</Text>
@@ -207,7 +208,7 @@ export function SignInScreen({
               <FontAwesome name="facebook" size={24} color="#1877F2" />
             </TouchableOpacity>
           </View>
-          */}
+         
 
           <TouchableOpacity
             style={styles.privacyContainer}
@@ -245,6 +246,7 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: 'center',
+    marginTop:60,
     marginBottom: 28,
   },
   logoImage: {

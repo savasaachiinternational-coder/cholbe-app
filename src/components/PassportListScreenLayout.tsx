@@ -85,7 +85,7 @@ export function PassportListScreenLayout({
       >
         <WaveTitleBand
           title={title}
-          color="#F9F9FE"
+          color="#F5F2FE"
           style={styles.screenTitle}
         />
       </View>
@@ -239,8 +239,8 @@ export const passportListLayoutStyles = StyleSheet.create({
   uploadBar: {
     backgroundColor: '#45A096',
     width: '100%',
-    height: 50,
-    borderRadius: 28,
+    height: 56,
+    borderRadius: 40,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -256,14 +256,14 @@ export const passportListLayoutStyles = StyleSheet.create({
     color: '#EDF7F6',
     fontSize: 12,
     fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9FE',
+    backgroundColor: '#F5F2FE',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -305,6 +305,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
+    paddingBottom:40,
   },
   screenSubtitle: {
     fontSize: 14,
@@ -315,7 +316,13 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+    marginTop:-50,
     paddingHorizontal: 20,
+    paddingTop:20,
+    borderTopLeftRadius:24,
+    borderTopRightRadius:24,
+    backgroundColor:'#F5F2FE',
+    elevation:1,
   },
   floatingGradientFab: {
     position: 'absolute',

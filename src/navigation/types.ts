@@ -44,6 +44,12 @@ export type RootStackParamList = {
   MedicineOverview: {schedule: MedicationSchedule};
   ReportsList: undefined;
   DoctorList: undefined;
+  DoctorProfile: {
+    doctorId: string;
+    doctorName?: string;
+    specialty?: string;
+    consultationFee?: string;
+  };
   BookVideoCall: {
     doctorId: string;
     doctorName?: string;

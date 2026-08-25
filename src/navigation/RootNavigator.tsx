@@ -74,6 +74,9 @@ import { OrderCompletedDetailsScreen } from '../screens/home/OrderCompletedDetai
 import { PharmacyPrescriptionMenuScreen } from '../screens/home/PharmacyPrescriptionMenuScreen';
 import { ChooseFromPharmacyGalleryScreen } from '../screens/home/ChooseFromPharmacyGalleryScreen';
 import { DoctorListScreen } from '../screens/home/DoctorListScreen';
+// Aliased: src/screens/doctor exports a DoctorProfileScreen too (the doctor's
+// own portal profile, route DProfile). This is the patient-facing view.
+import { DoctorProfileScreen as CustomerDoctorProfileScreen } from '../screens/home/DoctorProfileScreen';
 import { ReportsListScreen } from '../screens/home/ReportsListScreen';
 import { AiSymptomHome } from '../screens/aisymptom/screens/AiSymptomHome/AiSymptomHome';
 import { SymptomDurationScreen } from '../screens/aisymptom/screens/SymptomDurationScreen/SymptomDurationScreen';
@@ -254,6 +257,11 @@ export function RootNavigator({
       <Stack.Screen
         name="DoctorList"
         component={DoctorListScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="DoctorProfile"
+        component={CustomerDoctorProfileScreen}
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen

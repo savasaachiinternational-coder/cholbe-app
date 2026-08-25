@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -48,6 +49,16 @@ const SUMMARY_SNAP_INTERVAL = SUMMARY_CARD_WIDTH + SUMMARY_CARD_GAP;
 const SUB_TAB_SCROLL_STEP = 160;
 // Single source for the page tint so the header, sub-tab bar and body stay aligned.
 const PAGE_BG = '#F4F1FD';
+// Shared geometry for the design system's 286deg gradients: the run goes from
+// the right edge, just below centre, to the left edge, just above it.
+const GRADIENT_286 = {
+  start: {x: 0.98, y: 0.64},
+  end: {x: 0.02, y: 0.36},
+};
+// Gradients/Gradient-Green: linear-gradient(286deg, #307887 0%, #74ACB3 100%)
+const GRADIENT_GREEN = ['#307887', '#74ACB3'];
+// Gradients/Gradient-Red: linear-gradient(286deg, #CB5D67 0%, #F66D74 100%)
+const GRADIENT_RED = ['#CB5D67', '#F66D74'];
 
 type SummaryCarouselItem =
   | {id: 'conditions'; type: 'conditions'}
@@ -247,7 +258,7 @@ export function MyProfileScreen({navigation}: Props) {
   if (loading && !overview) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#0D9488" />
+        <ActivityIndicator size="large" color="#4DA69F" />
       </View>
     );
   }
@@ -324,7 +335,7 @@ export function MyProfileScreen({navigation}: Props) {
           style={styles.headerIconButton}
           activeOpacity={0.7}
           onPress={() => navigation.goBack()}>
-          <Feather name="chevron-left" size={24} color="#1E293B" />
+          <Feather name="chevron-left" size={24} color="#424242" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Profile</Text>
         <TouchableOpacity
@@ -334,7 +345,7 @@ export function MyProfileScreen({navigation}: Props) {
           <Feather
             name="edit-2"
             size={14}
-            color="#475569"
+            color="#424242"
             style={styles.editIconMargin}
           />
           <Text style={styles.editProfileTopText}>Edit Profile</Text>
@@ -354,7 +365,7 @@ export function MyProfileScreen({navigation}: Props) {
             <Feather
               name="chevron-left"
               size={18}
-              color={canScrollSubTabsLeft ? '#475569' : '#CBD5E1'}
+              color={canScrollSubTabsLeft ? '#424242' : '#E6E3EE'}
             />
           </TouchableOpacity>
         ) : null} */}
@@ -412,7 +423,7 @@ export function MyProfileScreen({navigation}: Props) {
             <Feather
               name="chevron-right"
               size={18}
-              color={canScrollSubTabsRight ? '#475569' : '#CBD5E1'}
+              color={canScrollSubTabsRight ? '#424242' : '#E6E3EE'}
             />
           </TouchableOpacity>
         ) : null} */}
@@ -432,7 +443,7 @@ export function MyProfileScreen({navigation}: Props) {
               style={styles.avatarCameraBadge}
               activeOpacity={0.8}
               onPress={() => navigation.navigate('EditProfile')}>
-              <Feather name="camera" size={12} color="#0D9488" />
+              <Feather name="camera" size={12} color="#4DA69F" />
             </TouchableOpacity>
           </View>
 
@@ -445,15 +456,15 @@ export function MyProfileScreen({navigation}: Props) {
             ) : null}
             <Text style={styles.userDemographicsText}>{demographics}</Text>
             <View style={styles.userMetaLine}>
-              <Feather name="map-pin" size={11} color="#408E91" />
+              <Feather name="map-pin" size={11} color="#4DA69F" />
               <Text style={styles.userMetaRow}>{location}</Text>
             </View>
             <View style={styles.userMetaLine}>
-              <Feather name="phone" size={11} color="#408E91" />
+              <Feather name="phone" size={11} color="#4DA69F" />
               <Text style={styles.userMetaRow}>{user?.phone ?? '—'}</Text>
             </View>
             <View style={styles.userMetaLine}>
-              <Feather name="mail" size={11} color="#408E91" />
+              <Feather name="mail" size={11} color="#4DA69F" />
               <Text style={styles.userMetaRow}>{user?.email ?? '—'}</Text>
             </View>
           </View>
@@ -490,12 +501,12 @@ export function MyProfileScreen({navigation}: Props) {
               return (
                 <View style={styles.summaryMetricsCard}>
                   <View style={styles.summaryCardHeader}>
-                    <Feather name="heart" size={16} color="#E11D48" />
+                    <Feather name="heart" size={16} color="#E16160" />
                     <Text style={styles.summaryCardTitle}>Medical Conditions</Text>
                     <Feather
                       name="chevron-right"
                       size={16}
-                      color="#94A3B8"
+                      color="#757575"
                       style={styles.summaryCardArrow}
                     />
                   </View>
@@ -518,12 +529,12 @@ export function MyProfileScreen({navigation}: Props) {
               return (
                 <View style={styles.summaryMetricsCard}>
                   <View style={styles.summaryCardHeader}>
-                    <FontAwesome name="medkit" size={16} color="#0D9488" />
+                    <FontAwesome name="medkit" size={16} color="#4DA69F" />
                     <Text style={styles.summaryCardTitle}>Current Medications</Text>
                     <Feather
                       name="chevron-right"
                       size={16}
-                      color="#94A3B8"
+                      color="#757575"
                       style={styles.summaryCardArrow}
                     />
                   </View>
@@ -544,12 +555,12 @@ export function MyProfileScreen({navigation}: Props) {
             return (
               <View style={styles.summaryMetricsCard}>
                 <View style={styles.summaryCardHeader}>
-                  <Feather name="activity" size={16} color="#0D9488" />
+                  <Feather name="activity" size={16} color="#4DA69F" />
                   <Text style={styles.summaryCardTitle}>Health Vitals</Text>
                   <Feather
                     name="chevron-right"
                     size={16}
-                    color="#94A3B8"
+                    color="#757575"
                     style={styles.summaryCardArrow}
                   />
                 </View>
@@ -607,10 +618,16 @@ export function MyProfileScreen({navigation}: Props) {
               <Text style={styles.doctorInlineChatText}>Chat</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.doctorInlineBookButton}
+              style={styles.doctorInlineBookButtonWrap}
               activeOpacity={0.8}
               onPress={bookAppointment}>
-              <Text style={styles.doctorInlineBookText}>Book Appointment</Text>
+              <LinearGradient
+                colors={GRADIENT_GREEN}
+                start={GRADIENT_286.start}
+                end={GRADIENT_286.end}
+                style={styles.doctorInlineBookButton}>
+                <Text style={styles.doctorInlineBookText}>Book Appointment</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -621,7 +638,7 @@ export function MyProfileScreen({navigation}: Props) {
             style={styles.sectionInlineEditRow}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('EditProfile')}>
-            <Feather name="edit-2" size={12} color="#64748B" />
+            <Feather name="edit-2" size={12} color="#616161" />
             <Text style={styles.sectionInlineEditText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -652,14 +669,14 @@ export function MyProfileScreen({navigation}: Props) {
                   style={styles.contactCallButton}
                   activeOpacity={0.8}
                   onPress={() => dialPhone(contact.phone)}>
-                  <Feather name="phone" size={12} color="#475569" />
+                  <Feather name="phone" size={12} color="#424242" />
                   <Text style={styles.contactActionText}>Call</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.contactCallButton}
                   activeOpacity={0.8}
                   onPress={() => smsPhone(contact.phone)}>
-                  <Feather name="message-square" size={12} color="#475569" />
+                  <Feather name="message-square" size={12} color="#424242" />
                   <Text style={styles.contactActionText}>SMS</Text>
                 </TouchableOpacity>
               </View>
@@ -667,18 +684,24 @@ export function MyProfileScreen({navigation}: Props) {
           ))}
 
           <TouchableOpacity
-            style={styles.addContractButton}
+            style={styles.addContractButtonWrap}
             activeOpacity={0.9}
             onPress={openEmergencyModal}>
-            <Feather
-              name="plus"
-              size={16}
-              color="#FFFFFF"
-              style={styles.plusIconMargin}
-            />
-            <Text style={styles.addContractButtonText}>
-              Add Emergency Contact
-            </Text>
+            <LinearGradient
+              colors={GRADIENT_RED}
+              start={GRADIENT_286.start}
+              end={GRADIENT_286.end}
+              style={styles.addContractButton}>
+              <Feather
+                name="plus"
+                size={16}
+                color="#FFFFFF"
+                style={styles.plusIconMargin}
+              />
+              <Text style={styles.addContractButtonText}>
+                Add Emergency Contact
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -690,7 +713,7 @@ export function MyProfileScreen({navigation}: Props) {
                 style={styles.sectionInlineEditRow}
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate('AddFamilyMember')}>
-                <Feather name="edit-2" size={12} color="#64748B" />
+                <Feather name="edit-2" size={12} color="#616161" />
                 <Text style={styles.sectionInlineEditText}>Edit</Text>
               </TouchableOpacity>
             </View>
@@ -706,7 +729,7 @@ export function MyProfileScreen({navigation}: Props) {
                   activeOpacity={0.85}
                   onPress={() => navigation.navigate('AddFamilyMember')}>
                   <View style={styles.familyAddPlaceholder}>
-                    <Feather name="plus" size={20} color="#0D9488" />
+                    <Feather name="plus" size={20} color="#4DA69F" />
                   </View>
                   <View style={styles.familyMemberMeta}>
                     <Text style={styles.familyMemberName}>Add member</Text>
@@ -769,7 +792,7 @@ export function MyProfileScreen({navigation}: Props) {
             style={styles.profileActionButton}
             activeOpacity={0.85}
             onPress={() => navigation.navigate('MyAppointment')}>
-            <Feather name="file-text" size={18} color="#0D9488" />
+            <Feather name="file-text" size={18} color="#4DA69F" />
             <Text style={styles.profileActionButtonText}>
               Consultation Summary
             </Text>
@@ -778,7 +801,7 @@ export function MyProfileScreen({navigation}: Props) {
             style={styles.profileActionButton}
             activeOpacity={0.85}
             onPress={() => navigation.navigate('MyAppointment')}>
-            <Feather name="calendar" size={18} color="#0D9488" />
+            <Feather name="calendar" size={18} color="#4DA69F" />
             <Text style={styles.profileActionButtonText}>My Appointment</Text>
           </TouchableOpacity>
         </View>
@@ -790,7 +813,7 @@ export function MyProfileScreen({navigation}: Props) {
             activeOpacity={0.8}
             onPress={() => navigation.navigate('ReportsList')}>
             <Text style={styles.viewAllTextLink}>View All Reports</Text>
-            <Feather name="chevron-right" size={14} color="#64748B" />
+            <Feather name="chevron-right" size={14} color="#616161" />
           </TouchableOpacity>
         </View>
 
@@ -828,7 +851,7 @@ export function MyProfileScreen({navigation}: Props) {
               <Feather
                 name="chevron-right"
                 size={16}
-                color="#64748B"
+                color="#616161"
                 style={styles.actionArrowIconRight}
               />
             </TouchableOpacity>
@@ -842,7 +865,7 @@ export function MyProfileScreen({navigation}: Props) {
             activeOpacity={0.8}
             onPress={() => navigation.navigate('Notifications')}>
             <View style={[styles.settingsIconWrapper, styles.notifIconBg]}>
-              <Feather name="bell" size={20} color="#0284C7" />
+              <Feather name="bell" size={20} color="#4DA69F" />
             </View>
             <View style={styles.settingsTextContent}>
               <Text style={styles.settingsTitleText}>Notifications</Text>
@@ -850,20 +873,20 @@ export function MyProfileScreen({navigation}: Props) {
                 Manage reminders and alerts
               </Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <Feather name="chevron-right" size={18} color="#757575" />
           </TouchableOpacity>
 
           <View style={styles.settingsInnerSeparatorLine} />
 
           <TouchableOpacity style={styles.settingsRowItem} activeOpacity={0.8}>
             <View style={[styles.settingsIconWrapper, styles.langIconBg]}>
-              <Feather name="globe" size={20} color="#475569" />
+              <Feather name="globe" size={20} color="#424242" />
             </View>
             <View style={styles.settingsTextContent}>
               <Text style={styles.settingsTitleText}>Language</Text>
               <Text style={styles.settingsSubText}>English</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <Feather name="chevron-right" size={18} color="#757575" />
           </TouchableOpacity>
 
           <View style={styles.settingsInnerSeparatorLine} />
@@ -872,14 +895,14 @@ export function MyProfileScreen({navigation}: Props) {
             style={styles.settingsRowItem}
             activeOpacity={0.8}
             onPress={() => setChangePwVisible(true)}>
-            <View style={[styles.settingsIconWrapper, {backgroundColor: '#EFF6FF'}]}>
-              <Feather name="lock" size={20} color="#2563EB" />
+            <View style={[styles.settingsIconWrapper, {backgroundColor: '#EDF7F6'}]}>
+              <Feather name="lock" size={20} color="#4DA69F" />
             </View>
             <View style={styles.settingsTextContent}>
               <Text style={styles.settingsTitleText}>Change Password</Text>
               <Text style={styles.settingsSubText}>Update your account password</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <Feather name="chevron-right" size={18} color="#757575" />
           </TouchableOpacity>
 
           <View style={styles.settingsInnerSeparatorLine} />
@@ -889,13 +912,13 @@ export function MyProfileScreen({navigation}: Props) {
             activeOpacity={0.8}
             onPress={handleLogout}>
             <View style={[styles.settingsIconWrapper, styles.logoutIconBg]}>
-              <Feather name="log-out" size={20} color="#DC2626" />
+              <Feather name="log-out" size={20} color="#E16160" />
             </View>
             <View style={styles.settingsTextContent}>
               <Text style={styles.settingsTitleTextLogout}>Logout</Text>
               <Text style={styles.settingsSubText}>Sign out of your account</Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <Feather name="chevron-right" size={18} color="#757575" />
           </TouchableOpacity>
 
           <View style={styles.settingsInnerSeparatorLine} />
@@ -905,7 +928,7 @@ export function MyProfileScreen({navigation}: Props) {
             activeOpacity={0.8}
             onPress={handleDeleteAccount}>
             <View style={[styles.settingsIconWrapper, styles.logoutIconBg]}>
-              <Feather name="trash-2" size={20} color="#DC2626" />
+              <Feather name="trash-2" size={20} color="#E16160" />
             </View>
             <View style={styles.settingsTextContent}>
               <Text style={styles.settingsTitleTextLogout}>Delete account</Text>
@@ -913,7 +936,7 @@ export function MyProfileScreen({navigation}: Props) {
                 Permanently remove your data from Cholbe
               </Text>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <Feather name="chevron-right" size={18} color="#757575" />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -991,7 +1014,7 @@ function CustomerChangePasswordModal({visible, onClose}: {visible: boolean; onCl
           <View style={cpStyles.header}>
             <Text style={cpStyles.title}>Change Password</Text>
             <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-              <Feather name="x" size={22} color="#1E293B" />
+              <Feather name="x" size={22} color="#424242" />
             </TouchableOpacity>
           </View>
           {[
@@ -1004,7 +1027,7 @@ function CustomerChangePasswordModal({visible, onClose}: {visible: boolean; onCl
               <TextInput
                 style={cpStyles.input}
                 placeholder="••••••••"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#757575"
                 secureTextEntry
                 value={field.value}
                 onChangeText={field.setter}
@@ -1043,22 +1066,38 @@ const cpStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  title: {fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600', color: '#1E293B'},
+  title: {
+    fontSize: 14,
+    lineHeight: 19.6,
+    letterSpacing: 0.2,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#212121',
+  },
   field: {marginBottom: 14},
-  label: {fontSize: 12, fontFamily: FONT.semibold, fontWeight: '600', color: '#475569', marginBottom: 6},
+  label: {
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#616161',
+    marginBottom: 6,
+  },
   input: {
-    backgroundColor: '#F2F1FB',
+    backgroundColor: '#F3F2FB',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     paddingHorizontal: 14,
     height: 46,
-    fontSize: 14,
+    fontSize: 12,
+    letterSpacing: 0.2,
     fontFamily: FONT.regular,
-    color: '#1E293B',
+    color: '#424242',
   },
   btn: {
-    backgroundColor: '#0D9488',
+    backgroundColor: '#4DA69F',
     borderRadius: 12,
     height: 48,
     justifyContent: 'center',
@@ -1066,20 +1105,27 @@ const cpStyles = StyleSheet.create({
     marginTop: 8,
   },
   btnDisabled: {opacity: 0.6},
-  btnText: {color: '#FFFFFF', fontSize: 15, fontFamily: FONT.semibold, fontWeight: '600'},
+  btnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+  },
 });
 
 function QuickActionIcon({type}: {type: QuickAction['icon']}) {
   if (type === 'medications') {
-    return <FontAwesome name="medkit" size={20} color="#0D9488" />;
+    return <FontAwesome name="medkit" size={20} color="#4DA69F" />;
   }
   if (type === 'upload') {
-    return <Feather name="upload-cloud" size={20} color="#1E293B" />;
+    return <Feather name="upload-cloud" size={20} color="#424242" />;
   }
   if (type === 'passport') {
-    return <Feather name="activity" size={20} color="#0D9488" />;
+    return <Feather name="activity" size={20} color="#4DA69F" />;
   }
-  return <Feather name="shield" size={20} color="#0D9488" />;
+  return <Feather name="shield" size={20} color="#4DA69F" />;
 }
 
 const styles = StyleSheet.create({
@@ -1116,7 +1162,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E6E4F0',
+    borderColor: '#E6E3EE',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -1150,14 +1196,15 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   profileSubTabActive: {
-    backgroundColor: '#408E91',
+    backgroundColor: '#4DA69F',
   },
   profileSubTabText: {
-    fontSize: 13,
+    fontSize: 12,
+    letterSpacing: 0.2,
     lineHeight: Platform.OS === 'android' ? 18 : undefined,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#616161',
     ...(Platform.OS === 'android' ? {includeFontPadding: false} : {}),
   },
   profileSubTabTextActive: {
@@ -1169,6 +1216,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    lineHeight: 21.6,
     fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#424242',
@@ -1179,9 +1227,9 @@ const styles = StyleSheet.create({
   editProfileTopButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F1FD',
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
@@ -1190,17 +1238,19 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   editProfileTopText: {
-    fontSize: 12,
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
-    color: '#475569',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#424242',
   },
   profileBioSection: {
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#E6E4F0',
+    borderColor: '#E6E3EE',
     paddingVertical: 16,
     marginTop: 4,
     marginBottom: 16,
@@ -1212,13 +1262,13 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#E6E3EE',
   },
   avatarCameraBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#E6F4F1',
+    backgroundColor: '#FFFFFF',
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -1233,12 +1283,15 @@ const styles = StyleSheet.create({
   },
   userNameText: {
     fontSize: 18,
+    lineHeight: 21.6,
     fontFamily: FONT.semibold,
     fontWeight: '600',
     color: '#212121',
   },
   userDemographicsText: {
     fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
     color: '#424242',
     fontFamily: FONT.regular,
     fontWeight: '400',
@@ -1246,8 +1299,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   guardianHintText: {
-    fontSize: 11,
-    color: '#0D9488',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#4DA69F',
     fontFamily: FONT.semibold,
     fontWeight: '600',
     marginTop: 2,
@@ -1261,9 +1316,10 @@ const styles = StyleSheet.create({
   },
   userMetaRow: {
     fontSize: 10,
+    letterSpacing: 0.2,
     fontFamily: FONT.regular,
     color: '#424242',
-    lineHeight: 15,
+    lineHeight: 11,
     flex: 1,
   },
   summaryHorizontalScroll: {
@@ -1276,10 +1332,10 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   summaryMetricsCard: {
-    backgroundColor: '#FAF9FF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     padding: 12,
     width: SUMMARY_CARD_WIDTH,
     marginRight: SUMMARY_CARD_GAP,
@@ -1296,17 +1352,19 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#E6E3EE',
   },
   summaryDotActive: {
     width: 18,
-    backgroundColor: '#408E91',
+    backgroundColor: '#4DA69F',
   },
   summaryEmptyText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#757575',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   vitalRow: {
     flexDirection: 'row',
@@ -1315,16 +1373,20 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   vitalLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#616161',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   vitalValue: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#424242',
   },
   summaryCardHeader: {
     flexDirection: 'row',
@@ -1333,14 +1395,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   summaryCardTitle: {
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#424242',
     marginLeft: 6,
     paddingRight: 18,
     flex: 1,
-    lineHeight: 17,
   },
   summaryCardArrow: {
     position: 'absolute',
@@ -1352,25 +1415,29 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tagChip: {
-    backgroundColor: '#FFEBEB',
+    backgroundColor: '#FBE9E9',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   tagChipText: {
     fontSize: 10,
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
-    color: '#EF4444',
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+    color: '#424242',
   },
   medicationQuantityText: {
-    fontSize: 13,
-    color: '#475569',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#424242',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   viewDetailsChipLink: {
-    backgroundColor: '#E6F4F1',
+    backgroundColor: '#EDF7F6',
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -1378,24 +1445,30 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   viewDetailsChipText: {
-    fontSize: 11,
-    color: '#0D9488',
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#4DA69F',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   sectionTitleLabel: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#475569',
+    color: '#616161',
     marginTop: 20,
     marginBottom: 12,
   },
   sectionTitleLabelNoMargin: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#475569',
+    color: '#616161',
   },
   sectionTitleHeaderRow: {
     flexDirection: 'row',
@@ -1417,16 +1490,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sectionInlineEditText: {
-    fontSize: 13,
-    color: '#64748B',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#616161',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   assignedDoctorCard: {
-    backgroundColor: '#FAF9FF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1435,7 +1510,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#E6E3EE',
   },
   doctorCardMeta: {
     marginLeft: 12,
@@ -1443,16 +1518,20 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   doctorCardNameText: {
-    fontSize: 15,
+    fontSize: 14,
+    lineHeight: 19.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#212121',
   },
   doctorCardSpecText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#616161',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   doctorActionButtonsRow: {
     flexDirection: 'row',
@@ -1460,34 +1539,44 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   doctorInlineChatButton: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E6E3EE',
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 40,
   },
   doctorInlineChatText: {
-    fontSize: 12,
-    color: '#475569',
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#424242',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+  },
+  // Gradient fill lives on the inner LinearGradient; the wrapper clips it to
+  // the pill radius and carries the layout.
+  doctorInlineBookButtonWrap: {
+    borderRadius: 40,
+    overflow: 'hidden',
+    flexShrink: 0,
   },
   doctorInlineBookButton: {
-    backgroundColor: '#408E91',
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 40,
   },
   doctorInlineBookText: {
-    fontSize: 12,
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
     color: '#FFFFFF',
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   emergencyContractsContainer: {
-    backgroundColor: '#FAF9FF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     padding: 14,
     gap: 12,
   },
@@ -1495,7 +1584,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#E6E3EE',
     paddingBottom: 10,
   },
   emergencyContactRowLast: {
@@ -1506,43 +1595,49 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E6E3EE',
   },
   contactAvatarPlaceholder: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E6E3EE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   contactAvatarInitial: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#475569',
+    color: '#424242',
   },
   contactBaseMeta: {
     marginLeft: 10,
     width: SCREEN_WIDTH * 0.18,
   },
   contactNameTitle: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#212121',
   },
   contactRelationLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#616161',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   contactPhoneText: {
-    fontSize: 12,
-    color: '#475569',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#424242',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     flex: 1,
   },
   contactActionButtonsGroup: {
@@ -1553,35 +1648,42 @@ const styles = StyleSheet.create({
   contactCallButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#E6E3EE',
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 8,
     gap: 4,
   },
   contactActionText: {
-    fontSize: 11,
-    color: '#475569',
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#424242',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
+  },
+  addContractButtonWrap: {
+    borderRadius: 40,
+    overflow: 'hidden',
+    marginTop: 4,
   },
   addContractButton: {
-    backgroundColor: '#E11D48',
     borderRadius: 40,
     paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
   },
   plusIconMargin: {
     marginRight: 4,
   },
   addContractButtonText: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   familyCarouselScroll: {
     marginHorizontal: -16,
@@ -1590,10 +1692,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   familyAvatarCard: {
-    backgroundColor: '#FAF9FF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1604,32 +1706,34 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#E6E3EE',
   },
   familyAvatarImage: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#E6E3EE',
   },
   familyAvatarPlaceholder: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#E6E3EE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   familyAvatarInitial: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#475569',
+    color: '#424242',
   },
   emptySummaryText: {
-    fontSize: 13,
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
     fontFamily: FONT.regular,
-    color: '#64748B',
+    color: '#616161',
     paddingVertical: 8,
   },
   familyMemberMeta: {
@@ -1637,26 +1741,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   familyMemberName: {
-    fontSize: 13,
+    fontSize: 14,
+    lineHeight: 19.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#212121',
   },
   familyMemberRelation: {
-    fontSize: 11,
-    color: '#64748B',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#616161',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   familyMemberLogin: {
     fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
     fontFamily: FONT.regular,
-    color: '#94A3B8',
+    color: '#757575',
     marginTop: 2,
   },
   familyTapHint: {
-    fontSize: 9,
-    color: '#0D9488',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#4DA69F',
     marginTop: 4,
     fontFamily: FONT.semibold,
     fontWeight: '600',
@@ -1665,7 +1777,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E6F4F1',
+    backgroundColor: '#EDF7F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1680,7 +1792,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     paddingVertical: 14,
     paddingHorizontal: 10,
     alignItems: 'center',
@@ -1689,9 +1801,11 @@ const styles = StyleSheet.create({
   },
   profileActionButtonText: {
     fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#424242',
     textAlign: 'center',
   },
   viewAllRowLink: {
@@ -1699,10 +1813,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewAllTextLink: {
-    fontSize: 12,
-    color: '#64748B',
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#616161',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
     marginRight: 2,
   },
   summaryGridContainer: {
@@ -1715,34 +1831,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     padding: 12,
     width: GRID_ITEM_WIDTH,
   },
   gridSummaryLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: '#424242',
+    fontFamily: FONT.regular,
+    fontWeight: '400',
   },
   gridSummaryValue: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#424242',
     marginTop: 2,
   },
   gridSummarySub: {
     fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
     fontFamily: FONT.regular,
-    color: '#94A3B8',
+    color: '#424242',
     marginTop: 4,
   },
   actionGridRowButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1753,7 +1875,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E6F4F1',
+    backgroundColor: '#EDF7F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1764,14 +1886,18 @@ const styles = StyleSheet.create({
   },
   actionButtonTitleText: {
     fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#424242',
   },
   actionButtonSubText: {
-    fontSize: 9,
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
     fontFamily: FONT.regular,
-    color: '#64748B',
+    color: '#424242',
     marginTop: 2,
   },
   actionArrowIconRight: {
@@ -1782,7 +1908,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
+    borderColor: '#E6E3EE',
     paddingVertical: 4,
     marginBottom: 8,
   },
@@ -1800,39 +1926,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   notifIconBg: {
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#EDF7F6',
   },
   langIconBg: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F3F2FB',
   },
   logoutIconBg: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#FBE9E9',
   },
   settingsTextContent: {
     marginLeft: 12,
     flex: 1,
   },
   settingsTitleText: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#424242',
   },
   settingsTitleTextLogout: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 14.6,
+    letterSpacing: 0.2,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#DC2626',
+    color: '#E16160',
   },
   settingsSubText: {
-    fontSize: 11,
+    fontSize: 10,
+    lineHeight: 11,
+    letterSpacing: 0.2,
     fontFamily: FONT.regular,
-    color: '#64748B',
+    color: '#424242',
     marginTop: 2,
   },
   settingsInnerSeparatorLine: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#E6E3EE',
     marginHorizontal: 14,
   },
   floatingScanButton: {
@@ -1841,7 +1973,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#A7F3D0',
+    backgroundColor: '#EDF7F6',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

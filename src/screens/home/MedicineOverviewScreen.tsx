@@ -104,7 +104,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 8,
   },
   headerIconButton: {
     padding: 4,
