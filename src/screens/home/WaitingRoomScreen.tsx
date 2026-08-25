@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   roomCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F5F4FD',
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,

@@ -141,6 +141,16 @@ export function DoctorListScreen({navigation}: Props) {
   };
 
 
+  const openDoctorProfile = (doc: Doctor) => {
+    navigation.navigate('DoctorProfile', {
+      doctorId: doc.id,
+      doctorName: doc.user.fullName,
+      specialty: doc.specialty,
+      consultationFee: formatFee(doc.fee),
+    });
+  };
+
+
   const bookDoctor = (doc: Doctor) => {
     navigation.navigate('BookVideoCall', {
       doctorId: doc.id,
@@ -307,7 +317,11 @@ export function DoctorListScreen({navigation}: Props) {
         ) : (
           <View style={styles.doctorsGridContainer}>
             {filteredDoctors.map(doc => (
-              <View key={doc.id} style={[styles.doctorProductCard, {width: CARD_WIDTH}]}>
+              <TouchableOpacity
+                key={doc.id}
+                style={[styles.doctorProductCard, {width: CARD_WIDTH}]}
+                activeOpacity={0.85}
+                onPress={() => openDoctorProfile(doc)}>
                 <Image
                   // source={
                   //   doc.imageUrl || doc.user.avatarUrl
@@ -344,7 +358,7 @@ export function DoctorListScreen({navigation}: Props) {
                     <Text style={styles.appointmentButtonText}>Book Appointment</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}

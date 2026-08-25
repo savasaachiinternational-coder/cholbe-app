@@ -43,6 +43,19 @@ import { FONT } from '../../theme/typography';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PRODUCT_CARD_WIDTH = SCREEN_WIDTH * 0.43;
 
+// Shared geometry for the design system's 286deg gradients. A CSS angle of
+// 286deg points left-and-slightly-up — direction (sin a, -cos a) — so the run
+// goes from the right edge, just below centre, to the left edge, just above it.
+const GRADIENT_286 = {
+  start: { x: 0.98, y: 0.64 },
+  end: { x: 0.02, y: 0.36 },
+};
+// Gradients/Gradient-Green: linear-gradient(286deg, #307887 0%, #74ACB3 100%)
+const GRADIENT_GREEN = ['#307887', '#74ACB3'];
+const GRADIENT_DISABLED = ['#94A3B8', '#94A3B8'];
+// Gradients/Gradient-Red: linear-gradient(286deg, #CB5D67 0%, #F66D74 100%)
+const GRADIENT_RED = ['#CB5D67', '#F66D74'];
+
 function normalizeTime(timeStr: string) {
   return timeStr.trim().replace(/\s+/g, ' ').toUpperCase();
 }
@@ -271,7 +284,7 @@ export function HomeScreen() {
         >
           <View style={styles.profileBgWrap}>
             <Image
-              source={require('../../assets/home_profile_bg.png')}
+              source={require('../../assets/home_profile_bg4.png')}
               style={styles.profileBgArt}
               resizeMode="cover"
             />
@@ -328,18 +341,29 @@ export function HomeScreen() {
             ) : null}
 
             <TouchableOpacity
-              style={[
-                styles.markTakenButton,
-                (!canMarkTaken || allDosesTaken) &&
-                  styles.markTakenButtonDisabled,
-              ]}
+              style={styles.markTakenButtonWrap}
               activeOpacity={0.85}
               onPress={() => markTaken()}
               disabled={!canMarkTaken || allDosesTaken}
             >
-              <Text style={styles.markTakenButtonText}>
-                {allDosesTaken ? 'Taken for today' : 'Mark as Taken'}
-              </Text>
+              <LinearGradient
+                colors={
+                  !canMarkTaken || allDosesTaken
+                    ? GRADIENT_DISABLED
+                    : GRADIENT_GREEN
+                }
+                start={GRADIENT_286.start}
+                end={GRADIENT_286.end}
+                style={[
+                  styles.markTakenButton,
+                  (!canMarkTaken || allDosesTaken) &&
+                    styles.markTakenButtonDisabled,
+                ]}
+              >
+                <Text style={styles.markTakenButtonText}>
+                  {allDosesTaken ? 'Taken for today' : 'Mark as Taken'}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -473,7 +497,7 @@ export function HomeScreen() {
           <View style={styles.alertCard}>
             <View style={styles.alertLeftContent}>
               <View style={styles.alertRow}>
-                <Feather name="bell" size={16} color="#475569" />
+                <Feather name="bell" size={20} color="#475569" />
                 <Text style={styles.alertText}>
                   Next refill in {refill?.daysUntil ?? 0} days
                 </Text>
@@ -488,8 +512,15 @@ export function HomeScreen() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.scanBadge} activeOpacity={0.8} onPress={() => navigation.navigate('AiSymptomHome')}>
-             <Image style={styles.aiHelpIcon} source={require('../../assets/syaiicon.png')}/>
+            <TouchableOpacity
+              style={styles.scanBadge}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('AiSymptomHome')}
+            >
+              <Image
+                style={styles.aiHelpIcon}
+                source={require('../../assets/syaiicon.png')}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -543,91 +574,98 @@ export function HomeScreen() {
           </View>
 
           <TouchableOpacity
-            style={styles.addMedicineButton}
+            style={styles.addMedicineButtonWrap}
             activeOpacity={0.9}
             onPress={() => navigation.navigate('AddMedication')}
           >
-            <Feather
-              name="plus"
-              size={20}
-              color="#FFFFFF"
-              style={styles.addMedIcon}
-            />
-            <Text style={styles.addMedicineButtonText}>Add Medicine</Text>
+            <LinearGradient
+              colors={GRADIENT_RED}
+              start={GRADIENT_286.start}
+              end={GRADIENT_286.end}
+              style={styles.addMedicineButton}
+            >
+              <Feather
+                name="plus"
+                size={20}
+                color="#FFFFFF"
+                style={styles.addMedIcon}
+              />
+              <Text style={styles.addMedicineButtonText}>Add Medicine</Text>
+            </LinearGradient>
           </TouchableOpacity>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.tabsContainer}
-            contentContainerStyle={styles.tabsContent}
-          >
-            {SCHEDULE_TABS.map(tab => {
-              const active =
-                tab.key !== 'waitingRoom' && scheduleTab === tab.key;
-              const isWaitingRoom = tab.key === 'waitingRoom';
-              return (
-                <TouchableOpacity
-                  key={tab.key}
-                  style={
-                    isWaitingRoom
-                      ? styles.waitingRoomTab
-                      : active
-                      ? styles.activeTab
-                      : styles.inactiveTab
-                  }
-                  onPress={() => {
-                    if (isWaitingRoom) {
-                      const appt = dashboard?.nextAppointment;
-                      if (appt) {
-                        navigation.navigate('WaitingRoom', {
-                          appointmentId: appt.id,
-                          doctorName: appt.doctorName,
-                          specialty: appt.specialty,
-                        });
-                      } else {
-                        navigation.navigate('MyAppointment');
-                      }
-                      return;
-                    }
-                    setScheduleTab(tab.key);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  {active && <View style={styles.activeTabDot} />}
-                  <Text
+          <View style={styles.tabsOuterContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.tabsContainer}
+              contentContainerStyle={styles.tabsContent}
+            >
+              {SCHEDULE_TABS.map(tab => {
+                const active =
+                  tab.key !== 'waitingRoom' && scheduleTab === tab.key;
+                const isWaitingRoom = tab.key === 'waitingRoom';
+                return (
+                  <TouchableOpacity
+                    key={tab.key}
                     style={
                       isWaitingRoom
-                        ? styles.waitingRoomTabText
+                        ? styles.waitingRoomTab
                         : active
-                        ? styles.activeTabText
-                        : styles.inactiveTabText
+                        ? styles.activeTab
+                        : styles.inactiveTab
                     }
+                    onPress={() => {
+                      if (isWaitingRoom) {
+                        const appt = dashboard?.nextAppointment;
+                        if (appt) {
+                          navigation.navigate('WaitingRoom', {
+                            appointmentId: appt.id,
+                            doctorName: appt.doctorName,
+                            specialty: appt.specialty,
+                          });
+                        } else {
+                          navigation.navigate('MyAppointment');
+                        }
+                        return;
+                      }
+                      setScheduleTab(tab.key);
+                    }}
+                    activeOpacity={0.8}
                   >
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+                    {active && <View style={styles.activeTabDot} />}
+                    <Text
+                      style={
+                        isWaitingRoom
+                          ? styles.waitingRoomTabText
+                          : active
+                          ? styles.activeTabText
+                          : styles.inactiveTabText
+                      }
+                    >
+                      {tab.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
 
-          {scheduleGroups.map(group => (
-            <View key={group.time}>
-              <Text style={styles.timeSectionHeader}>{group.time}</Text>
-              {group.items.map(item => (
-                <ScheduleRow
-                  key={item.id}
-                  item={item}
-                  onTaken={
-                    item.taken || !item.scheduleId || !item.scheduledTime
-                      ? undefined
-                      : () => markTaken(item.scheduleId, item.scheduledTime)
-                  }
-                />
-              ))}
-            </View>
-          ))}
-
+            {scheduleGroups.map(group => (
+              <View key={group.time}>
+                <Text style={styles.timeSectionHeader}>{group.time}</Text>
+                {group.items.map(item => (
+                  <ScheduleRow
+                    key={item.id}
+                    item={item}
+                    onTaken={
+                      item.taken || !item.scheduleId || !item.scheduledTime
+                        ? undefined
+                        : () => markTaken(item.scheduleId, item.scheduledTime)
+                    }
+                  />
+                ))}
+              </View>
+            ))}
+          </View>
           <TouchableOpacity
             style={[styles.viewReportsButton, styles.viewReportsSpaced]}
             activeOpacity={0.8}
@@ -819,10 +857,7 @@ function ScheduleRow({
       <View style={styles.actionIconsRight}>
         {item.showDismiss !== false && !taken && (
           <View
-            style={[
-              styles.dismissCircle,
-              active && styles.dismissCircleActive,
-            ]}
+            style={[styles.dismissCircle, active && styles.dismissCircleActive]}
           >
             <Feather
               name="x"
@@ -881,7 +916,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 4,
     backgroundColor: '#F5F2FE',
   },
   iconButton: {
@@ -903,21 +937,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-  },
-  logoTextPrimary: {
-    fontSize: 20,
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
-    color: '#0284C7',
-  },
-  logoTextSecondary: {
-    fontSize: 10,
-    fontFamily: FONT.medium,
-    fontWeight: '500',
-    color: '#64748B',
-    marginLeft: 4,
-    letterSpacing: 1,
-    marginBottom: 3,
   },
   iconImage: {
     height: 48,
@@ -941,13 +960,13 @@ const styles = StyleSheet.create({
   },
   profileBgArt: {
     position: 'absolute',
-    width: SCREEN_WIDTH * 1.6,
-    height: SCREEN_WIDTH * 1.6,
+    width: SCREEN_WIDTH * 1.4,
+    height: SCREEN_WIDTH * 1.2,
     left: -SCREEN_WIDTH * 0.3,
     top: -SCREEN_WIDTH * 0.62,
-    opacity: 0.25
+    opacity: 0.7,
   },
-  // the curve in the top center
+
   profileBgNotch: {
     position: 'absolute',
     left: 0,
@@ -975,9 +994,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#E2E8F0',
   },
   userMeta: {
@@ -986,9 +1005,9 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 18,
-    fontFamily: FONT.semibold,
+    fontFamily: FONT.bold,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#212121',
   },
   locationRow: {
     flexDirection: 'row',
@@ -996,13 +1015,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   locationText: {
-    fontSize: 13,
-    color: '#64748B',
+    fontSize: 14,
+    color: '#616161',
     marginLeft: 4,
   },
   lastSeenText: {
-    fontSize: 11,
-    color: '#94A3B8',
+    fontSize: 10,
+    color: '#616161',
+    fontWeight: '400',
     marginTop: 4,
   },
   heroCard: {
@@ -1021,27 +1041,27 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   heroLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#475569',
+    color: '#616161',
     marginLeft: 6,
   },
   medicationTitle: {
-    fontSize: 22,
+    fontSize: 16,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#0F172A',
+    color: '#424242',
   },
   medicationSubtitle: {
-    fontSize: 14,
-    color: '#475569',
+    fontSize: 12,
+    color: '#616161',
     marginTop: 2,
   },
   timeTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -1052,18 +1072,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#0EA5E9',
+    color: '#4DA69F',
     marginLeft: 4,
   },
-  markTakenButton: {
-    backgroundColor: '#307887',
-    borderRadius: 18,
-    paddingVertical: 14,
-    alignItems: 'center',
+  // The gradient fill lives on the inner LinearGradient; the wrapper keeps the
+  // spacing and clips the gradient to the pill's radius.
+  markTakenButtonWrap: {
+    borderRadius: 40,
+    overflow: 'hidden',
     marginTop: 8,
   },
+  markTakenButton: {
+    borderRadius: 40,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
   markTakenButtonDisabled: {
-    backgroundColor: '#94A3B8',
     opacity: 0.85,
   },
   markTakenButtonText: {
@@ -1077,11 +1101,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
-    marginBottom:3,
+    marginBottom: 3,
   },
   snoozeText: {
-    fontSize: 13,
-    color: '#64748B',
+    fontSize: 12,
+    color: '#424242',
     marginRight: 2,
   },
   snoozeTextDisabled: {
@@ -1093,10 +1117,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     gap: 12,
   },
-  aiHelpIcon:{
-    height:44,
-    width:44,
-    borderRadius:22
+  aiHelpIcon: {
+    height: 44,
+    width: 44,
+    borderRadius: 22,
   },
   actionButton: {
     flex: 1,
@@ -1107,7 +1131,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E6E3EE',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -1128,7 +1152,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 16,
     marginTop: 16,
-    elevation:1,
+    elevation: 1,
   },
   statusHeader: {
     flexDirection: 'row',
@@ -1137,10 +1161,10 @@ const styles = StyleSheet.create({
   },
   statusTitle: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#475569',
+    color: '#616161',
     marginLeft: 6,
   },
   updateVitalsLink: {
@@ -1183,7 +1207,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   viewReportsButton: {
-    backgroundColor: '#F0FDFA',
+    backgroundColor: '#EDF7F6',
     borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
@@ -1199,11 +1223,12 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   alertCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    backgroundColor: '#F3F2FB',
+    borderRadius: 10,
     padding: 16,
     marginTop: 16,
     position: 'relative',
+    elevation: 1,
   },
   alertLeftContent: {
     paddingRight: 60,
@@ -1216,10 +1241,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   alertText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#475569',
+    color: '#616161',
     marginLeft: 6,
   },
   alertSubtext: {
@@ -1241,7 +1266,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   viewMedicineButton: {
-    backgroundColor: '#F0FDFA',
+    backgroundColor: '#EDF7F6',
     borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
@@ -1262,7 +1287,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 12,
     marginTop: 16,
-    elevation:1
+    elevation: 1,
   },
   statSummaryItem: {
     flex: 1,
@@ -1345,23 +1370,35 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginTop: 8,
   },
+  // Wrapper keeps the spacing and clips the gradient to the pill's radius.
+  addMedicineButtonWrap: {
+    borderRadius: 40,
+    overflow: 'hidden',
+    marginTop: 16,
+  },
   addMedicineButton: {
-    backgroundColor: '#E11D48',
-    borderRadius: 20,
+    borderRadius: 40,
     paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
   },
   addMedIcon: {
     marginRight: 6,
   },
   addMedicineButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+    color: '#FFF',
+    fontSize: 16,
     fontFamily: FONT.semibold,
     fontWeight: '600',
+  },
+  tabsOuterContainer: {
+    marginTop:12,
+    paddingTop:16,
+    backgroundColor: '#F3F2FB',
+    paddingHorizontal:16,
+    elevation:1,
+   
   },
   tabsContainer: {
     marginTop: 20,
@@ -1550,7 +1587,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
     borderWidth: 1,
     borderColor: '#F1F5F9',
-    elevation:1,
+    elevation: 1,
   },
   productCardBody: {
     flex: 1,

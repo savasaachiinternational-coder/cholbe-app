@@ -21,6 +21,7 @@ import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import { authApi } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { FONT } from '../../theme/typography';
+import { LEGAL_URLS } from '../../config/legal';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -227,7 +228,7 @@ export function CreateHealthProfileScreen({
                   </Text>
                   .
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.footerSection}>
