@@ -79,3 +79,5 @@ nasir/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+src/config/googleMaps.ts
+src/config/gemini.ts
