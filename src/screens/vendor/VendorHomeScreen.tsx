@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { vendorApi } from '../../api/vendor';
+import { vendorApi, type VendorDashboard, type VendorDashboardOrder, type VendorDashboardProduct } from '../../api/vendor';
 import { ApiError } from '../../api/client';
 import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import type { RootStackParamList } from '../../navigation/types';
@@ -27,6 +27,7 @@ import type { VendorOrderStatus } from './vendorNav';
 import { NotificationBell } from '../../components/NotificationBell';
 import { RoleMenuDrawer } from '../../components/RoleMenuDrawer';
 import { WaveWithChild } from '../../components/WaveWithChild';
+import { vendorActionLabel, vendorNextStatus } from '../../utils/orderStatusFlow';
 import { FONT } from '../../theme/typography';
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
@@ -91,52 +92,11 @@ function VChartLineSegment({
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VHome'>;
 
-type VendorProduct = {
-  id: string;
-  name: string;
-  genericName?: string | null;
-  category?: string | null;
-  unitPrice: string | number;
-  discountPrice?: string | number | null;
-  stockQuantity: number;
-  minAlertLevel: number;
-  unitType?: string | null;
-  imageUrl?: string | null;
-  isActive: boolean;
-};
-
-type VendorOrder = {
-  id: string;
-  orderNumber: string;
-  status: string;
-  paymentMethod: string;
-  addressSnapshot?: { formattedAddress?: string; region?: string } | null;
-  customer?: { fullName: string; phone?: string | null };
-  items: { name: string; genericName?: string | null }[];
-};
-
-type DashboardData = {
-  vendor: {
-    id: string;
-    pharmacyName: string;
-    address?: string | null;
-    user?: { fullName: string };
-  };
-  stats: {
-    productCount: number;
-    orderCount: number;
-    pendingOrders: number;
-    totalRevenue: string | number;
-  };
-  recentProducts: VendorProduct[];
-  recentOrders: VendorOrder[];
-};
-
 function formatTk(amount: string | number) {
   return formatBdt(amount);
 }
 
-function discountLabel(product: VendorProduct) {
+function discountLabel(product: VendorDashboardProduct) {
   if (!product.discountPrice) return null;
   const unit =
     typeof product.unitPrice === 'string'
@@ -169,7 +129,7 @@ function paymentMethodLabel(method: string) {
   return 'Cash on Delivery';
 }
 
-function orderLocation(order: VendorOrder) {
+function orderLocation(order: VendorDashboardOrder) {
   const snap = order.addressSnapshot;
   if (!snap) return '—';
   return snap.formattedAddress ?? snap.region ?? '—';
@@ -180,7 +140,7 @@ export function VendorHomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [dashboard, setDashboard] = useState<VendorDashboard | null>(null);
   const [monthlyRevenue, setMonthlyRevenue] = useState<
     { month: string; revenue: number }[]
   >([]);
@@ -194,7 +154,7 @@ export function VendorHomeScreen({ navigation }: Props) {
         vendorApi.dashboard(),
         vendorApi.revenueMonthly().catch(() => []),
       ]);
-      setDashboard(data as DashboardData);
+      setDashboard(data);
       setMonthlyRevenue(monthly);
     } catch (err) {
       const message =
@@ -256,7 +216,7 @@ export function VendorHomeScreen({ navigation }: Props) {
     [monthlyRevenue],
   );
 
-  const renderInventoryItem = (product: VendorProduct) => {
+  const renderInventoryItem = (product: VendorDashboardProduct) => {
     const discount = discountLabel(product);
     return (
       <View key={product.id} style={styles.inventoryCard}>
@@ -307,7 +267,7 @@ export function VendorHomeScreen({ navigation }: Props) {
     );
   };
 
-  const renderOrderCard = (order: VendorOrder) => {
+  const renderOrderCard = (order: VendorDashboardOrder) => {
     const uiStatus = mapOrderStatus(order.status);
     const firstItem = order.items[0];
     const isUpdating = updatingOrderId === order.id;
@@ -383,19 +343,30 @@ export function VendorHomeScreen({ navigation }: Props) {
                 </View>
               ) : null}
 
-              {uiStatus === 'Accepted' && order.status !== 'ON_THE_WAY' ? (
+              {order.status === 'CONFIRMED' ||
+              order.status === 'PREPARING' ||
+              order.status === 'ON_THE_WAY' ? (
                 <TouchableOpacity
                   style={styles.readyPickupBtn}
                   activeOpacity={0.85}
                   disabled={isUpdating}
-                  onPress={() => updateOrderStatus(order.id, 'ON_THE_WAY')}
+                  onPress={() => {
+                    const next = vendorNextStatus(order.status);
+                    if (next) updateOrderStatus(order.id, next);
+                  }}
                 >
                   <MaterialCommunityIcons
-                    name="truck-check-outline"
+                    name={
+                      order.status === 'ON_THE_WAY'
+                        ? 'package-variant-closed'
+                        : 'truck-check-outline'
+                    }
                     size={20}
                     color="#4DA69F"
                   />
-                  <Text style={styles.outlinePillText}>Ready for Pickup</Text>
+                  <Text style={styles.outlinePillText}>
+                    {vendorActionLabel(order.status) ?? 'Update Status'}
+                  </Text>
                 </TouchableOpacity>
               ) : null}
 

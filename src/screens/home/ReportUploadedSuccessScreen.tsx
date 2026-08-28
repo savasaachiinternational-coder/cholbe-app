@@ -36,7 +36,9 @@ export function ReportUploadedSuccessScreen({navigation, route}: Props) {
 
   const title = params?.reportTitle ?? 'Blood Test Results';
   const provider = params?.provider ?? 'Devcare Lab';
-  const patientName = params?.patientName ?? 'Rahman Uddin';
+  const patientName = params?.patientName ?? '—';
+  const referredDoctorName = params?.referredDoctorName ?? '—';
+  const referredDoctorSpecialty = params?.referredDoctorSpecialty ?? '';
   const reportId = params?.reportId;
   const fileName = params?.fileName;
   const typeLabel = REPORT_TYPE_LABELS[params?.reportType ?? 'LAB'] ?? 'Report';
@@ -166,6 +168,51 @@ export function ReportUploadedSuccessScreen({navigation, route}: Props) {
               </Text>
             </View>
           </View>
+
+          {referredDoctorName !== '—' ? (
+            <>
+              <View style={styles.dividerLine} />
+              <View style={styles.infoBlockRow}>
+                <View style={styles.iconColumn}>
+                  <MaterialCommunityIcons
+                    name="stethoscope"
+                    size={20}
+                    color="#AED8D7"
+                  />
+                </View>
+                <View style={styles.detailsColumn}>
+                  <Text style={styles.inlineInfoValueText}>
+                    Doctor :{' '}
+                    <Text style={styles.boldSpan}>
+                      {referredDoctorName}
+                      {referredDoctorSpecialty
+                        ? ` (${referredDoctorSpecialty})`
+                        : ''}
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            </>
+          ) : null}
+
+          {params?.comments?.trim() ? (
+            <>
+              <View style={styles.dividerLine} />
+              <View style={styles.infoBlockRow}>
+                <View style={styles.iconColumn}>
+                  <MaterialCommunityIcons
+                    name="comment-text-outline"
+                    size={20}
+                    color="#AED8D7"
+                  />
+                </View>
+                <View style={styles.detailsColumn}>
+                  <Text style={styles.sectionLabelText}>Comments</Text>
+                  <Text style={styles.timelineContentText}>{params.comments}</Text>
+                </View>
+              </View>
+            </>
+          ) : null}
 
           {fileName ? (
             <>

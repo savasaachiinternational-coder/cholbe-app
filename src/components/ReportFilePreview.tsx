@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type ImageStyle,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -18,7 +19,7 @@ type Props = {
   fileName?: string | null;
   size?: number;
   variant?: 'thumb' | 'hero';
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<ImageStyle>;
   rounded?: boolean;
 };
 
@@ -48,17 +49,20 @@ export function ReportFilePreview({
     );
   }
 
-  const boxStyle = [
+  const dimensions: ImageStyle = {width: size, height: size, borderRadius: radius};
+  const imageStyle: StyleProp<ImageStyle> = [
     styles.box,
-    {width: size, height: size, borderRadius: radius},
+    dimensions,
+    styles.image,
     style,
   ];
+  const viewStyle: StyleProp<ViewStyle> = [styles.box, dimensions, style];
 
   if (image && uri && !failed) {
     return (
       <Image
         source={{uri}}
-        style={[boxStyle, styles.image]}
+        style={imageStyle}
         resizeMode="cover"
         onError={() => setFailed(true)}
       />
@@ -68,7 +72,7 @@ export function ReportFilePreview({
   if (pdf) {
     const pdfSize = variant === 'hero' ? 88 : size;
     return (
-      <View style={[boxStyle, styles.pdfBox, variant === 'hero' && styles.heroPdfBox]}>
+      <View style={[viewStyle, styles.pdfBox, variant === 'hero' && styles.heroPdfBox]}>
         <MaterialCommunityIcons
           name="file-pdf-box"
           size={Math.round(pdfSize * 0.58)}
@@ -80,7 +84,7 @@ export function ReportFilePreview({
   }
 
   return (
-    <View style={[boxStyle, styles.fallbackBox]}>
+    <View style={[viewStyle, styles.fallbackBox]}>
       <MaterialCommunityIcons
         name="file-document-outline"
         size={Math.round(size * 0.52)}

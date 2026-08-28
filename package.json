@@ -1,6 +1,6 @@
 {
   "name": "cholbe",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -16,7 +16,10 @@
     "build:apk": "bash scripts/android-free-disk.sh && cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a",
     "build:apk:all": "bash scripts/android-free-disk.sh && cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a",
     "build:apk:debug": "cd android && ./gradlew assembleDebug --no-daemon",
-    "build:bundle": "bash scripts/android-free-disk.sh && cd android && ./gradlew bundleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a"
+    "build:bundle": "bash scripts/android-free-disk.sh && cd android && ./gradlew bundleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a",
+    "icons:android": "python3 -m venv .venv-icons && .venv-icons/bin/pip install -q pillow && .venv-icons/bin/python scripts/generate-android-icons.py",
+    "verify:keystore": "bash scripts/verify-upload-keystore.sh",
+    "export:upload-cert": "bash scripts/export-upload-certificate.sh"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^3.1.1",

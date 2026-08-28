@@ -25,6 +25,7 @@ import {VendorBottomNav} from './VendorBottomNav';
 import {ORDER_FILTER_CHIPS, type VendorOrderStatus} from './vendorNav';
 import {NotificationBell} from '../../components/NotificationBell';
 import { FONT } from '../../theme/typography';
+import { vendorActionLabel, vendorNextStatus } from '../../utils/orderStatusFlow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VOrders'>;
 
@@ -324,10 +325,10 @@ type OrderCardProps = {
   updating: boolean;
   onAccept: (id: string) => void;
   onDecline: (id: string) => void;
-  onReadyPickup: (id: string) => void;
+  onAdvance: (id: string, status: string) => void;
 };
 
-function OrderCard({order, onTap, updating, onAccept, onDecline, onReadyPickup}: OrderCardProps) {
+function OrderCard({order, onTap, updating, onAccept, onDecline, onAdvance}: OrderCardProps) {
   return (
     <TouchableOpacity style={styles.orderCardContainer} activeOpacity={0.9} onPress={() => onTap(order)}>
       <Text style={styles.customerText}>Customer : {order.customer}</Text>
@@ -392,18 +393,29 @@ function OrderCard({order, onTap, updating, onAccept, onDecline, onReadyPickup}:
             </View>
           ) : null}
 
-          {order.status === 'Accepted' && order.rawStatus !== 'ON_THE_WAY' ? (
+          {order.rawStatus === 'CONFIRMED' ||
+          order.rawStatus === 'PREPARING' ||
+          order.rawStatus === 'ON_THE_WAY' ? (
             <TouchableOpacity
               style={styles.readyPickupBtn}
               activeOpacity={0.85}
               disabled={updating}
-              onPress={() => onReadyPickup(order.id)}>
+              onPress={() => {
+                const next = vendorNextStatus(order.rawStatus);
+                if (next) onAdvance(order.id, next);
+              }}>
               <MaterialCommunityIcons
-                name="truck-check-outline"
+                name={
+                  order.rawStatus === 'ON_THE_WAY'
+                    ? 'package-variant-closed'
+                    : 'truck-check-outline'
+                }
                 size={20}
                 color="#4DA69F"
               />
-              <Text style={styles.outlinePillText}>Ready for Pickup</Text>
+              <Text style={styles.outlinePillText}>
+                {vendorActionLabel(order.rawStatus) ?? 'Update Status'}
+              </Text>
             </TouchableOpacity>
           ) : null}
 
@@ -592,7 +604,7 @@ export function VendorOrdersScreen({navigation}: Props) {
                     updating={updatingOrderId === order.id}
                     onAccept={id => updateOrderStatus(id, 'CONFIRMED')}
                     onDecline={id => updateOrderStatus(id, 'CANCELLED')}
-                    onReadyPickup={id => updateOrderStatus(id, 'ON_THE_WAY')}
+                    onAdvance={(id, status) => updateOrderStatus(id, status)}
                   />
                 ))}
               </>
@@ -609,7 +621,7 @@ export function VendorOrdersScreen({navigation}: Props) {
                     updating={updatingOrderId === order.id}
                     onAccept={id => updateOrderStatus(id, 'CONFIRMED')}
                     onDecline={id => updateOrderStatus(id, 'CANCELLED')}
-                    onReadyPickup={id => updateOrderStatus(id, 'ON_THE_WAY')}
+                    onAdvance={(id, status) => updateOrderStatus(id, status)}
                   />
                 ))}
               </>
@@ -629,7 +641,7 @@ export function VendorOrdersScreen({navigation}: Props) {
                       updating={updatingOrderId === order.id}
                       onAccept={id => updateOrderStatus(id, 'CONFIRMED')}
                       onDecline={id => updateOrderStatus(id, 'CANCELLED')}
-                      onReadyPickup={id => updateOrderStatus(id, 'ON_THE_WAY')}
+                      onAdvance={(id, status) => updateOrderStatus(id, status)}
                     />
                   ))}
               </>
@@ -646,7 +658,7 @@ export function VendorOrdersScreen({navigation}: Props) {
                     updating={updatingOrderId === order.id}
                     onAccept={id => updateOrderStatus(id, 'CONFIRMED')}
                     onDecline={id => updateOrderStatus(id, 'CANCELLED')}
-                    onReadyPickup={id => updateOrderStatus(id, 'ON_THE_WAY')}
+                    onAdvance={(id, status) => updateOrderStatus(id, status)}
                   />
                 ))}
               </>

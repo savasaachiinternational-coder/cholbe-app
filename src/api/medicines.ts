@@ -1,4 +1,5 @@
 import {apiRequest} from './client';
+import type {MedicineInfoSection} from '../types/medicineInfo';
 
 export type Medicine = {
   id: string;
@@ -8,6 +9,8 @@ export type Medicine = {
   brand: string | null;
   status: string;
   imageUrl: string | null;
+  description?: string | null;
+  infoSections?: MedicineInfoSection[] | null;
 };
 
 export const medicinesApi = {
@@ -22,6 +25,28 @@ export const medicinesApi = {
 
   getOne(id: string) {
     return apiRequest<Medicine>(`/medicines/${id}`);
+  },
+
+  update(
+    id: string,
+    payload: {
+      name?: string;
+      genericName?: string;
+      category?: string;
+      brand?: string;
+      medicineType?: string;
+      description?: string;
+      infoSections?: MedicineInfoSection[];
+      imageUrl?: string;
+      prescriptionRequired?: boolean;
+      status?: string;
+    },
+  ) {
+    return apiRequest<Medicine>(`/medicines/${id}`, {
+      method: 'PATCH',
+      auth: true,
+      body: payload,
+    });
   },
 
   updateStatus(id: string, status: string) {

@@ -1,10 +1,7 @@
 /**
- * Copy this file to `gemini.ts` and paste the real key in.
+ * Gemini is now called through the backend at POST /gemini/generate-json.
  *
- * `gemini.ts` is gitignored — same arrangement as `googleMaps.ts`.
- *
- * The type annotation is deliberate: without it TypeScript narrows the const to
- * its literal string, and the "is this still the placeholder?" guard in
- * geminiService.ts becomes a comparison with no overlap (a tsc error).
+ * Set GEMINI_API_KEY in the server's .env — do NOT put the key in the app.
+ * This file is kept only as a pointer for developers who expect it here.
  */
-export const GEMINI_API_KEY: string = 'your_gemini_api_key_here';
+export {};

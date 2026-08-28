@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   selectedIndicatorBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 3,
     borderColor: '#45A096',
     borderRadius: 8,

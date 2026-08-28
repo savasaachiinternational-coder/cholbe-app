@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   imagePlaceholderBox: {flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#EBEFF5'},
   previewImage: {width: '100%', height: '100%'},
   selectedOverlayBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 3,
     borderColor: '#45A096',
     borderRadius: 8,

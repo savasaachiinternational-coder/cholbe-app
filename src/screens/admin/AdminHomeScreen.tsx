@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { adminApi } from '../../api/admin';
+import { authApi } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import type { RootStackParamList } from '../../navigation/types';
@@ -24,6 +25,7 @@ import { RoleMenuDrawer } from '../../components/RoleMenuDrawer';
 import { formatBdt } from '../../utils/pharmacyHelpers';
 import { NotificationBell } from '../../components/NotificationBell';
 import { WaveWithChild } from '../../components/WaveWithChild';
+import { AvatarImage } from '../../components/AvatarImage';
 import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AHome'>;
@@ -43,6 +45,17 @@ type DashboardData = {
   totalRevenue: string | number;
   growthPercent: number;
 };
+
+type AdminUser = {
+  fullName: string;
+  avatarUrl: string | null;
+};
+
+function greetingForHour(hour: number) {
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
 
 function buildChartPoints(data: MonthlyPoint[]): { x: number; y: number }[] {
   if (data.length === 0) return [];
@@ -182,18 +195,24 @@ export function AdminHomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [monthlyData, setMonthlyData] = useState<MonthlyPoint[]>([]);
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const [data, monthly] = await Promise.all([
+      const [data, monthly, me] = await Promise.all([
         adminApi.dashboard(),
         adminApi.ordersMonthly(),
+        authApi.getMe(),
       ]);
       setDashboard(data);
       setMonthlyData(monthly);
+      setAdmin({
+        fullName: me.fullName,
+        avatarUrl: me.avatarUrl ?? null,
+      });
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : 'Could not load dashboard';
@@ -252,6 +271,8 @@ export function AdminHomeScreen({ navigation }: Props) {
     ];
   }, [dashboard]);
 
+  const adminDisplayName = admin?.fullName?.trim().split(/\s+/)[0] ?? 'Admin';
+
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
@@ -282,20 +303,10 @@ export function AdminHomeScreen({ navigation }: Props) {
         <View style={styles.waveHost}>
           <WaveWithChild color="#F4F1FD" style={styles.waveContent}>
             <View style={styles.welcomeContainer}>
-              <Image
-                source={{
-                  uri: 'https://via.placeholder.com/60/E2E8F0/000000?text=Admin',
-                }}
-                style={styles.adminAvatar}
-              />
+              <AvatarImage uri={admin?.avatarUrl} style={styles.adminAvatar} />
               <View style={styles.welcomeTextColumn}>
                 <Text style={styles.welcomeTitle}>
-                  {(() => {
-                    const h = new Date().getHours();
-                    if (h < 12) return 'Good Morning, Admin';
-                    if (h < 17) return 'Good Afternoon, Admin';
-                    return 'Good Evening, Admin';
-                  })()}
+                  {`${greetingForHour(new Date().getHours())}, ${adminDisplayName}`}
                 </Text>
                 <Text style={styles.welcomeSubtitle}>
                   Here's what's happening today.

@@ -29,6 +29,7 @@ import {
   type AdminOrderFilter,
   type AdminOrderStatus,
 } from './adminNav';
+import { adminAllowedStatuses } from '../../utils/orderStatusFlow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AOrders'>;
 
@@ -54,8 +55,6 @@ type OrderRecord = {
   rawStatus: string;
   total: string | number;
 };
-
-const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'PREPARING', 'ON_THE_WAY', 'DELIVERED', 'CANCELLED'];
 
 function mapOrderStatus(status: string): AdminOrderStatus {
   switch (status) {
@@ -133,6 +132,8 @@ function OrderDetailModal({
   const subtotal = typeof detail.subtotal === 'string' ? parseFloat(detail.subtotal) : detail.subtotal;
   const delivery = typeof detail.deliveryCharge === 'string' ? parseFloat(detail.deliveryCharge) : detail.deliveryCharge;
   const total = typeof detail.total === 'string' ? parseFloat(detail.total) : detail.total;
+  const allowedStatuses = adminAllowedStatuses(detail.status);
+  const lastTimelineIndex = detail.statusEvents.length - 1;
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
@@ -280,7 +281,12 @@ function OrderDetailModal({
                 <View style={styles.timelineCard}>
                   {detail.statusEvents.map((evt, idx) => (
                     <View key={evt.id} style={styles.timelineItem}>
-                      <View style={[styles.timelineDot, idx === 0 && styles.timelineDotFirst]} />
+                      <View
+                        style={[
+                          styles.timelineDot,
+                          idx === lastTimelineIndex && styles.timelineDotActive,
+                        ]}
+                      />
                       <View style={styles.timelineContent}>
                         <Text style={styles.timelineStatus}>{evt.status}</Text>
                         {evt.note ? (
@@ -299,25 +305,20 @@ function OrderDetailModal({
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.statusButtons}>
-                  {ORDER_STATUSES.map(s => (
-                    <TouchableOpacity
-                      key={s}
-                      style={[
-                        styles.statusBtn,
-                        detail.status === s && styles.statusBtnActive,
-                      ]}
-                      disabled={updatingStatus || detail.status === s}
-                      onPress={() => onStatusUpdate(detail.id, s)}
-                      activeOpacity={0.8}>
-                      <Text
-                        style={[
-                          styles.statusBtnText,
-                          detail.status === s && styles.statusBtnTextActive,
-                        ]}>
-                        {s}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                  {allowedStatuses.length ? (
+                    allowedStatuses.map(s => (
+                      <TouchableOpacity
+                        key={s}
+                        style={styles.statusBtn}
+                        disabled={updatingStatus}
+                        onPress={() => onStatusUpdate(detail.id, s)}
+                        activeOpacity={0.8}>
+                        <Text style={styles.statusBtnText}>{s}</Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <Text style={styles.timelineNote}>No further status changes available.</Text>
+                  )}
                 </ScrollView>
               </>
             )}
@@ -627,7 +628,7 @@ const styles = StyleSheet.create({
   badgeCancelled: {backgroundColor: '#E26D6D'},
   statusBadgeText: {color: '#FFFFFF', fontSize: 11, fontFamily: FONT.semibold, fontWeight: '600'},
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(255,255,255,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -721,7 +722,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
     marginRight: 10,
   },
-  timelineDotFirst: {backgroundColor: '#4E929D'},
+  timelineDotActive: {backgroundColor: '#4E929D'},
   timelineContent: {flex: 1},
   timelineStatus: {fontSize: 13, fontFamily: FONT.semibold, fontWeight: '600', color: '#1A1C1E'},
   timelineNote: {fontSize: 11, color: '#7E8B97', marginTop: 1},

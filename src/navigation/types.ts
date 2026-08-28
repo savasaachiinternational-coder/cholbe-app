@@ -81,6 +81,7 @@ export type RootStackParamList = {
         appointmentId?: string;
         doctorName?: string;
         specialty?: string;
+        viewerRole?: 'DOCTOR' | 'CUSTOMER';
       }
     | undefined;
   MyAppointment: undefined;
@@ -151,10 +152,13 @@ export type RootStackParamList = {
         provider?: string;
         reportDate?: string;
         patientName?: string;
+        referredDoctorName?: string;
+        referredDoctorSpecialty?: string;
         fileName?: string;
         mimeType?: string;
         fileUrl?: string;
         tip?: string;
+        comments?: string;
       }
     | undefined;
   PharmacyShop: undefined;

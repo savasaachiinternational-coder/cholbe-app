@@ -1,7 +1,7 @@
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {NavigationProp} from '@react-navigation/native';
 import type {RootStackParamList} from '../../navigation/types';
 import {ADMIN_TABS, type AdminTabKey} from './adminNav';
 import { FONT } from '../../theme/typography';
@@ -11,7 +11,7 @@ import { FONT } from '../../theme/typography';
 type Props = {
   activeTab: AdminTabKey;
   bottomInset: number;
-  navigation: NativeStackNavigationProp<RootStackParamList>;
+  navigation: NavigationProp<RootStackParamList>;
 };
 
 export function AdminBottomNav({activeTab, bottomInset, navigation}: Props) {

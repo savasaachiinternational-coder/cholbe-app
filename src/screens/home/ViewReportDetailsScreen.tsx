@@ -49,6 +49,10 @@ export function ViewReportDetailsScreen({navigation, route}: Props) {
   const [provider, setProvider] = useState('');
   const [reportDate, setReportDate] = useState('');
   const [tip, setTip] = useState('');
+  const [patientName, setPatientName] = useState('');
+  const [referredDoctorName, setReferredDoctorName] = useState('');
+  const [referredDoctorSpecialty, setReferredDoctorSpecialty] = useState('');
+  const [comments, setComments] = useState('');
 
   const loadReport = useCallback(async () => {
     if (!reportId) {
@@ -63,6 +67,10 @@ export function ViewReportDetailsScreen({navigation, route}: Props) {
       setProvider(data.provider ?? '');
       setReportDate(toIsoDateString(data.reportDate));
       setTip(data.tip ?? '');
+      setPatientName(data.patientName ?? '');
+      setReferredDoctorName(data.referredDoctorName ?? '');
+      setReferredDoctorSpecialty(data.referredDoctorSpecialty ?? '');
+      setComments(data.comments ?? '');
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Could not load report';
       Alert.alert('View Report', message);
@@ -90,12 +98,20 @@ export function ViewReportDetailsScreen({navigation, route}: Props) {
         provider: provider.trim() || undefined,
         reportDate,
         tip: tip.trim() || undefined,
+        patientName: patientName.trim() || undefined,
+        referredDoctorName: referredDoctorName.trim() || undefined,
+        referredDoctorSpecialty: referredDoctorSpecialty.trim() || undefined,
+        comments: comments.trim() || undefined,
       });
       setReport(updated);
       setTitle(updated.title);
       setProvider(updated.provider ?? '');
       setReportDate(toIsoDateString(updated.reportDate));
       setTip(updated.tip ?? '');
+      setPatientName(updated.patientName ?? '');
+      setReferredDoctorName(updated.referredDoctorName ?? '');
+      setReferredDoctorSpecialty(updated.referredDoctorSpecialty ?? '');
+      setComments(updated.comments ?? '');
       setEditing(false);
       Alert.alert('Report', 'Report updated successfully.');
     } catch (err) {
@@ -250,6 +266,70 @@ export function ViewReportDetailsScreen({navigation, route}: Props) {
 
             <View style={styles.dividerLine} />
 
+            <View style={styles.infoBlockRow}>
+              <View style={styles.iconColumn}>
+                <Feather name="user" size={20} color="#45A096" />
+              </View>
+              <View style={styles.detailsColumn}>
+                <Text style={styles.sectionLabelText}>Patient</Text>
+                {editing ? (
+                  <TextInput
+                    style={styles.editFieldInput}
+                    value={patientName}
+                    onChangeText={setPatientName}
+                    placeholder="Patient name"
+                    placeholderTextColor="#A0A5BA"
+                  />
+                ) : (
+                  <Text style={styles.inlineInfoValueText}>
+                    Patient :{' '}
+                    <Text style={styles.boldSpan}>{report.patientName ?? '—'}</Text>
+                  </Text>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.dividerLine} />
+
+            <View style={styles.infoBlockRow}>
+              <View style={styles.iconColumn}>
+                <MaterialCommunityIcons name="stethoscope" size={20} color="#45A096" />
+              </View>
+              <View style={styles.detailsColumn}>
+                <Text style={styles.sectionLabelText}>Referred Doctor</Text>
+                {editing ? (
+                  <>
+                    <TextInput
+                      style={styles.editFieldInput}
+                      value={referredDoctorName}
+                      onChangeText={setReferredDoctorName}
+                      placeholder="Doctor name"
+                      placeholderTextColor="#A0A5BA"
+                    />
+                    <TextInput
+                      style={[styles.editFieldInput, styles.editFieldInputSpaced]}
+                      value={referredDoctorSpecialty}
+                      onChangeText={setReferredDoctorSpecialty}
+                      placeholder="Specialty"
+                      placeholderTextColor="#A0A5BA"
+                    />
+                  </>
+                ) : (
+                  <Text style={styles.inlineInfoValueText}>
+                    Doctor :{' '}
+                    <Text style={styles.boldSpan}>
+                      {report.referredDoctorName ?? '—'}
+                      {report.referredDoctorSpecialty
+                        ? ` (${report.referredDoctorSpecialty})`
+                        : ''}
+                    </Text>
+                  </Text>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.dividerLine} />
+
             <View style={[styles.infoBlockRow, styles.tipRow]}>
               <View style={styles.iconColumn}>
                 <MaterialCommunityIcons
@@ -278,6 +358,35 @@ export function ViewReportDetailsScreen({navigation, route}: Props) {
                   ))
                 ) : (
                   <Text style={styles.timelineContentText}>—</Text>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.dividerLine} />
+
+            <View style={[styles.infoBlockRow, styles.tipRow]}>
+              <View style={styles.iconColumn}>
+                <MaterialCommunityIcons
+                  name="comment-text-outline"
+                  size={20}
+                  color="#45A096"
+                />
+              </View>
+              <View style={styles.detailsColumn}>
+                <Text style={styles.sectionLabelText}>Comments</Text>
+                {editing ? (
+                  <TextInput
+                    style={styles.editTipInput}
+                    value={comments}
+                    onChangeText={setComments}
+                    placeholder="Doctor comments or follow-up notes"
+                    placeholderTextColor="#A0A5BA"
+                    multiline
+                  />
+                ) : (
+                  <Text style={styles.timelineContentText}>
+                    {report.comments?.trim() || '—'}
+                  </Text>
                 )}
               </View>
             </View>
@@ -523,6 +632,9 @@ const styles = StyleSheet.create({
     color: '#5A6578',
     borderWidth: 1,
     borderColor: '#E6E9F0',
+  },
+  editFieldInputSpaced: {
+    marginTop: 8,
   },
   editTipInput: {
     backgroundColor: '#F1F2F7',

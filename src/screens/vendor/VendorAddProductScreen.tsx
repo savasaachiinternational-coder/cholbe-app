@@ -41,6 +41,13 @@ import {
 type Props = NativeStackScreenProps<RootStackParamList, 'VAddProduct'>;
 type PickerField = 'category' | 'unitType' | 'temperature' | null;
 
+type PickerConfig = {
+  title: string;
+  options: readonly string[];
+  selected: string;
+  onSelect: (value: string) => void;
+};
+
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact
 // font file name, so each weight is referenced by its own family name.
 // Figma "Card/Shadow 1": 0 4px 60px 0 rgba(4, 6, 15, 0.08).
@@ -145,27 +152,27 @@ export function VendorAddProductScreen({navigation}: Props) {
     }
   };
 
-  const pickerConfig =
+  const pickerConfig: PickerConfig | null =
     activePicker === 'category'
       ? {
           title: 'Category',
           options: PRODUCT_CATEGORIES,
           selected: category,
-          onSelect: (value: ProductCategory) => handleCategoryChange(value),
+          onSelect: value => handleCategoryChange(value as ProductCategory),
         }
       : activePicker === 'unitType'
         ? {
             title: 'Sell Unit',
             options: availableUnitTypes,
             selected: unitType,
-            onSelect: setUnitType,
+            onSelect: value => setUnitType(value as UnitType),
           }
         : activePicker === 'temperature'
           ? {
               title: 'Temperature',
               options: TEMPERATURE_OPTIONS,
               selected: temperature,
-              onSelect: setTemperature,
+              onSelect: value => setTemperature(value as TemperatureOption),
             }
           : null;
 

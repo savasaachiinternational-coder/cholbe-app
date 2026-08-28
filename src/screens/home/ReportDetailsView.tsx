@@ -104,12 +104,13 @@ export function ReportDetailsViewScreen({navigation, route}: Props) {
   const isImage = !isPdf && isImageFile(mimeType, fileUrl, fileName);
   const totalPages = isPdf ? params.totalPages ?? 2 : 1;
 
-  // The report model carries no patient or requesting doctor, so those come
-  // from route params when the caller knows them.
-  const patientName = params.patientName ?? '—';
-  const doctorName = params.doctorName ?? '—';
-  const doctorSpecialty = params.doctorSpecialty ?? '';
-  const comment = report?.tip ?? '';
+  // The report model carries patient and doctor fields from the API; route
+  // params are only used as a fallback for older navigation paths.
+  const patientName = report?.patientName ?? params.patientName ?? '—';
+  const doctorName = report?.referredDoctorName ?? params.doctorName ?? '—';
+  const doctorSpecialty =
+    report?.referredDoctorSpecialty ?? params.doctorSpecialty ?? '';
+  const comment = report?.comments ?? '';
 
   const handleOpenExternally = () => {
     if (!sourceUri) {

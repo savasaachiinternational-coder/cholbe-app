@@ -12,6 +12,10 @@ export type HealthReport = {
   fileName?: string | null;
   mimeType?: string | null;
   tip: string | null;
+  patientName: string | null;
+  referredDoctorName: string | null;
+  referredDoctorSpecialty: string | null;
+  comments: string | null;
   createdAt?: string;
 };
 
@@ -25,6 +29,10 @@ export const reportsApi = {
     fileName?: string;
     mimeType?: string;
     tip?: string;
+    patientName?: string;
+    referredDoctorName?: string;
+    referredDoctorSpecialty?: string;
+    comments?: string;
   }) {
     return apiRequest<HealthReport>('/reports', {
       method: 'POST',
@@ -49,6 +57,10 @@ export const reportsApi = {
       provider?: string;
       reportDate?: string;
       tip?: string;
+      patientName?: string;
+      referredDoctorName?: string;
+      referredDoctorSpecialty?: string;
+      comments?: string;
     },
   ) {
     return apiRequest<HealthReport>(`/reports/${id}`, {

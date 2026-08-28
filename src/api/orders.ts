@@ -60,5 +60,6 @@ export function uiPaymentToApi(
 ): PaymentMethod {
   if (method === 'bKash') return 'BKASH';
   if (method === 'Nagad') return 'NAGAD';
+  if (method === 'Card') return 'CARD';
   return method;
 }

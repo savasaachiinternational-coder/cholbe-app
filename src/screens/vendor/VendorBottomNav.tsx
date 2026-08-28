@@ -1,6 +1,6 @@
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {NavigationProp} from '@react-navigation/native';
 import type {RootStackParamList} from '../../navigation/types';
 import {VENDOR_TABS, type VendorTabKey} from './vendorNav';
 import { FONT } from '../../theme/typography';
@@ -8,7 +8,7 @@ import { FONT } from '../../theme/typography';
 type Props = {
   activeTab: VendorTabKey;
   bottomInset: number;
-  navigation: NativeStackNavigationProp<RootStackParamList>;
+  navigation: NavigationProp<RootStackParamList>;
 };
 
 // Proxima Nova per the Figma typography. Android resolves a weight by the exact

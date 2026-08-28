@@ -38,6 +38,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'VPayments'>;
 // font file name, so each weight is referenced by its own family name.
 type PickerField = 'date' | 'status' | null;
 
+type PickerConfig = {
+  title: string;
+  options: readonly string[];
+  selected: string;
+  onSelect: (value: string) => void;
+};
+
 type TransactionIconType = 'bkash' | 'nagad' | 'card' | 'cod' | 'fee';
 
 type ApiPayment = {
@@ -238,20 +245,20 @@ export function VendorPaymentsScreen({navigation}: Props) {
     };
   }, [payments]);
 
-  const pickerConfig =
+  const pickerConfig: PickerConfig | null =
     activePicker === 'date'
       ? {
           title: 'Date Range',
           options: PAYMENT_DATE_FILTERS,
           selected: dateFilter,
-          onSelect: setDateFilter,
+          onSelect: value => setDateFilter(value as PaymentDateFilter),
         }
       : activePicker === 'status'
         ? {
             title: 'Status',
             options: PAYMENT_STATUS_FILTERS,
             selected: statusFilter,
-            onSelect: setStatusFilter,
+            onSelect: value => setStatusFilter(value as PaymentStatusFilter),
           }
         : null;
 

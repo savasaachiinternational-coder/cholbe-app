@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,6 +24,7 @@ import {WaveTitleBand} from '../../components/WaveTitleBand';
 import {API_ORIGIN} from '../../config/api';
 import {imageUri, isImageFile, isPdfFile} from '../../utils/fileAsset';
 import {reportsApi} from '../../api/reports';
+import {profileApi} from '../../api/profile';
 import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
 import { FONT } from '../../theme/typography';
@@ -47,14 +48,38 @@ export function ReportPreviewScreen({navigation, route}: Props) {
   const [endDate, setEndDate] = useState(params?.endDate ?? 'May 24 2024');
   const [reportId, setReportId] = useState(params?.reportId ?? '#BTR -545454');
   const [patientName, setPatientName] = useState(
-    params?.patientName ?? 'Rahman Uddin',
+    params?.patientName ?? '',
   );
+  const [referredDoctorName, setReferredDoctorName] = useState('');
+  const [referredDoctorSpecialty, setReferredDoctorSpecialty] = useState('');
+  const [comments, setComments] = useState('');
   const [editing, setEditing] = useState(false);
   const fileName = params?.fileName;
   const mimeType = params?.mimeType;
   const reportType = params?.reportType ?? 'LAB';
   // The API expects an ISO date; startDate/endDate are display-only strings.
   const reportDate = params?.reportDate ?? new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    let cancelled = false;
+    profileApi
+      .overview()
+      .then(overview => {
+        if (cancelled) return;
+        if (!params?.patientName) {
+          setPatientName(overview.user.fullName ?? '');
+        }
+        const doctor = overview.assignedDoctor;
+        if (doctor) {
+          setReferredDoctorName(doctor.user.fullName ?? '');
+          setReferredDoctorSpecialty(doctor.specialty ?? '');
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [params?.patientName]);
 
   // A local pick (fileUri) is shown as-is; a stored report is resolved against
   // the API origin so Android emulators reach the host correctly.
@@ -124,7 +149,6 @@ export function ReportPreviewScreen({navigation, route}: Props) {
             mimeType: mimeType ?? 'image/jpeg',
             size: 0,
           };
-      // patient name, refered doctor
       const created = await reportsApi.create({
         title: title.trim(),
         reportType,
@@ -134,6 +158,10 @@ export function ReportPreviewScreen({navigation, route}: Props) {
         fileName: uploaded.fileName,
         mimeType: uploaded.mimeType,
         tip: params.tip?.trim() || undefined,
+        patientName: patientName.trim() || undefined,
+        referredDoctorName: referredDoctorName.trim() || undefined,
+        referredDoctorSpecialty: referredDoctorSpecialty.trim() || undefined,
+        comments: comments.trim() || undefined,
       });
 
       navigation.navigate('ReportUploadedSuccess', {
@@ -142,11 +170,15 @@ export function ReportPreviewScreen({navigation, route}: Props) {
         reportType,
         provider: provider.trim() || undefined,
         reportDate: created?.reportDate ?? reportDate,
-        patientName,
+        patientName: created?.patientName ?? patientName,
+        referredDoctorName: created?.referredDoctorName ?? referredDoctorName,
+        referredDoctorSpecialty:
+          created?.referredDoctorSpecialty ?? referredDoctorSpecialty,
         fileName: uploaded.fileName,
         mimeType: uploaded.mimeType,
         fileUrl: uploaded.fileUrl,
         tip: created?.tip ?? params.tip,
+        comments: created?.comments ?? comments,
       });
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Upload failed';
@@ -275,7 +307,7 @@ export function ReportPreviewScreen({navigation, route}: Props) {
               <Text style={styles.metaText}>Report ID: {reportId}</Text>
             )}
           </View>
-          <View style={[styles.metaRow, styles.metaRowLast]}>
+          <View style={styles.metaRow}>
             <Feather name="user" size={20} color="#AED8D7" />
             {editing ? (
               <TextInput
@@ -287,6 +319,57 @@ export function ReportPreviewScreen({navigation, route}: Props) {
               />
             ) : (
               <Text style={styles.metaText}>Patient: {patientName}</Text>
+            )}
+          </View>
+          <View style={styles.metaRow}>
+            <MaterialCommunityIcons
+              name="stethoscope"
+              size={20}
+              color="#AED8D7"
+            />
+            {editing ? (
+              <View style={styles.dateEditRow}>
+                <TextInput
+                  style={[styles.metaText, styles.editableField]}
+                  value={referredDoctorName}
+                  onChangeText={setReferredDoctorName}
+                  placeholder="Doctor"
+                  placeholderTextColor="#A0A5BA"
+                />
+                <TextInput
+                  style={[styles.metaText, styles.editableField]}
+                  value={referredDoctorSpecialty}
+                  onChangeText={setReferredDoctorSpecialty}
+                  placeholder="Specialty"
+                  placeholderTextColor="#A0A5BA"
+                />
+              </View>
+            ) : (
+              <Text style={styles.metaText}>
+                Doctor: {referredDoctorName || '—'}
+                {referredDoctorSpecialty ? ` (${referredDoctorSpecialty})` : ''}
+              </Text>
+            )}
+          </View>
+          <View style={[styles.metaRow, styles.metaRowLast]}>
+            <MaterialCommunityIcons
+              name="comment-text-outline"
+              size={20}
+              color="#AED8D7"
+            />
+            {editing ? (
+              <TextInput
+                style={[styles.metaText, styles.editableField]}
+                value={comments}
+                onChangeText={setComments}
+                placeholder="Comments"
+                placeholderTextColor="#A0A5BA"
+                multiline
+              />
+            ) : (
+              <Text style={styles.metaText}>
+                Comments: {comments.trim() || '—'}
+              </Text>
             )}
           </View>
         </View>

@@ -18,6 +18,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {HomeBottomNav} from './HomeBottomNav';
 import type {BottomTabKey} from './homeData';
 import {authApi} from '../../api/auth';
+import {addressesApi, type Address} from '../../api/addresses';
 import {profileApi, type EmergencyContact} from '../../api/profile';
 import {uploadAvatarAsset} from '../../api/uploads';
 import {ApiError} from '../../api/client';
@@ -37,6 +38,7 @@ export function EditProfileScreen({navigation}: Props) {
   const [gender, setGender] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
   const [address, setAddress] = useState('');
+  const [defaultAddressId, setDefaultAddressId] = useState<string | null>(null);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -55,11 +57,19 @@ export function EditProfileScreen({navigation}: Props) {
       const overview = await profileApi.overview();
       const user = overview.user;
       const patient = user.patientProfile;
+      const addresses = await addressesApi.list();
+      const defaultAddress =
+        addresses.find(item => item.isDefault) ?? addresses[0] ?? null;
       setName(user.fullName ?? '');
       setAge(patient?.age != null ? String(patient.age) : '');
       setGender(patient?.gender ?? '');
       setBloodGroup(patient?.bloodGroup ?? '');
-      setAddress(overview.defaultAddress?.formattedAddress ?? '');
+      setAddress(
+        defaultAddress?.formattedAddress ??
+          overview.defaultAddress?.formattedAddress ??
+          '',
+      );
+      setDefaultAddressId(defaultAddress?.id ?? null);
       setPhone(user.phone ?? '');
       setEmail(user.email ?? '');
       setAvatarUrl(user.avatarUrl ?? null);
@@ -173,6 +183,21 @@ export function EditProfileScreen({navigation}: Props) {
         gender: gender.trim() || undefined,
         bloodGroup: bloodGroup.trim() || undefined,
       });
+      const trimmedAddress = address.trim();
+      if (trimmedAddress) {
+        const addressPayload = {
+          label: 'Home',
+          formattedAddress: trimmedAddress,
+          isDefault: true,
+        };
+        let savedAddress: Address;
+        if (defaultAddressId) {
+          savedAddress = await addressesApi.update(defaultAddressId, addressPayload);
+        } else {
+          savedAddress = await addressesApi.create(addressPayload);
+        }
+        setDefaultAddressId(savedAddress.id);
+      }
       const bp = bloodPressure.trim();
       const o2 = oxygen.trim();
       if (bp || o2) {

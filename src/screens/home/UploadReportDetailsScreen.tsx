@@ -19,6 +19,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {reportsApi, type ReportType} from '../../api/reports';
+import {profileApi} from '../../api/profile';
 import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
 import {DatePickerField} from '../../components/MedicationPickers';
@@ -58,7 +59,11 @@ export function UploadReportDetailsScreen({navigation, route}: Props) {
     new Date().toISOString().slice(0, 10),
   );
   const [provider, setProvider] = useState(initial?.provider ?? '');
+  const [patientName, setPatientName] = useState('');
+  const [referredDoctorName, setReferredDoctorName] = useState('');
+  const [referredDoctorSpecialty, setReferredDoctorSpecialty] = useState('');
   const [tip, setTip] = useState('');
+  const [comments, setComments] = useState('');
   const [loading, setLoading] = useState(false);
   const [typePickerOpen, setTypePickerOpen] = useState(false);
 
@@ -68,6 +73,25 @@ export function UploadReportDetailsScreen({navigation, route}: Props) {
       setTitle(sourceName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '));
     }
   }, [fileAsset?.fileName, initial?.existingFileName, title]);
+
+  useEffect(() => {
+    let cancelled = false;
+    profileApi
+      .overview()
+      .then(overview => {
+        if (cancelled) return;
+        setPatientName(overview.user.fullName ?? '');
+        const doctor = overview.assignedDoctor;
+        if (doctor) {
+          setReferredDoctorName(doctor.user.fullName ?? '');
+          setReferredDoctorSpecialty(doctor.specialty ?? '');
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleBrowse = async () => {
     const result = await launchImageLibrary({
@@ -114,6 +138,10 @@ export function UploadReportDetailsScreen({navigation, route}: Props) {
         fileName: uploaded.fileName,
         mimeType: uploaded.mimeType,
         tip: tip.trim() || undefined,
+        patientName: patientName.trim() || undefined,
+        referredDoctorName: referredDoctorName.trim() || undefined,
+        referredDoctorSpecialty: referredDoctorSpecialty.trim() || undefined,
+        comments: comments.trim() || undefined,
       });
       navigation.navigate('ReportUploadedSuccess');
     } catch (err) {
@@ -223,6 +251,44 @@ export function UploadReportDetailsScreen({navigation, route}: Props) {
             </View>
           </View>
 
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Patient Name</Text>
+            <View style={styles.textInputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                value={patientName}
+                onChangeText={setPatientName}
+                placeholderTextColor="#A0A5BA"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Referred Doctor</Text>
+            <View style={styles.textInputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                value={referredDoctorName}
+                onChangeText={setReferredDoctorName}
+                placeholder="Doctor name"
+                placeholderTextColor="#A0A5BA"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Doctor Specialty</Text>
+            <View style={styles.textInputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                value={referredDoctorSpecialty}
+                onChangeText={setReferredDoctorSpecialty}
+                placeholder="Specialty"
+                placeholderTextColor="#A0A5BA"
+              />
+            </View>
+          </View>
+
           <View style={styles.tipCardContainer}>
             <View style={styles.tipHeaderRow}>
               <MaterialCommunityIcons
@@ -238,6 +304,26 @@ export function UploadReportDetailsScreen({navigation, route}: Props) {
               value={tip}
               onChangeText={setTip}
               placeholder="Add notes about this report (optional)"
+              placeholderTextColor="#8A94A6"
+              multiline
+            />
+          </View>
+
+          <View style={styles.tipCardContainer}>
+            <View style={styles.tipHeaderRow}>
+              <MaterialCommunityIcons
+                name="comment-text-outline"
+                size={20}
+                color="#45A096"
+                style={styles.tipIcon}
+              />
+              <Text style={styles.tipTitleText}>Comments</Text>
+            </View>
+            <TextInput
+              style={styles.tipInput}
+              value={comments}
+              onChangeText={setComments}
+              placeholder="Doctor comments or follow-up notes (optional)"
               placeholderTextColor="#8A94A6"
               multiline
             />

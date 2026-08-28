@@ -1,4 +1,5 @@
 import {apiRequest} from './client';
+import type {MedicineInfoSection} from '../types/medicineInfo';
 
 export type PharmacyProduct = {
   id: string;
@@ -17,6 +18,7 @@ export type PharmacyProduct = {
     id: string;
     name: string;
     description?: string | null;
+    infoSections?: MedicineInfoSection[] | null;
     medicineType?: string | null;
     brand?: string | null;
   } | null;

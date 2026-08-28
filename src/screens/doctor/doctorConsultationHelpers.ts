@@ -1,8 +1,8 @@
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {NavigationProp} from '@react-navigation/native';
 import type {RootStackParamList} from '../../navigation/types';
 import type {DoctorAppointment} from '../../api/doctorPortal';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Nav = NavigationProp<RootStackParamList>;
 
 export function openDoctorConsultation(navigation: Nav, appt: DoctorAppointment) {
   if (appt.consultationType === 'CHAT') {

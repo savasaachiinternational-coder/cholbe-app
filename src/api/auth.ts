@@ -8,6 +8,16 @@ export type AuthResponse = {
 
 export type OtpChannel = 'SMS' | 'EMAIL';
 
+export type AuthMe = {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  role: string;
+  status: string;
+  avatarUrl: string | null;
+};
+
 function contactChannel(contact: string): OtpChannel {
   return contact.includes('@') ? 'EMAIL' : 'SMS';
 }
@@ -74,7 +84,7 @@ export const authApi = {
   },
 
   async getMe() {
-    return apiRequest('/auth/me', {auth: true});
+    return apiRequest<AuthMe>('/auth/me', {auth: true});
   },
 
   async medicalHistory(payload: {

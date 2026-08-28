@@ -31,7 +31,7 @@ export function getProductImageSource(url?: string | null): ImageSourcePropType 
 
 export function productImageUrl(url?: string | null) {
   const source = getProductImageSource(url);
-  if ('uri' in source && source.uri) {
+  if (typeof source === 'object' && 'uri' in source && source.uri) {
     return source.uri;
   }
   return '';

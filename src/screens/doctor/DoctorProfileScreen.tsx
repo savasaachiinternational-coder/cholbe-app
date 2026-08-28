@@ -24,6 +24,12 @@ import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DProfile'>;
 
+function toAmount(value: string | number | undefined): number {
+  if (value == null) return 0;
+  const n = typeof value === 'number' ? value : parseFloat(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function DoctorProfileScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
@@ -66,6 +72,8 @@ export function DoctorProfileScreen({navigation}: Props) {
 
   const doctor = dashboard?.doctor;
   const stats = dashboard?.stats;
+  const totalEarnings = toAmount(doctor?.earnings?.total);
+  const availableEarnings = toAmount(doctor?.earnings?.availableBalance);
 
   return (
     <View style={styles.container}>
@@ -159,12 +167,12 @@ export function DoctorProfileScreen({navigation}: Props) {
             onPress={() => navigation.navigate('DConsultations')}
           />
 
-          {(doctor?.earnings?.total ?? 0) > 0 || (doctor?.earnings?.availableBalance ?? 0) > 0 ? (
+          {totalEarnings > 0 || availableEarnings > 0 ? (
             <View style={styles.earningsBanner}>
               <View>
                 <Text style={styles.earningsBannerLabel}>Available earnings</Text>
                 <Text style={styles.earningsBannerValue}>
-                  ৳{doctor?.earnings?.availableBalance ?? doctor?.earnings?.total ?? 0}
+                  ৳{availableEarnings || totalEarnings}
                 </Text>
               </View>
               <TouchableOpacity

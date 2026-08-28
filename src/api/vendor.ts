@@ -17,6 +17,30 @@ export type VendorPayoutMethod = {
   isPrimary: boolean;
 };
 
+export type VendorDashboardProduct = {
+  id: string;
+  name: string;
+  genericName?: string | null;
+  category?: string | null;
+  unitPrice: string | number;
+  discountPrice?: string | number | null;
+  stockQuantity: number;
+  minAlertLevel: number;
+  unitType?: string | null;
+  imageUrl?: string | null;
+  isActive: boolean;
+};
+
+export type VendorDashboardOrder = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentMethod: string;
+  addressSnapshot?: {formattedAddress?: string; region?: string} | null;
+  customer?: {fullName: string; phone?: string | null};
+  items: {name: string; genericName?: string | null}[];
+};
+
 export type VendorDashboard = {
   vendor: {
     id: string;
@@ -32,7 +56,7 @@ export type VendorDashboard = {
     productCount: number;
     orderCount: number;
     pendingOrders: number;
-    totalRevenue: number;
+    totalRevenue: string | number;
   };
   wallet: {
     availableBalance: number;
@@ -44,6 +68,8 @@ export type VendorDashboard = {
   };
   documents: VendorDocument[];
   payoutMethods: VendorPayoutMethod[];
+  recentProducts: VendorDashboardProduct[];
+  recentOrders: VendorDashboardOrder[];
 };
 
 export const vendorApi = {

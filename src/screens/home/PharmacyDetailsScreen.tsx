@@ -39,89 +39,16 @@ import {
   productMetaLines,
   productSubtitle,
 } from '../../utils/productVariants';
+import {
+  parseMedicineInfoSections,
+  type MedicineInfoSection,
+} from '../../types/medicineInfo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyDetails'>;
 type TabKey = 'Summary' | 'Info';
 
 const {width} = Dimensions.get('window');
 const CARD_WIDTH = (width - 32 - 12) / 2;
-
-type InfoBlock = {text: string; bullet?: boolean; bold?: boolean};
-
-// Dummy copy standing in for the medicine monograph until the API returns it.
-const MEDICINE_INFO_SECTIONS: {title: string; blocks: InfoBlock[]}[] = [
-  {
-    title: 'Indications',
-    blocks: [
-      {
-        text: 'Cetirizine is indicated for the relief of symptoms associated with seasonal & perennial allergic rhinitis. It is also indicated for the treatment of the uncomplicated skin manifestations of chronic idiopathic urticaria and allergen induced asthma.',
-      },
-      {
-        text: 'Take medication as per the advice of a registered doctor.',
-        bullet: true,
-        bold: true,
-      },
-    ],
-  },
-  {
-    title: 'Dosage & Administration',
-    blocks: [
-      {text: 'Cetirizine oral dosage form:'},
-      {
-        text: 'Adults and Children 6 years and older: 1 tablet or 2 teaspoonfuls daily (or 1 teaspoonful twice daily).',
-        bullet: true,
-      },
-      {
-        text: 'Children 2-6 years: 1 teaspoonful once daily or 1/2 teaspoonful twice daily.',
-        bullet: true,
-      },
-      {
-        text: 'Children 6 months to 2 years : 1/2 teaspoonful once daily. The dose in children 12-23 months of age can be increased to a maximum dose as 1/2 teaspoonful every 12 hours.',
-        bullet: true,
-      },
-      {
-        text: 'Cetirizine injectable dosage form: Cetirizine is a single use injectable product for intravenous administration only. The recommended dosage regimen is once every 24 hours as needed for treatment of acute urticaria. Administer Cetirizine as an intravenous push over a period of 1 to 2 minutes. Cetirizine is not recommended in pediatric patients less than 6 years of age with impaired renal or hepatic function.',
-      },
-      {
-        text: 'Adults and adolescents 12 years of age and older: The recommended dosage is 10 mg administered by intravenous injection.',
-        bullet: true,
-      },
-      {
-        text: 'Children 6 to 11 years of age: The recommended dosage is 5 mg or 10 mg depending on symptom severity administered by intravenous injection.',
-        bullet: true,
-      },
-      {
-        text: 'Children 6 months to 5 years of age: The recommended dosage is 2.5 mg administered by intravenous injection.',
-        bullet: true,
-      },
-    ],
-  },
-  {
-    title: 'Interaction',
-    blocks: [
-      {
-        text: 'No clinically significant drug interactions have been found with Theophylline, Azithromycin, Pseudoephedrine, Ketoconazole or Erythromycin and with other drugs.',
-      },
-      {text: 'Contraindications'},
-    ],
-  },
-  {
-    title: 'Side Effects',
-    blocks: [
-      {
-        text: 'The most common side effects that occurred more frequently on Cetirizine is somnolence',
-      },
-    ],
-  },
-  {
-    title: 'Storage Conditions',
-    blocks: [
-      {
-        text: 'Keep in a dry place away from light and heat. Keep out of the reach of children.',
-      },
-    ],
-  },
-];
 
 function categoryBadgeIcon(category?: string | null) {
   const cat = (category ?? '').toLowerCase();
@@ -199,6 +126,11 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
         : ''
     }`;
 
+  const medicineInfoSections = useMemo(
+    () => parseMedicineInfoSections(product?.medicine?.infoSections),
+    [product?.medicine?.infoSections],
+  );
+
   const handleAddToCart = async () => {
     if (!product) return;
     const qty = quantities[selectedVariant] || 1;
@@ -255,28 +187,35 @@ export function PharmacyDetailsScreen({navigation, route}: Props) {
   const renderMedicineInfoContent = () => (
     <View style={styles.infoContentContainer}>
       {isMedicineProduct(product) ? (
-        MEDICINE_INFO_SECTIONS.map(section => (
-          <View key={section.title}>
-            <Text style={styles.contentHeading}>{section.title}</Text>
-            {section.blocks.map((block, index) =>
-              block.bullet ? (
-                <View key={`${section.title}-${index}`} style={styles.bulletRow}>
-                  <Text style={styles.bullet}>•</Text>
+        medicineInfoSections?.length ? (
+          medicineInfoSections.map((section: MedicineInfoSection) => (
+            <View key={section.title}>
+              <Text style={styles.contentHeading}>{section.title}</Text>
+              {section.blocks.map((block, index) =>
+                block.bullet ? (
+                  <View key={`${section.title}-${index}`} style={styles.bulletRow}>
+                    <Text style={styles.bullet}>•</Text>
+                    <Text
+                      style={[styles.contentText, block.bold && styles.boldText]}>
+                      {block.text}
+                    </Text>
+                  </View>
+                ) : (
                   <Text
-                    style={[styles.contentText, block.bold && styles.boldText]}>
+                    key={`${section.title}-${index}`}
+                    style={[styles.paragraph, block.bold && styles.boldText]}>
                     {block.text}
                   </Text>
-                </View>
-              ) : (
-                <Text
-                  key={`${section.title}-${index}`}
-                  style={[styles.paragraph, block.bold && styles.boldText]}>
-                  {block.text}
-                </Text>
-              ),
-            )}
-          </View>
-        ))
+                ),
+              )}
+            </View>
+          ))
+        ) : (
+          <>
+            <Text style={styles.contentHeading}>About this medicine</Text>
+            <Text style={styles.paragraph}>{productDescription}</Text>
+          </>
+        )
       ) : (
         <>
           <Text style={styles.contentHeading}>About this product</Text>
