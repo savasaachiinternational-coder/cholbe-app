@@ -155,7 +155,7 @@ function OrderDetailModal({
               )}
               {showInvoice && (
                 <TouchableOpacity onPress={() => setShowInvoice(false)} activeOpacity={0.7}>
-                  <Text style={styles.backText}>← Back</Text>
+                  <Text style={styles.backText}>Back</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={onClose} activeOpacity={0.7} style={styles.closeBtn}>
@@ -169,7 +169,7 @@ function OrderDetailModal({
               // Invoice view
               <View style={styles.invoiceContainer}>
                 <View style={styles.invoiceHeader}>
-                  <Text style={styles.invoiceBrand}>+ Cholbe PHARMACY</Text>
+                  <Image source={require('../../assets/logoImage.png')} fadeDuration={0} style={styles.logoStyle}/>
                   <Text style={styles.invoiceSubtitle}>Tax Invoice</Text>
                 </View>
                 <View style={styles.invoiceDivider} />
@@ -532,7 +532,7 @@ export function AdminOrdersScreen({navigation}: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F4F3FC'},
+  container: {flex: 1, backgroundColor: '#F4F1FD'},
   scrollContent: {paddingTop: 4},
   header: {
     flexDirection: 'row',
@@ -555,6 +555,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ECEFF3',
     gap: 8,
+    elevation:1,
   },
   searchInput: {flex: 1, fontSize: 14, padding: 0, color: '#1A1C1E'},
   filtersContent: {paddingHorizontal: 16, paddingVertical: 16, gap: 8},
@@ -562,7 +563,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 40,
-    backgroundColor: '#F3F2FB',
+    backgroundColor: '#F2F1FA',
     marginRight: 8,
     borderWidth: 1,
     borderColor: '#E0E0E0',
@@ -742,9 +743,10 @@ const styles = StyleSheet.create({
   statusBtnText: {fontSize: 12, fontFamily: FONT.medium, fontWeight: '500', color: '#7E8B97'},
   statusBtnTextActive: {color: '#FFFFFF', fontFamily: FONT.semibold, fontWeight: '600'},
   // Invoice
-  invoiceContainer: {padding: 4},
+  invoiceContainer: {padding: 4,},
   invoiceHeader: {alignItems: 'center', marginBottom: 16},
   invoiceBrand: {fontSize: 18, fontFamily: FONT.semibold, fontWeight: '600', color: '#3F8694'},
+  logoStyle:{height:56, width:150, resizeMode:'cover'},
   invoiceSubtitle: {fontSize: 12, color: '#7E8B97', marginTop: 2},
   invoiceDivider: {height: 1, backgroundColor: '#ECEFF3', marginVertical: 12},
   invoiceRow: {flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5},

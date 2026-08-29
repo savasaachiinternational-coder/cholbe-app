@@ -769,6 +769,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ECEFF3',
     gap: 8,
+    elevation:0.5,
   },
   searchInput: {
     flex: 1,
@@ -821,12 +822,13 @@ const styles = StyleSheet.create({
     minHeight: 120,
   },
   formCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     borderRadius: 14,
     marginHorizontal: 16,
     marginBottom: 12,
     padding: 14,
     borderWidth: 1,
+    elevation:1,
     borderColor: '#ECEFF3',
   },
   formTitle: {

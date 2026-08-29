@@ -406,7 +406,7 @@ export function AdminMedicinesScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0EFF8',
+    backgroundColor: '#F5F4FD',
   },
   scrollContent: {
     paddingTop: 4,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F0EFF8',
+    backgroundColor: '#F5F4FD',
   },
   // Figma H6/bold: Proxima Nova 18px / 600 / 120%, Greyscale-800.
   headerTitle: {
@@ -442,6 +442,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: 56,
     gap: 12,
+    elevation:1,
   },
   searchInput: {
     flex: 1,
@@ -500,7 +501,7 @@ const styles = StyleSheet.create({
     padding: 8,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E7E5F2',
+    borderColor: '#E6E3EE',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -510,7 +511,7 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#E8ECF1',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',

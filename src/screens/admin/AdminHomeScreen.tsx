@@ -30,8 +30,6 @@ import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AHome'>;
 
-// Proxima Nova per the Figma typography. Android resolves a weight by the exact
-// font file name, so each weight is referenced by its own family name.
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = width - 64;
 const CHART_PLOT_HEIGHT = 150;
@@ -449,7 +447,7 @@ export function AdminHomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0EFF8',
+    backgroundColor: '#F4F1FD',
   },
   scrollContent: {
     paddingTop: 0,

@@ -281,7 +281,7 @@ export function AdminReportsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0EFF8',
+    backgroundColor: '#F4F3FC',
   },
   scrollContent: {
     paddingTop: 4,
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 14,
-    backgroundColor: '#F0EFF8',
+    backgroundColor: '#F4F3FC',
   },
   // Figma H6/bold: Proxima Nova 18px / 600 / 120%, Greyscale-800.
   headerTitle: {
@@ -314,11 +314,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F5F4FD',
     borderRadius: 100,
-    height: 56,
+    height: 60,
     marginHorizontal: 16,
     marginTop: 12,
     paddingHorizontal: 20,
     gap: 12,
+    elevation:1,
   },
   datePickerText: {
     flex: 1,
@@ -441,10 +442,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   sectionHeadingTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: FONT.medium,
-    fontWeight: '500',
-    color: '#424242',
+    fontWeight: '600',
+    color: '#616161',
     paddingHorizontal: 16,
     marginTop: 22,
     marginBottom: 12,
