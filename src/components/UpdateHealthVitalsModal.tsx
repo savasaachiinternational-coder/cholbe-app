@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { FONT } from '../theme/typography';
+import {useKeyboardHeight} from '../hooks/useKeyboardHeight';
 
 type Props = {
   visible: boolean;
@@ -49,9 +50,10 @@ export function UpdateHealthVitalsModal({
     });
   };
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable style={[styles.backdrop, {paddingBottom: keyboardHeight}]} onPress={onClose}>
         <Pressable style={styles.card} onPress={e => e.stopPropagation()}>
           <View style={styles.headerRow}>
             <Text style={styles.title}>Update Health Status</Text>

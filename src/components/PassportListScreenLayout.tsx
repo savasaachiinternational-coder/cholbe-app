@@ -3,6 +3,7 @@ import {
   Alert,
   Dimensions,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,6 +14,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabKey } from '../screens/home/homeData';
 import { WaveTitleBand } from './WaveTitleBand';
+import { HomeBottomNav } from '../screens/home/HomeBottomNav';
 import { navigateCustomerTab } from '../screens/home/customerTabNavigation';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -80,38 +82,49 @@ export function PassportListScreenLayout({
           <Feather name="bell" size={24} color="#333333" />
         </TouchableOpacity>
       </View>
-      <View
-        style={{ marginTop: -16, justifyContent: 'center', marginBottom: 12 }}
+      {/* The band and the upload bar live inside the ScrollView so they scroll
+          away with the list. Order matters: bandWrap and body must stay
+          consecutive siblings for their negative margins to keep overlapping
+          the way they did as direct children of the container. */}
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
-        <WaveTitleBand
-          title={title}
-          color="#F5F2FE"
-          style={styles.screenTitle}
-        />
-      </View>
-      {/*      
-
-      <View style={styles.titleContainer}>
-        <Text style={styles.screenTitle}>{title}</Text>
-        {subtitle ? <Text style={styles.screenSubtitle}>{subtitle}</Text> : null}
-      </View> */}
-
-      <View style={[styles.body, { paddingBottom: insets.bottom + 96 }]}>
-        <TouchableOpacity
-          style={passportListLayoutStyles.uploadBar}
-          activeOpacity={0.85}
-          onPress={onUpload}
-        >
-          <MaterialCommunityIcons
-            name="cloud-upload-outline"
-            size={24}
-            color="#FFFFFF"
-            style={passportListLayoutStyles.uploadIcon}
+          <WaveTitleBand
+            title={title}
+            color="#F5F2FE"
+            style={styles.screenTitle}
           />
-          <Text style={passportListLayoutStyles.uploadText}>{uploadLabel}</Text>
-        </TouchableOpacity>
-        {children}
-      </View>
+        
+        {/*      
+
+        <View style={styles.titleContainer}>
+          <Text style={styles.screenTitle}>{title}</Text>
+          {subtitle ? (
+            <Text style={styles.screenSubtitle}>{subtitle}</Text>
+          ) : null}
+        </View> */}
+
+        <View style={[styles.body, { paddingBottom: insets.bottom + 96 }]}>
+          <TouchableOpacity
+            style={passportListLayoutStyles.uploadBar}
+            activeOpacity={0.85}
+            onPress={onUpload}
+          >
+            <MaterialCommunityIcons
+              name="cloud-upload-outline"
+              size={24}
+              color="#FFFFFF"
+              style={passportListLayoutStyles.uploadIcon}
+            />
+            <Text style={passportListLayoutStyles.uploadText}>
+              {uploadLabel}
+            </Text>
+          </TouchableOpacity>
+          {children}
+        </View>
+      </ScrollView>
 
       <TouchableOpacity
         style={[styles.floatingGradientFab, { bottom: insets.bottom + 94 }]}
@@ -127,6 +140,9 @@ export function PassportListScreenLayout({
           />
         </View> */}
       </TouchableOpacity>
+
+      {/* Superseded by the shared HomeBottomNav below - kept for reference.
+          To restore, delete this comment wrapper and the HomeBottomNav block.
 
       <View
         style={[styles.bottomTabBar, { paddingBottom: 12 + insets.bottom }]}
@@ -231,6 +247,15 @@ export function PassportListScreenLayout({
           </Text>
         </TouchableOpacity>
       </View>
+      */}
+
+      <View style={styles.bottomNavWrap}>
+        <HomeBottomNav
+          activeTab={activeTab}
+          bottomInset={insets.bottom}
+          onTabPress={onTabPress}
+        />
+      </View>
     </View>
   );
 }
@@ -278,6 +303,11 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   headerIconButton: { padding: 4, width: 32 },
+  scroll: { flex: 1 },
+  // flexGrow (not flex) so the content still fills the viewport when the list
+  // is short, while being free to exceed it when the list is long.
+  scrollContent: { flexGrow: 1 },
+  bandWrap: { marginTop: -16, justifyContent: 'center', marginBottom: 12 },
   logoContainer: { alignItems: 'center', justifyContent: 'center' },
   logoPlaceholder: { flexDirection: 'row', alignItems: 'center' },
   logoTextMain: {
@@ -315,7 +345,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   body: {
-    flex: 1,
+    // flexGrow, not flex: inside a ScrollView content container `flex: 1`
+    // collapses to the content height and the rounded card stops short.
+    flexGrow: 1,
     marginTop:-50,
     paddingHorizontal: 20,
     paddingTop:20,
@@ -344,6 +376,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#6DBAE7',
     opacity: 0.9,
+  },
+  bottomNavWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   bottomTabBar: {
     flexDirection: 'row',

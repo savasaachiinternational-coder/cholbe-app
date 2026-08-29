@@ -5,7 +5,6 @@ import {
   Dimensions,
   FlatList,
   Image,
-  KeyboardAvoidingView,
   Linking,
   Modal,
   Platform,
@@ -40,6 +39,7 @@ import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 import {AddEmergencyContactModal} from '../../components/AddEmergencyContactModal';
 import {AvatarImage} from '../../components/AvatarImage';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - 44) / 2;
@@ -1005,11 +1005,11 @@ function CustomerChangePasswordModal({visible, onClose}: {visible: boolean; onCl
     }
   };
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={cpStyles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View
+        style={[cpStyles.overlay, {paddingBottom: keyboardHeight}]}>
         <View style={cpStyles.modal}>
           <View style={cpStyles.header}>
             <Text style={cpStyles.title}>Change Password</Text>
@@ -1046,7 +1046,7 @@ function CustomerChangePasswordModal({visible, onClose}: {visible: boolean; onCl
             )}
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

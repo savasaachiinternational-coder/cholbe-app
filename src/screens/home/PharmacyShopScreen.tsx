@@ -34,6 +34,9 @@ import {
   unitTypeToVariant,
 } from '../../utils/pharmacyHelpers';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
+import {HomeBottomNav} from './HomeBottomNav';
+import type {BottomTabKey} from './homeData';
+import {navigateCustomerTab} from './customerTabNavigation';
 import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PharmacyShop'>;
@@ -47,6 +50,13 @@ const FILTER_CATEGORIES = ['All Items', 'Medicines', "Women's Care", 'Body Care'
 export function PharmacyShopScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+
+  const handleTabPress = (tab: BottomTabKey) => {
+    // Already on the pharmacy tab, so pressing it is a no-op - matching the
+    // inline bar this replaced, where Pharmacy had no onPress.
+    if (tab === 'pharmacy') return;
+    navigateCustomerTab(navigation, tab);
+  };
   const [activeCategory, setActiveCategory] = useState('All Items');
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<PharmacyProduct[]>([]);
@@ -268,43 +278,55 @@ export function PharmacyShopScreen({navigation}: Props) {
         {/* <MaterialCommunityIcons name="search" size={24} color="#FFFFFF" /> */}
       </TouchableOpacity>
 
-      <View style={[styles.bottomNav, {paddingBottom: 12 + insets.bottom}]}>
-        <TouchableOpacity
-          style={styles.navItem}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Home')}>
-          <Feather name="home" size={22} color="#9AA6B2" />
-          <Text style={styles.navText}>Home</Text>
-        </TouchableOpacity>
+      {/* Superseded by the shared HomeBottomNav below - kept for reference.
+          To restore, delete this comment wrapper and the HomeBottomNav block.
 
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
-          <MaterialCommunityIcons name="clippy" size={22} color="#00A884" />
-          <Text style={[styles.navText, styles.activeNavText]}>Pharmacy</Text>
-        </TouchableOpacity>
+        <View style={[styles.bottomNav, {paddingBottom: 12 + insets.bottom}]}>
+          <TouchableOpacity
+            style={styles.navItem}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Home')}>
+            <Feather name="home" size={22} color="#9AA6B2" />
+            <Text style={styles.navText}>Home</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navItem}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('MedicineList')}>
-          <MaterialCommunityIcons name="heart-pulse" size={22} color="#9AA6B2" />
-          <Text style={styles.navText}>Medication</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="clippy" size={22} color="#00A884" />
+            <Text style={[styles.navText, styles.activeNavText]}>Pharmacy</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navItem}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('ReportsList')}>
-          <MaterialCommunityIcons name="file-document-outline" size={22} color="#9AA6B2" />
-          <Text style={styles.navText}>Report</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navItem}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('MedicineList')}>
+            <MaterialCommunityIcons name="heart-pulse" size={22} color="#9AA6B2" />
+            <Text style={styles.navText}>Medication</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navItem}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('MyProfile')}>
-          <Feather name="user" size={22} color="#9AA6B2" />
-          <Text style={styles.navText}>Profile</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navItem}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('ReportsList')}>
+            <MaterialCommunityIcons name="file-document-outline" size={22} color="#9AA6B2" />
+            <Text style={styles.navText}>Report</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navItem}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('MyProfile')}>
+            <Feather name="user" size={22} color="#9AA6B2" />
+            <Text style={styles.navText}>Profile</Text>
+          </TouchableOpacity>
+        </View>
+      */}
+
+      <View style={styles.bottomNavWrap}>
+        <HomeBottomNav
+          activeTab="pharmacy"
+          bottomInset={insets.bottom}
+          onTabPress={handleTabPress}
+        />
       </View>
     </View>
   );
@@ -571,11 +593,18 @@ const styles = StyleSheet.create({
   fabIcon:{
     resizeMode:'cover'
   },
+  bottomNavWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   bottomNav: {
     flexDirection: 'row',
     minHeight: 74,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
+    paddingTop:10,
     borderTopColor: '#F0F2F7',
     justifyContent: 'space-around',
     alignItems: 'center',

@@ -108,43 +108,54 @@ export function AddMedicationFormScreen({ navigation, route }: Props) {
         </TouchableOpacity>
       </View>
 
-      <View
-        style={{ marginTop: -16, justifyContent: 'center', marginBottom: 12 }}
-      >
-        <WaveTitleBand title={isEditing ? 'Edit Medication' : 'Add Medication'} color="#F5F2FE"  style={styles.paddingInWave}/>
-      </View>
-
+      {/* The band sits inside the ScrollView so it scrolls away with the form.
+          The rounded card moved from the ScrollView's own style onto an inner
+          View, so its -50 overlap with the band still applies and the two stay
+          consecutive siblings in the same column. */}
       <ScrollView
-        style={styles.contentCard}
+        style={styles.scroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 110 },
-        ]}
+        contentContainerStyle={styles.scrollCanvas}
       >
-        <MedicationFormFields />
-
-        <TouchableOpacity
-          style={styles.saveButton}
-          activeOpacity={0.9}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          <LinearGradient
-            colors={SAVE_GRADIENT}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={StyleSheet.absoluteFill}
+        
+          <WaveTitleBand
+            title={isEditing ? 'Edit Medication' : 'Add Medication'}
+            color="#F5F2FE"
+            style={styles.paddingInWave}
           />
-          {saving ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.saveButtonText}>
-              {isEditing ? 'Update Medication' : 'Save Medication'}
-            </Text>
-          )}
-        </TouchableOpacity>
+      
+
+        <View
+          style={[
+            styles.contentCard,
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 110 },
+          ]}
+        >
+          <MedicationFormFields />
+
+          <TouchableOpacity
+            style={styles.saveButton}
+            activeOpacity={0.9}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            <LinearGradient
+              colors={SAVE_GRADIENT}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>
+                {isEditing ? 'Update Medication' : 'Save Medication'}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       <View style={styles.bottomNavWrap}>
@@ -191,20 +202,29 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   titleContainer: { alignItems: 'center', marginTop: 24, marginBottom: 16 },
-  screenTitle: { fontSize: 20, fontFamily: FONT.semibold, fontWeight: '600', color: '#333333' },
-  paddingInWave:{
-    paddingBottom:40,
-    color:'#424242',
-    fontSize:18,
+  screenTitle: {
+    fontSize: 20,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+    color: '#333333',
+  },
+  paddingInWave: {
+    paddingBottom: 50,
+    color: '#424242',
+    fontSize: 18,
     fontFamily: FONT.semibold,
     fontWeight: '600',
   },
+  scroll: { flex: 1 },
+  // flexGrow, not flex: inside a ScrollView content container `flex: 1`
+  // collapses to the content height and the card would stop short.
+  scrollCanvas: { flexGrow: 1 },
   contentCard: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#F5F2FE',
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
-    marginTop:-50,
+    marginTop: -50,
     shadowColor: '#E0E4F0',
     shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.4,
@@ -222,7 +242,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
   },
-  saveButtonText: { color: '#FFF', fontSize: 16, fontFamily: FONT.semibold, fontWeight: '600' },
+  saveButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontFamily: FONT.semibold,
+    fontWeight: '600',
+  },
   bottomNavWrap: {
     position: 'absolute',
     left: 0,

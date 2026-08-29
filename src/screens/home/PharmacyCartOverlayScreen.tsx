@@ -20,6 +20,9 @@ import {cartApi, type CartItem} from '../../api/cart';
 import {pharmacyApi, type PharmacyProduct} from '../../api/pharmacy';
 import {ApiError} from '../../api/client';
 import {ProductImage} from '../../components/ProductImage';
+import {HomeBottomNav} from './HomeBottomNav';
+import type {BottomTabKey} from './homeData';
+import {navigateCustomerTab} from './customerTabNavigation';
 import { FONT } from '../../theme/typography';
 import {
   discountPercent,
@@ -44,6 +47,10 @@ const DELIVERY_CHARGE = 30;
 export function PharmacyCartOverlayScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+
+  const handleTabPress = (tab: BottomTabKey) => {
+    navigateCustomerTab(navigation, tab);
+  };
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [subtotal, setSubtotal] = useState(0);
   const [products, setProducts] = useState<PharmacyProduct[]>([]);
@@ -302,6 +309,9 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
         </TouchableOpacity>
       </View>
 
+      {/* Superseded by the shared HomeBottomNav below - kept for reference.
+          To restore, delete this comment wrapper and the HomeBottomNav block.
+
       <View style={[styles.bottomTabBar, {paddingBottom: 12 + insets.bottom}]}>
         <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => navigation.navigate('Home')}>
           <Feather name="home" size={24} color="#A0A5BA" />
@@ -323,6 +333,15 @@ export function PharmacyCartOverlayScreen({navigation}: Props) {
           <Feather name="user" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Profile</Text>
         </TouchableOpacity>
+      </View>
+      */}
+
+      <View style={styles.bottomNavWrap}>
+        <HomeBottomNav
+          activeTab="pharmacy"
+          bottomInset={insets.bottom}
+          onTabPress={handleTabPress}
+        />
       </View>
     </View>
   );
@@ -630,6 +649,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONT.semibold,
     fontWeight: '600',
+  },
+  bottomNavWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   bottomTabBar: {
     flexDirection: 'row',

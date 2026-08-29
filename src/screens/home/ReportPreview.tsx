@@ -28,6 +28,7 @@ import {profileApi} from '../../api/profile';
 import {uploadFile} from '../../api/uploads';
 import {ApiError} from '../../api/client';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReportPreview'>;
 
@@ -188,6 +189,7 @@ export function ReportPreviewScreen({navigation, route}: Props) {
     }
   };
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <View style={styles.container}>
       <View style={[styles.headerContainer, {paddingTop: insets.top + 8}]}>
@@ -593,7 +595,7 @@ export function ReportPreviewScreen({navigation, route}: Props) {
         transparent={false}
         animationType="fade"
         onRequestClose={() => setFullscreen(false)}>
-        <View style={styles.fullscreenBackdrop}>
+        <View style={[styles.fullscreenBackdrop, {paddingBottom: keyboardHeight}]}>
           <TouchableOpacity
             style={[styles.fullscreenClose, {top: insets.top + 12}]}
             activeOpacity={0.7}

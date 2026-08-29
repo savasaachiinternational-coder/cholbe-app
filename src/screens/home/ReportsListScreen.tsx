@@ -2,9 +2,9 @@ import {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  ScrollView,
   StyleSheet,
   Text,
+  View,
 } from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -61,7 +61,7 @@ export function ReportsListScreen({navigation}: Props) {
       onTabPress={tab => navigateCustomerTab(navigation, tab)}
       onBack={() => navigation.goBack()}
       onNotifications={() => navigation.navigate('Notifications')}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.listContent}>
         {loading ? (
           <ActivityIndicator color="#45A096" style={styles.loader} />
         ) : items.length === 0 ? (
@@ -98,13 +98,13 @@ export function ReportsListScreen({navigation}: Props) {
             />
           ))
         )}
-      </ScrollView>
+      </View>
     </PassportListScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
+  listContent: {
     paddingTop: 8,
     paddingBottom: 24,
   },

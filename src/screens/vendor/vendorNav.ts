@@ -75,7 +75,11 @@ export type UnitType = (typeof UNIT_TYPES)[number];
 export const ORDER_FILTER_CHIPS = ['Accepted', 'Declined', 'Pending', 'Last 1 Weeks'] as const;
 export type OrderFilterChip = (typeof ORDER_FILTER_CHIPS)[number];
 
-export type VendorOrderStatus = 'Pending' | 'Accepted' | 'Delivered';
+export type VendorOrderStatus =
+  | 'Pending'
+  | 'Accepted'
+  | 'Delivered'
+  | 'Cancelled';
 
 export const PAYMENT_DATE_FILTERS = [
   'Last 7 Days',

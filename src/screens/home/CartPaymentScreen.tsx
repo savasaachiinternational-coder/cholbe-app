@@ -26,6 +26,7 @@ import { ApiError } from '../../api/client';
 import { LEGAL_URLS } from '../../config/legal';
 import { formatBdt } from '../../utils/pharmacyHelpers';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CartPayment'>;
 type PaymentMethod = 'COD' | 'bKash' | 'Nagad' | 'Card';
@@ -140,6 +141,7 @@ export function CartPaymentScreen({ navigation, route }: Props) {
     ? `#${placedOrderId.replace(/-/g, '').slice(0, 8).toUpperCase()}`
     : '';
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
@@ -318,7 +320,7 @@ export function CartPaymentScreen({ navigation, route }: Props) {
         animationType="fade"
         onRequestClose={handleDone}
       >
-        <Pressable style={styles.modalBackdrop} onPress={handleDone} />
+        <Pressable style={[styles.modalBackdrop, {paddingBottom: keyboardHeight}]} onPress={handleDone} />
 
         <View style={styles.congratsWrapper} pointerEvents="box-none">
           <View style={styles.congratsCard}>

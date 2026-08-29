@@ -22,6 +22,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import {AdminBottomNav} from './AdminBottomNav';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ADoctors'>;
 
@@ -165,6 +166,7 @@ export function AdminDoctorsScreen({navigation}: Props) {
     return '#94A3B8';
   };
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <View style={styles.container}>
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
@@ -262,7 +264,7 @@ export function AdminDoctorsScreen({navigation}: Props) {
 
       {/* Create Doctor Modal */}
       <Modal visible={showCreate} animationType="slide" transparent>
-        <View style={modal.overlay}>
+        <View style={[modal.overlay, {paddingBottom: keyboardHeight}]}>
           <View style={[modal.sheet, {paddingBottom: insets.bottom + 16}]}>
             <View style={modal.sheetHeader}>
               <Text style={modal.sheetTitle}>Add Doctor</Text>
@@ -323,7 +325,7 @@ export function AdminDoctorsScreen({navigation}: Props) {
 
       {/* Specialty Picker Modal */}
       <Modal visible={showSpecialtyPicker} animationType="slide" transparent>
-        <View style={modal.overlay}>
+        <View style={[modal.overlay, {paddingBottom: keyboardHeight}]}>
           <View style={[modal.sheet, {paddingBottom: insets.bottom + 16}]}>
             <View style={modal.sheetHeader}>
               <Text style={modal.sheetTitle}>Select Specialty</Text>

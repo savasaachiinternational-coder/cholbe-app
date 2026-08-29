@@ -30,6 +30,7 @@ import {
 } from './homeData';
 import { ProductImage } from '../../components/ProductImage';
 import { AvatarImage } from '../../components/AvatarImage';
+import { WaveWithChild } from '../../components/WaveWithChild';
 import { RoleMenuDrawer } from '../../components/RoleMenuDrawer';
 import { UpdateHealthVitalsModal } from '../../components/UpdateHealthVitalsModal';
 import { formatBdt, productUnitPrice } from '../../utils/pharmacyHelpers';
@@ -282,7 +283,25 @@ export function HomeScreen() {
             { paddingBottom: insets.bottom + 100 },
           ]}
         >
-          <View style={styles.profileBgWrap}>
+          <WaveWithChild color="#F5F2FE" style={styles.profileBandContent}>
+            <View style={styles.userInfoContainer}>
+              <AvatarImage uri={user?.avatarUrl} style={styles.avatar} />
+              <View style={styles.userMeta}>
+                <Text style={styles.userName}>{user?.fullName ?? '—'}</Text>
+                <View style={styles.locationRow}>
+                  <Feather name="map-pin" size={14} color="#64748B" />
+                  <Text style={styles.locationText}>
+                    {user?.location ?? 'Add address'}
+                  </Text>
+                </View>
+                <Text style={styles.lastSeenText}>
+                  Last seen by Dashboard: {user?.lastActiveLabel ?? '—'}
+                </Text>
+              </View>
+            </View>
+          </WaveWithChild>
+{/* 
+                    <View style={styles.profileBgWrap}>
             <Image
               source={require('../../assets/home_profile_bg4.png')}
               style={styles.profileBgArt}
@@ -304,7 +323,7 @@ export function HomeScreen() {
                 </Text>
               </View>
             </View>
-          </View>
+          </View> */}
           <View style={styles.heroCard}>
             {/* <View style={styles.waveDecorator1} />
           <View style={styles.waveDecorator2} /> */}
@@ -943,14 +962,6 @@ const styles = StyleSheet.create({
     width: 150,
     resizeMode: 'cover',
   },
-  profileBgWrap: {
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
-    paddingTop: 32,
-    paddingBottom: 34,
-    overflow: 'hidden',
-    position: 'relative',
-  },
   profileBgCurve: {
     position: 'absolute',
     top: 0,
@@ -958,26 +969,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  profileBgArt: {
-    position: 'absolute',
-    width: SCREEN_WIDTH * 1.4,
-    height: SCREEN_WIDTH * 1.2,
-    left: -SCREEN_WIDTH * 0.3,
-    top: -SCREEN_WIDTH * 0.62,
-    opacity: 0.7,
-  },
 
-  profileBgNotch: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: SCREEN_WIDTH,
-    top: 30 - SCREEN_WIDTH,
-    backgroundColor: '#F5F2FE',
-    borderBottomLeftRadius: SCREEN_WIDTH / 2,
-    borderBottomRightRadius: SCREEN_WIDTH / 2,
-    transform: [{ scaleX: 2 }],
-  },
   heroCardBg: {
     position: 'absolute',
     top: 0,
@@ -986,6 +978,14 @@ const styles = StyleSheet.create({
     height: '160%',
     opacity: 0.25,
     transform: [{ rotate: '-15deg' }],
+  },
+  // WaveWithChild centres its child and adds marginTop 12 on top of a
+  // paddingTop of 24. This restores the band's original rhythm: a full-width
+  // row, 48dp below the band top and 46dp above its bottom.
+  profileBandContent: {
+    alignItems: 'stretch',
+    marginTop: 8,
+    marginBottom: 20,
   },
   userInfoContainer: {
     flexDirection: 'row',

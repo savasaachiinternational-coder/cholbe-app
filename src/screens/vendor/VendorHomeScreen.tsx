@@ -21,6 +21,8 @@ import { ApiError } from '../../api/client';
 import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import type { RootStackParamList } from '../../navigation/types';
 import { ProductImage } from '../../components/ProductImage';
+import { ProductEditSheet } from '../../components/ProductEditSheet';
+import { vendorProductsApi } from '../../api/vendorProducts';
 import { formatBdt } from '../../utils/pharmacyHelpers';
 import { VendorBottomNav } from './VendorBottomNav';
 import type { VendorOrderStatus } from './vendorNav';
@@ -34,7 +36,7 @@ import { FONT } from '../../theme/typography';
 // font file name, so each weight is referenced by its own family name.
 // Figma "Card/Shadow 1": 0 4px 60px 0 rgba(4, 6, 15, 0.08).
 const CARD_SHADOW = {
-  shadowColor: '#04060F',
+  shadowColor: '#130F26',
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.08,
   shadowRadius: 30,
@@ -113,6 +115,9 @@ function discountLabel(product: VendorDashboardProduct) {
 function mapOrderStatus(status: string): VendorOrderStatus {
   if (status === 'PENDING') return 'Pending';
   if (status === 'DELIVERED') return 'Delivered';
+  // Without this, a cancelled order fell through to 'Pending' below and the
+  // Accept / Decline buttons came back - letting a declined order be revived.
+  if (status === 'CANCELLED') return 'Cancelled';
   if (
     status === 'CONFIRMED' ||
     status === 'PREPARING' ||
@@ -146,6 +151,11 @@ export function VendorHomeScreen({ navigation }: Props) {
   >([]);
   const [search, setSearch] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [togglingProductId, setTogglingProductId] = useState<string | null>(
+    null,
+  );
+  const [editingProduct, setEditingProduct] =
+    useState<VendorDashboardProduct | null>(null);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -188,6 +198,38 @@ export function VendorHomeScreen({ navigation }: Props) {
     [loadDashboard],
   );
 
+  const toggleProductActive = useCallback(
+    async (product: VendorDashboardProduct) => {
+      setTogglingProductId(product.id);
+      try {
+        await vendorProductsApi.updateStatus(product.id, !product.isActive);
+        await loadDashboard();
+      } catch (err) {
+        const message =
+          err instanceof ApiError ? err.message : 'Could not update product';
+        Alert.alert('Product', message);
+      } finally {
+        setTogglingProductId(null);
+      }
+    },
+    [loadDashboard],
+  );
+
+  // Declining is irreversible from this screen, so confirm first.
+  const confirmDecline = useCallback(
+    (orderId: string) => {
+      Alert.alert('Decline Order', 'Decline this order? This cannot be undone.', [
+        {text: 'Keep', style: 'cancel'},
+        {
+          text: 'Decline',
+          style: 'destructive',
+          onPress: () => updateOrderStatus(orderId, 'CANCELLED'),
+        },
+      ]);
+    },
+    [updateOrderStatus],
+  );
+
   const products = dashboard?.recentProducts ?? [];
   const filteredProducts = search.trim()
     ? products.filter(
@@ -218,6 +260,7 @@ export function VendorHomeScreen({ navigation }: Props) {
 
   const renderInventoryItem = (product: VendorDashboardProduct) => {
     const discount = discountLabel(product);
+    const isToggling = togglingProductId === product.id;
     return (
       <View key={product.id} style={styles.inventoryCard}>
         <View style={styles.inventoryImageBox}>
@@ -228,16 +271,30 @@ export function VendorHomeScreen({ navigation }: Props) {
           />
         </View>
         <View style={styles.inventoryDetails}>
-          <Text style={styles.itemTitle}>{product.name}</Text>
+          <Text style={styles.itemTitle} numberOfLines={1} ellipsizeMode="tail">
+            {product.name}
+          </Text>
           {product.genericName ? (
-            <Text style={styles.itemMetaText}>
+            <Text
+              style={styles.itemMetaText}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               Generic: {product.genericName}
             </Text>
           ) : null}
-          <Text style={styles.itemMetaText}>
+          <Text
+            style={styles.itemMetaText}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             In Stock: {product.stockQuantity} {product.unitType ?? 'units'}
           </Text>
-          <Text style={styles.itemMetaText}>
+          <Text
+            style={styles.itemMetaText}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             Price: {formatTk(product.discountPrice ?? product.unitPrice)}
             {product.unitType ? `/${product.unitType.toLowerCase()}` : ''}
             {discount ? (
@@ -245,23 +302,38 @@ export function VendorHomeScreen({ navigation }: Props) {
             ) : null}
           </Text>
 
-          {product.category ? (
-            <View style={styles.categoryPill}>
+          {/* Edit pill and status toggle share the details column's last row,
+              so the card root stays two columns: image | details. */}
+          <View style={styles.inventoryFooterRow}>
+            <TouchableOpacity
+              style={styles.categoryPill}
+              activeOpacity={0.7}
+              onPress={() => setEditingProduct(product)}
+            >
               <Feather name="edit-2" size={12} color="#616161" />
-              <Text style={styles.categoryPillText}>{product.category}</Text>
-            </View>
-          ) : null}
-        </View>
+              <Text
+                style={styles.categoryPillText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {product.category ?? 'Edit'}
+              </Text>
+            </TouchableOpacity>
 
-        <View
-          style={[
-            styles.statusToggleTrack,
-            product.isActive
-              ? styles.statusToggleTrackOn
-              : styles.statusToggleTrackOff,
-          ]}
-        >
-          <View style={styles.statusToggleKnob} />
+            <TouchableOpacity
+              activeOpacity={0.7}
+              disabled={isToggling}
+              onPress={() => toggleProductActive(product)}
+              style={[
+                styles.statusToggleTrack,
+                product.isActive
+                  ? styles.statusToggleTrackOn
+                  : styles.statusToggleTrackOff,
+              ]}
+            >
+              <View style={styles.statusToggleKnob} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -293,7 +365,11 @@ export function VendorHomeScreen({ navigation }: Props) {
         {firstItem ? (
           <View style={styles.orderProductRow}>
             <View style={styles.orderProductImageBox}>
-              <ProductImage style={styles.orderProductImage} />
+              <ProductImage
+                imageUrl={firstItem.imageUrl}
+                style={styles.orderProductImage}
+                resizeMode="contain"
+              />
             </View>
             <View style={styles.orderProductInfo}>
               <Text style={styles.orderProductTitle}>{firstItem.name}</Text>
@@ -331,7 +407,7 @@ export function VendorHomeScreen({ navigation }: Props) {
                     style={[styles.actionBtn, styles.btnDecline]}
                     activeOpacity={0.85}
                     disabled={isUpdating}
-                    onPress={() => updateOrderStatus(order.id, 'CANCELLED')}
+                    onPress={() => confirmDecline(order.id)}
                   >
                     <MaterialCommunityIcons
                       name="close-circle"
@@ -380,6 +456,17 @@ export function VendorHomeScreen({ navigation }: Props) {
                   <Text style={styles.outlinePillText}>Successful</Text>
                 </View>
               ) : null}
+
+              {uiStatus === 'Cancelled' ? (
+                <View style={[styles.successPill, styles.cancelledPill]}>
+                  <MaterialCommunityIcons
+                    name="close-circle"
+                    size={20}
+                    color="#E16160"
+                  />
+                  <Text style={styles.outlinePillText}>Cancelled</Text>
+                </View>
+              ) : null}
             </View>
           </View>
         ) : null}
@@ -391,7 +478,7 @@ export function VendorHomeScreen({ navigation }: Props) {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity activeOpacity={0.7} onPress={() => setMenuOpen(true)}>
-          <Feather name="menu" size={24} color="#1A1C1E" />
+          <Feather name="menu" size={24} color="#171717" />
         </TouchableOpacity>
         {/* <View style={styles.logoContainer}>
           <Text style={styles.logoTextMain}>+ Cholbe</Text>
@@ -659,6 +746,12 @@ export function VendorHomeScreen({ navigation }: Props) {
         navigation={navigation}
       />
 
+      <ProductEditSheet
+        product={editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSaved={loadDashboard}
+      />
+
       <RoleMenuDrawer
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -707,7 +800,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: FONT.semibold,
     fontWeight: '600',
-    color: '#3F8694',
+    color: '#4DA69F',
   },
   logoTextSub: {
     fontSize: 8,
@@ -811,10 +904,10 @@ const styles = StyleSheet.create({
     color: '#424242',
   },
   metricLabelLowStock: {
-    color: '#E26D6D',
+    color: '#E16160',
   },
   metricLabelOutStock: {
-    color: '#F37021',
+    color: '#FF981F',
   },
   // Figma H4/bold: 32px / 700 / 120%, Greyscale-900.
   metricValue: {
@@ -833,10 +926,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   metricSubPositive: {
-    color: '#00A651',
+    color: '#099250',
   },
   metricSubAlert: {
-    color: '#E26D6D',
+    color: '#E16160',
   },
 
   // ---- Primary action ----
@@ -924,12 +1017,13 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     padding: 12,
     gap: 12,
-    alignItems: 'flex-start',
+    // stretch, not flex-start: the image panel takes the card's full height,
+    // which the details column defines.
+    alignItems: 'stretch',
     ...CARD_SHADOW,
   },
   inventoryImageBox: {
-    width: 80,
-    height: 80,
+    width: 96,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
@@ -937,8 +1031,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   inventoryImage: {
-    width: 72,
-    height: 72,
+    width: 88,
+    height: 88,
   },
   inventoryDetails: {
     flex: 1,
@@ -958,20 +1052,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   discountText: {
-    color: '#E26D6D',
+    color: '#E16160',
   },
   // Figma: 100px radius pill, white fill, 1px Greyscale-300 border.
+  inventoryFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
   categoryPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    // shrink the pill rather than pushing the toggle off the row
+    flexShrink: 1,
+    backgroundColor: '#F3F2FB',
     borderWidth: 1,
     borderColor: '#E0E0E0',
     borderRadius: 100,
     paddingHorizontal: 12,
     height: 32,
-    marginTop: 8,
     gap: 6,
   },
   categoryPillText: {
@@ -982,11 +1082,11 @@ const styles = StyleSheet.create({
   },
   statusToggleTrack: {
     width: 40,
+    flexShrink: 0,
     height: 22,
     borderRadius: 11,
     padding: 3,
     justifyContent: 'center',
-    alignSelf: 'flex-end',
   },
   statusToggleTrackOn: {
     backgroundColor: '#4DA69F',
@@ -1046,13 +1146,14 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
     padding: 8,
     gap: 8,
-    alignItems: 'flex-start',
+    // stretch, not flex-start: the image panel takes the row's full height,
+    // which the info column defines.
+    alignItems: 'stretch',
     ...CARD_SHADOW,
     elevation: 0,
   },
   orderProductImageBox: {
     width: 80,
-    height: 80,
     borderRadius: 8,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
@@ -1062,7 +1163,6 @@ const styles = StyleSheet.create({
   orderProductImage: {
     width: 72,
     height: 72,
-    resizeMode: 'contain',
   },
   orderProductInfo: {
     flex: 1,
@@ -1092,10 +1192,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#4DA69F',
   },
   btnDecline: {
-    backgroundColor: '#E26D6D',
+    backgroundColor: '#E16160',
   },
   actionBtnText: {
-    color: '#FFFFFF',
+    color: '#F3F2FB',
     fontSize: 14,
     fontFamily: FONT.semibold,
     fontWeight: '600',
@@ -1110,8 +1210,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     gap: 8,
+  },
+  cancelledPill: {
+    borderColor: '#E16160',
   },
   successPill: {
     borderWidth: 1,
@@ -1122,7 +1225,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F2FB',
     gap: 8,
   },
   outlinePillText: {
@@ -1177,7 +1280,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: '#E4E2EF',
+    backgroundColor: '#E6E3EE',
     top: 0,
   },
   revenueGridLineMid: {

@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
@@ -37,6 +36,7 @@ import {VendorBottomNav} from './VendorBottomNav';
 import {performLogout} from '../../auth/sessionControl';
 import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VProfile'>;
 
@@ -145,11 +145,11 @@ function VendorEditProfileModal({
     });
   };
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.epOverlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View
+        style={[styles.epOverlay, {paddingBottom: keyboardHeight}]}>
         <View style={styles.epModal}>
           <View style={styles.epHeader}>
             <Text style={styles.epTitle}>Edit Profile</Text>
@@ -216,7 +216,7 @@ function VendorEditProfileModal({
             )}
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -255,11 +255,11 @@ function VendorChangePasswordModal({visible, onClose}: {visible: boolean; onClos
     }
   };
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.cpOverlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View
+        style={[styles.cpOverlay, {paddingBottom: keyboardHeight}]}>
         <View style={styles.cpModal}>
           <View style={styles.cpHeader}>
             <Text style={styles.cpTitle}>Change Password</Text>
@@ -292,7 +292,7 @@ function VendorChangePasswordModal({visible, onClose}: {visible: boolean; onClos
             )}
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -492,6 +492,7 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
 
   const bannerSource = resolveImageSource(vendor?.bannerUrl, FALLBACK_BANNER);
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <View style={styles.container}>
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
@@ -891,9 +892,8 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
         animationType="slide"
         transparent
         onRequestClose={() => setPayoutModalVisible(false)}>
-        <KeyboardAvoidingView
-          style={styles.epOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View
+          style={[styles.epOverlay, {paddingBottom: keyboardHeight}]}>
           <View style={styles.epModal}>
             <View style={styles.epHeader}>
               <Text style={styles.epTitle}>
@@ -954,7 +954,7 @@ export function VendorPharmacyProfileScreen({navigation}: Props) {
               )}
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );

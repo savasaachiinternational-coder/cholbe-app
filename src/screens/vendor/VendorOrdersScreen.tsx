@@ -26,6 +26,7 @@ import {ORDER_FILTER_CHIPS, type VendorOrderStatus} from './vendorNav';
 import {NotificationBell} from '../../components/NotificationBell';
 import { FONT } from '../../theme/typography';
 import { vendorActionLabel, vendorNextStatus } from '../../utils/orderStatusFlow';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VOrders'>;
 
@@ -144,9 +145,10 @@ function OrderDetailModal({order, visible, onClose, onStatusChange, updating}: O
   const stepIndex = STATUS_STEPS.indexOf(raw.status);
   const isCancelled = raw.status === 'CANCELLED';
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={detailStyles.overlay}>
+      <View style={[detailStyles.overlay, {paddingBottom: keyboardHeight}]}>
         <Pressable style={detailStyles.backdrop} onPress={onClose} />
         <View style={detailStyles.sheet}>
           <View style={detailStyles.handle} />

@@ -16,6 +16,7 @@ import DateTimePicker, {
 import LinearGradient from 'react-native-linear-gradient';
 import Feather from 'react-native-vector-icons/Feather';
 import { FONT } from '../theme/typography';
+import {useKeyboardHeight} from '../hooks/useKeyboardHeight';
 import {
   FREQUENCY_OPTIONS,
   INVENTORY_OPTIONS,
@@ -174,9 +175,10 @@ function NativePickerSheet({
     );
   }
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.modalBackdrop} onPress={onClose} />
+      <Pressable style={[styles.modalBackdrop, {paddingBottom: keyboardHeight}]} onPress={onClose} />
       <View style={styles.modalSheet}>
         <Text style={styles.modalTitle}>{title}</Text>
         <DateTimePicker
@@ -340,6 +342,7 @@ export function FrequencyPicker({value, onChange}: FrequencyPickerProps) {
   const label =
     FREQUENCY_OPTIONS.find(option => option.value === value)?.label ?? 'Once daily';
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <>
       <TouchableOpacity
@@ -351,7 +354,7 @@ export function FrequencyPicker({value, onChange}: FrequencyPickerProps) {
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="fade">
-        <Pressable style={styles.modalBackdrop} onPress={() => setVisible(false)} />
+        <Pressable style={[styles.modalBackdrop, {paddingBottom: keyboardHeight}]} onPress={() => setVisible(false)} />
         <View style={styles.optionSheet}>
           {FREQUENCY_OPTIONS.map(option => (
             <TouchableOpacity
@@ -392,6 +395,7 @@ export function StrengthPicker({
 }: StrengthPickerProps) {
   const [visible, setVisible] = useState(false);
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <>
       <TouchableOpacity
@@ -405,7 +409,7 @@ export function StrengthPicker({
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="fade">
-        <Pressable style={styles.modalBackdrop} onPress={() => setVisible(false)} />
+        <Pressable style={[styles.modalBackdrop, {paddingBottom: keyboardHeight}]} onPress={() => setVisible(false)} />
         <View style={styles.optionSheet}>
           {/* Scrolls because the strength list is long enough to run off-screen,
               unlike the 6-row frequency/inventory sheets. */}
@@ -466,6 +470,7 @@ export function MinuteChipRow({
     setCustomVisible(true);
   };
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <View style={styles.chipsSectionWrap}>
       {variant === 'segmented' ? (
@@ -574,7 +579,7 @@ export function MinuteChipRow({
       )}
 
       <Modal visible={customVisible} transparent animationType="fade">
-        <Pressable style={styles.modalBackdrop} onPress={() => setCustomVisible(false)} />
+        <Pressable style={[styles.modalBackdrop, {paddingBottom: keyboardHeight}]} onPress={() => setCustomVisible(false)} />
         <View style={styles.optionSheet}>
           <Text style={styles.modalTitle}>Custom minutes before</Text>
           <TextInput
@@ -608,6 +613,7 @@ type InventoryPickerProps = {
 export function InventoryPicker({value, onChange}: InventoryPickerProps) {
   const [visible, setVisible] = useState(false);
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <>
       <TouchableOpacity
@@ -619,7 +625,7 @@ export function InventoryPicker({value, onChange}: InventoryPickerProps) {
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="fade">
-        <Pressable style={styles.modalBackdrop} onPress={() => setVisible(false)} />
+        <Pressable style={[styles.modalBackdrop, {paddingBottom: keyboardHeight}]} onPress={() => setVisible(false)} />
         <View style={styles.optionSheet}>
           {INVENTORY_OPTIONS.map(count => (
             <TouchableOpacity

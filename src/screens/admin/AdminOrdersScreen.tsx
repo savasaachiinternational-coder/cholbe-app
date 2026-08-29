@@ -30,6 +30,7 @@ import {
   type AdminOrderStatus,
 } from './adminNav';
 import { adminAllowedStatuses } from '../../utils/orderStatusFlow';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AOrders'>;
 
@@ -135,9 +136,10 @@ function OrderDetailModal({
   const allowedStatuses = adminAllowedStatuses(detail.status);
   const lastTimelineIndex = detail.statusEvents.length - 1;
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, {paddingBottom: keyboardHeight}]}>
         <View style={styles.detailModal}>
           <View style={styles.detailModalHeader}>
             <Text style={styles.detailModalTitle}>

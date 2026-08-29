@@ -24,6 +24,7 @@ import {AdminBottomNav} from './AdminBottomNav';
 import {ADMIN_VENDOR_FILTERS, type AdminVendorFilter} from './adminNav';
 import {NotificationBell} from '../../components/NotificationBell';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AVendors'>;
 
@@ -81,9 +82,10 @@ function VendorDetailModal({
 }) {
   if (!vendor) return null;
   const showActions = vendor.approvalStatus === 'PENDING';
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal visible={!!vendor} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, {paddingBottom: keyboardHeight}]}>
         <View style={styles.detailModal}>
           <View style={styles.detailHeader}>
             <Text style={styles.detailTitle}>Vendor Details</Text>

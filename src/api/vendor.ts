@@ -38,7 +38,7 @@ export type VendorDashboardOrder = {
   paymentMethod: string;
   addressSnapshot?: {formattedAddress?: string; region?: string} | null;
   customer?: {fullName: string; phone?: string | null};
-  items: {name: string; genericName?: string | null}[];
+  items: {name: string; genericName?: string | null; imageUrl?: string | null}[];
 };
 
 export type VendorDashboard = {

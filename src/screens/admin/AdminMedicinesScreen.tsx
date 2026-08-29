@@ -24,6 +24,7 @@ import { ADMIN_MEDICINE_FILTERS, type AdminMedicineFilter } from './adminNav';
 import { NotificationBell } from '../../components/NotificationBell';
 import { ProductImage } from '../../components/ProductImage';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AMedicines'>;
 
@@ -97,6 +98,7 @@ function MedicineDetailModal({
   updating: boolean;
 }) {
   if (!medicine) return null;
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal
       visible={!!medicine}
@@ -104,7 +106,7 @@ function MedicineDetailModal({
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, {paddingBottom: keyboardHeight}]}>
         <View style={styles.detailModal}>
           <View style={styles.detailModalHeader}>
             <Text style={styles.detailModalTitle}>Medicine Details</Text>

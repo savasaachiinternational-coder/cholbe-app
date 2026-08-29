@@ -92,9 +92,8 @@ export function ReviewDetailsScreen({navigation}: Props) {
           </View>
 
           <MedicationReviewContent styles={styles} />
-
           <TouchableOpacity
-            style={styles.editButton}
+            style={[styles.editButton,{ marginBottom: 100+insets.bottom}]}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('AddMedicationForm')}>
             <Text style={styles.editButtonText}>Edit</Text>
@@ -102,7 +101,7 @@ export function ReviewDetailsScreen({navigation}: Props) {
         </View>
       </ScrollView>
 
-      <View style={[styles.footerActionContainer, {bottom: 74 + insets.bottom}]}>
+      <View style={[styles.footerActionContainer, {bottom: 50 + insets.bottom}]}>
         <TouchableOpacity
           style={styles.continueButton}
           activeOpacity={0.9}

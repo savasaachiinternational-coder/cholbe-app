@@ -2,7 +2,6 @@ import {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
@@ -27,6 +26,7 @@ import {confirmAndDeleteAccount} from '../../auth/deleteAccount';
 import {NotificationBell} from '../../components/NotificationBell';
 import {AvatarImage} from '../../components/AvatarImage';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AProfile'>;
 
@@ -103,11 +103,11 @@ function ChangePasswordModal({visible, onClose}: {visible: boolean; onClose: () 
     }
   };
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.cpOverlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View
+        style={[styles.cpOverlay, {paddingBottom: keyboardHeight}]}>
         <View style={styles.cpModal}>
           <View style={styles.cpHeader}>
             <Text style={styles.cpTitle}>Change Password</Text>
@@ -172,7 +172,7 @@ function ChangePasswordModal({visible, onClose}: {visible: boolean; onClose: () 
             )}
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

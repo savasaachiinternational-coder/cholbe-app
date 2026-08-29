@@ -3,8 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +16,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {vendorProductsApi} from '../../api/vendorProducts';
+import {ProductEditSheet} from '../../components/ProductEditSheet';
 import {ApiError} from '../../api/client';
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
@@ -74,15 +73,6 @@ export function VendorInventoryScreen({navigation}: Props) {
   const [search, setSearch] = useState('');
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<VendorProduct | null>(null);
-  const [editFields, setEditFields] = useState({
-    name: '',
-    genericName: '',
-    unitPrice: '',
-    discountPrice: '',
-    stockQuantity: '',
-    minAlertLevel: '',
-  });
-  const [editSaving, setEditSaving] = useState(false);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -122,14 +112,6 @@ export function VendorInventoryScreen({navigation}: Props) {
   );
 
   const openEdit = useCallback((product: VendorProduct) => {
-    setEditFields({
-      name: product.name,
-      genericName: product.genericName ?? '',
-      unitPrice: String(product.unitPrice),
-      discountPrice: product.discountPrice ? String(product.discountPrice) : '',
-      stockQuantity: String(product.stockQuantity),
-      minAlertLevel: '',
-    });
     setEditingProduct(product);
   }, []);
 
@@ -159,37 +141,6 @@ export function VendorInventoryScreen({navigation}: Props) {
     [loadProducts],
   );
 
-  const handleSaveEdit = useCallback(async () => {
-    if (!editingProduct) return;
-    const price = parseFloat(editFields.unitPrice);
-    const stock = parseInt(editFields.stockQuantity, 10);
-    if (Number.isNaN(price) || price < 0) {
-      Alert.alert('Edit', 'Enter a valid unit price.');
-      return;
-    }
-    if (Number.isNaN(stock) || stock < 0) {
-      Alert.alert('Edit', 'Enter a valid stock quantity.');
-      return;
-    }
-    setEditSaving(true);
-    try {
-      await vendorProductsApi.update(editingProduct.id, {
-        name: editFields.name.trim(),
-        genericName: editFields.genericName.trim() || undefined,
-        unitPrice: price,
-        discountPrice: editFields.discountPrice ? parseFloat(editFields.discountPrice) : undefined,
-        stockQuantity: stock,
-        minAlertLevel: editFields.minAlertLevel ? parseInt(editFields.minAlertLevel, 10) : undefined,
-      });
-      setEditingProduct(null);
-      loadProducts();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not update product';
-      Alert.alert('Edit', message);
-    } finally {
-      setEditSaving(false);
-    }
-  }, [editingProduct, editFields, loadProducts]);
 
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -337,83 +288,11 @@ export function VendorInventoryScreen({navigation}: Props) {
 
       <VendorBottomNav activeTab="inventory" bottomInset={insets.bottom} navigation={navigation} />
 
-      <Modal
-        animationType="slide"
-        transparent
-        visible={editingProduct !== null}
-        onRequestClose={() => setEditingProduct(null)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setEditingProduct(null)}>
-          <Pressable style={[styles.editSheet, {paddingBottom: insets.bottom + 16}]} onPress={e => e.stopPropagation()}>
-            <View style={styles.editSheetHandle} />
-            <Text style={styles.editSheetTitle}>Edit Product</Text>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.editLabel}>Product Name</Text>
-              <TextInput
-                style={styles.editInput}
-                value={editFields.name}
-                onChangeText={v => setEditFields(f => ({...f, name: v}))}
-                placeholder="Product Name"
-                placeholderTextColor="#A0AEC0"
-              />
-              <Text style={styles.editLabel}>Generic Name</Text>
-              <TextInput
-                style={styles.editInput}
-                value={editFields.genericName}
-                onChangeText={v => setEditFields(f => ({...f, genericName: v}))}
-                placeholder="Generic Name"
-                placeholderTextColor="#A0AEC0"
-              />
-              <Text style={styles.editLabel}>Unit Price</Text>
-              <TextInput
-                style={styles.editInput}
-                value={editFields.unitPrice}
-                onChangeText={v => setEditFields(f => ({...f, unitPrice: v}))}
-                placeholder="0.00"
-                placeholderTextColor="#A0AEC0"
-                keyboardType="numeric"
-              />
-              <Text style={styles.editLabel}>Discount Price</Text>
-              <TextInput
-                style={styles.editInput}
-                value={editFields.discountPrice}
-                onChangeText={v => setEditFields(f => ({...f, discountPrice: v}))}
-                placeholder="0.00"
-                placeholderTextColor="#A0AEC0"
-                keyboardType="numeric"
-              />
-              <Text style={styles.editLabel}>Stock Quantity</Text>
-              <TextInput
-                style={styles.editInput}
-                value={editFields.stockQuantity}
-                onChangeText={v => setEditFields(f => ({...f, stockQuantity: v}))}
-                placeholder="0"
-                placeholderTextColor="#A0AEC0"
-                keyboardType="numeric"
-              />
-              <Text style={styles.editLabel}>Min. Alert Level</Text>
-              <TextInput
-                style={styles.editInput}
-                value={editFields.minAlertLevel}
-                onChangeText={v => setEditFields(f => ({...f, minAlertLevel: v}))}
-                placeholder="e.g. 10"
-                placeholderTextColor="#A0AEC0"
-                keyboardType="numeric"
-              />
-              <TouchableOpacity
-                style={[styles.saveEditBtn, editSaving && styles.saveEditBtnDisabled]}
-                activeOpacity={0.9}
-                disabled={editSaving}
-                onPress={handleSaveEdit}>
-                {editSaving ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.saveEditBtnText}>Save Changes</Text>
-                )}
-              </TouchableOpacity>
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <ProductEditSheet
+        product={editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSaved={loadProducts}
+      />
     </View>
   );
 }
@@ -624,68 +503,5 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     padding: 2,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  editSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    maxHeight: '85%',
-  },
-  editSheetHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#CBD5E1',
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  editSheetTitle: {
-    fontSize: 17,
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
-    color: '#1A1C1E',
-    marginBottom: 16,
-  },
-  editLabel: {
-    fontSize: 12,
-    color: '#6F767E',
-    fontFamily: FONT.medium,
-    fontWeight: '500',
-    marginBottom: 4,
-    marginTop: 8,
-  },
-  editInput: {
-    backgroundColor: '#F4F5F6',
-    borderRadius: 10,
-    height: 44,
-    paddingHorizontal: 12,
-    fontSize: 13,
-    color: '#1A1C1E',
-    marginBottom: 4,
-  },
-  saveEditBtn: {
-    backgroundColor: '#3F8694',
-    borderRadius: 22,
-    height: 46,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  saveEditBtnDisabled: {
-    opacity: 0.7,
-  },
-  saveEditBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
   },
 });

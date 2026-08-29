@@ -25,6 +25,7 @@ import {VendorBottomNav} from './VendorBottomNav';
 import {NotificationBell} from '../../components/NotificationBell';
 import {AvatarImage} from '../../components/AvatarImage';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 import {
   PAYMENT_DATE_FILTERS,
   PAYMENT_STATUS_FILTERS,
@@ -421,9 +422,10 @@ function OptionPickerModal<T extends string>({
   onSelect,
   onClose,
 }: OptionPickerModalProps<T>) {
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
-      <Pressable style={styles.pickerOverlay} onPress={onClose}>
+      <Pressable style={[styles.pickerOverlay, {paddingBottom: keyboardHeight}]} onPress={onClose}>
         <Pressable style={styles.pickerCard} onPress={e => e.stopPropagation()}>
           <Text style={styles.pickerTitle}>{title}</Text>
           {options.map(option => (

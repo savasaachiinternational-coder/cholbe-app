@@ -409,7 +409,7 @@ export function NotificationsScreen({ navigation }: Props) {
           ]}
         >
           {filteredSections.length === 0 ? (
-            <Text style={styles.emptyText}>No notifications yet.</Text>
+            <Text style={styles.emptyText}>No {selectedScreen.toLowerCase()} yet.</Text>
           ) : (
             filteredSections.map(section => (
               <View key={section.title}>

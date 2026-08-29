@@ -82,3 +82,4 @@ nasir/
 !.yarn/versions
 src/config/googleMaps.ts
 src/config/gemini.ts
+cholbe-pharmacy-screens.json

@@ -22,6 +22,7 @@ import {DatePickerField, TimePickerField} from '../../components/MedicationPicke
 import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../navigation/types';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DEditProfile'>;
 
@@ -443,6 +444,7 @@ export function DoctorEditProfileScreen({navigation, route}: Props) {
     );
   }
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <View style={styles.container}>
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
@@ -752,7 +754,7 @@ export function DoctorEditProfileScreen({navigation, route}: Props) {
 
       {/* Specialty Picker Modal */}
       <Modal visible={showSpecialtyPicker} animationType="slide" transparent>
-        <View style={mst.overlay}>
+        <View style={[mst.overlay, {paddingBottom: keyboardHeight}]}>
           <View style={[mst.sheet, {paddingBottom: insets.bottom + 16}]}>
             <View style={mst.header}>
               <Text style={mst.title}>Select Specialty</Text>
@@ -779,7 +781,7 @@ export function DoctorEditProfileScreen({navigation, route}: Props) {
 
       {/* Schedule Slot Modal */}
       <Modal visible={showSlotModal} animationType="slide" transparent>
-        <View style={mst.overlay}>
+        <View style={[mst.overlay, {paddingBottom: keyboardHeight}]}>
           <View style={[mst.sheet, {paddingBottom: insets.bottom + 16}]}>
             <View style={mst.header}>
               <Text style={mst.title}>
@@ -859,7 +861,7 @@ export function DoctorEditProfileScreen({navigation, route}: Props) {
 
       {/* Qualification Modal */}
       <Modal visible={showQualModal} animationType="slide" transparent>
-        <View style={mst.overlay}>
+        <View style={[mst.overlay, {paddingBottom: keyboardHeight}]}>
           <View style={[mst.sheet, {paddingBottom: insets.bottom + 16}]}>
             <View style={mst.header}>
               <Text style={mst.title}>{editingQual ? 'Edit Qualification' : 'Add Qualification'}</Text>
@@ -894,7 +896,7 @@ export function DoctorEditProfileScreen({navigation, route}: Props) {
 
       {/* Experience Modal */}
       <Modal visible={showExpModal} animationType="slide" transparent>
-        <View style={mst.overlay}>
+        <View style={[mst.overlay, {paddingBottom: keyboardHeight}]}>
           <View style={[mst.sheet, {paddingBottom: insets.bottom + 16}]}>
             <View style={mst.header}>
               <Text style={mst.title}>{editingExp ? 'Edit Experience' : 'Add Experience'}</Text>
@@ -944,7 +946,7 @@ export function DoctorEditProfileScreen({navigation, route}: Props) {
 
       {/* Instruction Modal */}
       <Modal visible={showInstrModal} animationType="slide" transparent>
-        <View style={mst.overlay}>
+        <View style={[mst.overlay, {paddingBottom: keyboardHeight}]}>
           <View style={[mst.sheet, {paddingBottom: insets.bottom + 16}]}>
             <View style={mst.header}>
               <Text style={mst.title}>{editingInstr ? 'Edit Training' : 'Add Training'}</Text>
@@ -992,7 +994,7 @@ export function DoctorEditProfileScreen({navigation, route}: Props) {
 
       {/* Payment Modal */}
       <Modal visible={showPayModal} animationType="slide" transparent>
-        <View style={mst.overlay}>
+        <View style={[mst.overlay, {paddingBottom: keyboardHeight}]}>
           <View style={[mst.sheet, {paddingBottom: insets.bottom + 16}]}>
             <View style={mst.header}>
               <Text style={mst.title}>{editingPay ? 'Edit Payout Method' : 'Add Payout Method'}</Text>

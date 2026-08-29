@@ -21,6 +21,7 @@ import {useEdgeToEdgeStatusBar} from '../../hooks/useEdgeToEdgeStatusBar';
 import {authApi} from '../../api/auth';
 import {ApiError} from '../../api/client';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 
 const AUTH_GRADIENT = ['#F5F8FC', '#E3F2F9', '#DDF0F7'] as const;
 
@@ -235,13 +236,14 @@ function OptionPickerModal<T extends string>({
   onSelect,
   onClose,
 }: PickerModalProps<T>) {
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal
       animationType="fade"
       transparent
       visible={visible}
       onRequestClose={onClose}>
-      <Pressable style={styles.pickerOverlay} onPress={onClose}>
+      <Pressable style={[styles.pickerOverlay, {paddingBottom: keyboardHeight}]} onPress={onClose}>
         <Pressable style={styles.pickerCard} onPress={e => e.stopPropagation()}>
           <Text style={styles.pickerTitle}>{title}</Text>
           {options.map(option => (

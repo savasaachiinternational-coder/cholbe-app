@@ -34,6 +34,7 @@ import {ApiError} from '../../api/client';
 import {getStoredUser} from '../../api/tokenStorage';
 import {API_ORIGIN} from '../../config/api';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 import {
   imageUri,
   pickedFileFromAsset,
@@ -443,6 +444,7 @@ export function ConsultationChatScreen({navigation, route}: Props) {
     navigation.navigate('Home');
   };
 
+  const keyboardHeight = useKeyboardHeight();
   return (
     <View style={styles.container}>
       <View style={[styles.header, {paddingTop: insets.top + 8}]}>
@@ -653,7 +655,7 @@ export function ConsultationChatScreen({navigation, route}: Props) {
         transparent
         animationType="fade"
         onRequestClose={() => setEmojiOpen(false)}>
-        <Pressable style={styles.emojiBackdrop} onPress={() => setEmojiOpen(false)}>
+        <Pressable style={[styles.emojiBackdrop, {paddingBottom: keyboardHeight}]} onPress={() => setEmojiOpen(false)}>
           <View style={[styles.emojiPanel, {bottom: composerBottom + 72}]}>
             <View style={styles.emojiGrid}>
               {QUICK_EMOJIS.map(emoji => (

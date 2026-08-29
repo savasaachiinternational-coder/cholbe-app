@@ -28,6 +28,7 @@ import {NotificationBell} from '../../components/NotificationBell';
 import {WaveWithChild} from '../../components/WaveWithChild';
 import {DatePickerField} from '../../components/MedicationPickers';
 import { FONT } from '../../theme/typography';
+import {useKeyboardHeight} from '../../hooks/useKeyboardHeight';
 import {
   PRODUCT_CATEGORIES,
   TEMPERATURE_OPTIONS,
@@ -550,9 +551,10 @@ function OptionPickerModal<T extends string>({
   onSelect,
   onClose,
 }: OptionPickerModalProps<T>) {
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
-      <Pressable style={styles.pickerOverlay} onPress={onClose}>
+      <Pressable style={[styles.pickerOverlay, {paddingBottom: keyboardHeight}]} onPress={onClose}>
         <Pressable style={styles.pickerCard} onPress={e => e.stopPropagation()}>
           <Text style={styles.pickerTitle}>{title}</Text>
           {options.map((option, index) => (

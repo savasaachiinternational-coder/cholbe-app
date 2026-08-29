@@ -19,9 +19,19 @@ export function MedicationReviewContent({styles}: Props) {
 
   return (
     <>
-      {/* Direct child of the fragment so it anchors to the card, not to a row.
-          First in order so it paints behind everything below it. */}
-      <Image source={CARD_BG} style={bg.cardBg} resizeMode="cover" />
+
+      <View style={bg.cardBgClip} pointerEvents="none">
+        <Image
+          source={CARD_BG}
+          style={[bg.cardBg, bg.cardBgLower]}
+          resizeMode="cover"
+        />
+        <Image
+          source={CARD_BG}
+          style={[bg.cardBg, bg.cardBgUpper]}
+          resizeMode="cover"
+        />
+      </View>
 
       <View style={styles.metaTitleBlock}>
         <Text style={styles.medicineNameText}>{draft.medicineName || 'Medicine'}</Text>
@@ -146,12 +156,30 @@ export function MedicationReviewContent({styles}: Props) {
 }
 
 const bg = StyleSheet.create({
+  cardBgClip: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+    borderRadius: 16,
+  },
   cardBg: {
     position: 'absolute',
-    left: -16,      
-    right: -16,
-    bottom: -16,
+    left: 0,
+    // An explicit width is required here. A left/right pair does NOT size this
+    // node: an Image carries intrinsic dimensions, and with aspectRatio set
+    // Yoga resolves the box from those instead of from the insets - which
+    // pinned it at the asset's own 600dp, overflowing a narrow card in
+    // portrait and falling short of a wide one in landscape. The percentage
+    // resolves against cardBgClip, which has no padding of its own.
+    width: '100%',
     aspectRatio: 600 / 270,   // the asset's real dimensions
     opacity: 0.1,
   },
+  // One vertical anchor each: setting top and bottom together would pin the
+  // height and fight the aspectRatio.
+  cardBgLower: { bottom: 110 },
+  cardBgUpper: { top: '10%' },
 });

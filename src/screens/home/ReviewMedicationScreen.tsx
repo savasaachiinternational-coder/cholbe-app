@@ -2,13 +2,13 @@ import {useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
@@ -24,10 +24,11 @@ import { FONT } from '../../theme/typography';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewMedication'>;
 
-const {width} = Dimensions.get('window');
-
 export function ReviewMedicationScreen({navigation}: Props) {
   useEdgeToEdgeStatusBar();
+  // Live width. Reading the window size once at module load freezes it at the
+  // launch orientation, so the tab bar kept portrait widths after a rotate.
+  const {width} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const {saveSchedule} = useMedicationDraft();
   const [saving, setSaving] = useState(false);
@@ -64,16 +65,21 @@ export function ReviewMedicationScreen({navigation}: Props) {
         </TouchableOpacity>
       </View>
 
-       <WaveTitleBand title={'Review Medication'} color="#F5F2FD" style={[styles.waveDesign,styles.screenTitle]}/>
+      
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollCanvasContent}>
+          <WaveTitleBand title={'Review Medication'} color="#F5F2FD" style={[styles.waveDesign,styles.screenTitle]}/>
         <View style={styles.reviewDetailsCard}>
           <MedicationReviewContent styles={styles} />
+          <View style={{height:100}}/>
         </View>
+        
       </ScrollView>
 
-      <View style={[styles.dualActionFooterContainer, {bottom: 74 + insets.bottom}]}>
+     
+
+      <View style={[styles.dualActionFooterContainer, {bottom: 64 + insets.bottom}]}>
         <TouchableOpacity
           style={styles.cancelButton}
           activeOpacity={0.8}
@@ -96,7 +102,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
 
       <View style={[styles.bottomTabBar, {paddingBottom: 12 + insets.bottom}]}>
         <TouchableOpacity
-          style={styles.tabItem}
+          style={[styles.tabItem, {width: width / 5}]}
           activeOpacity={0.7}
           onPress={() => navigation.navigate('Home')}>
           <Feather name="home" size={24} color="#A0A5BA" />
@@ -104,7 +110,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.tabItem}
+          style={[styles.tabItem, {width: width / 5}]}
           activeOpacity={0.7}
           onPress={() => navigation.navigate('PharmacyShop')}>
           <MaterialCommunityIcons name="clippy" size={24} color="#A0A5BA" />
@@ -112,7 +118,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.tabItem}
+          style={[styles.tabItem, {width: width / 5}]}
           activeOpacity={0.7}
           onPress={() => navigation.navigate('MedicineList')}>
           <MaterialCommunityIcons name="heart-pulse" size={24} color="#45A096" />
@@ -120,7 +126,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.tabItem}
+          style={[styles.tabItem, {width: width / 5}]}
           activeOpacity={0.7}
           onPress={() => navigation.navigate('ReportsList')}>
           <MaterialCommunityIcons
@@ -132,7 +138,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.tabItem}
+          style={[styles.tabItem, {width: width / 5}]}
           activeOpacity={0.7}
           onPress={() => navigation.navigate('MyProfile')}>
           <Feather name="user" size={24} color="#A0A5BA" />
@@ -204,7 +210,6 @@ const styles = StyleSheet.create({
   },
   scrollCanvasContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
     paddingBottom: 160,
   },
   waveDesign:{
@@ -366,7 +371,6 @@ const styles = StyleSheet.create({
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: width / 5,
   },
   tabLabel: {
     fontSize: 11,
