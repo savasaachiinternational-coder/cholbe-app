@@ -23,7 +23,7 @@ function MetaRow({label, value}: {label: string; value?: string}) {
   );
 }
 
-export function ScannedDocumentView({document}: Props) {
+function ScannedDocumentViewBase({document}: Props) {
   const isPrescription = document.documentType === 'PRESCRIPTION';
   const count = isPrescription
     ? document.medicines.length
@@ -74,6 +74,8 @@ export function ScannedDocumentView({document}: Props) {
     </View>
   );
 }
+
+export const ScannedDocumentView = React.memo(ScannedDocumentViewBase);
 
 const styles = StyleSheet.create({
   container: {

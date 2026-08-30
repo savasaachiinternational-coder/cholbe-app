@@ -7,7 +7,6 @@ import {analyseSymptomIntake} from '../../services/SymptomResultScreen/symptomAn
 type State = {
   status: 'loading' | 'ready' | 'error';
   conditions: ConditionSuggestion[];
-  /** The backend's specialties, so the caller can map a name back to an id. */
   specialties: Specialty[];
   errorMessage: string;
 };
@@ -25,16 +24,6 @@ function errorText(err: unknown) {
     : 'Could not analyse your answers.';
 }
 
-/**
- * Runs the intake through Gemini once per screen, with an explicit retry.
- *
- * Specialties are fetched first because the analysis schema constrains its
- * `specialty` field to that exact list — a failed fetch just means the
- * suggestions come back untagged and the doctor list stays unfiltered.
- *
- * `attempt` is what actually re-triggers the effect: the intake object is a
- * fresh literal on every render, so depending on it directly would loop.
- */
 export function useSymptomAnalysis(intake: SymptomIntake) {
   const [state, setState] = useState<State>(INITIAL);
   const [attempt, setAttempt] = useState(0);
@@ -59,6 +48,9 @@ export function useSymptomAnalysis(intake: SymptomIntake) {
         }
       })
       .catch(err => {
+        if (__DEV__) {
+          console.warn('[symptomAnalysis] analysis failed', err);
+        }
         if (active) {
           setState({
             status: 'error',
@@ -69,7 +61,6 @@ export function useSymptomAnalysis(intake: SymptomIntake) {
         }
       });
 
-    // Late responses must not overwrite a retry that already landed.
     return () => {
       active = false;
     };

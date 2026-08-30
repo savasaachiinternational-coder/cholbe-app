@@ -6,11 +6,9 @@ import {
   TouchableOpacity,
   type ImageSourcePropType,
 } from 'react-native';
-import React from 'react';
+import React, {useCallback} from 'react';
 import { FONT } from '../../../../theme/typography';
 
-// The grid is two columns with a 16px gutter inside a 16px screen padding, so
-// the card width is pinned rather than left to a percentage.
 export const CATEGORY_GRID_GAP = 16;
 const SCREEN_PADDING = 16;
 const CARD_WIDTH =
@@ -20,15 +18,17 @@ type Props = {
   image: ImageSourcePropType;
   title: string;
   selected?: boolean;
-  onPress?: () => void;
+  onPress?: (title: string) => void;
 };
 
-export function AiHelpCategoryCard({image, title, selected, onPress}: Props) {
+function AiHelpCategoryCardBase({image, title, selected, onPress}: Props) {
+  const handlePress = useCallback(() => onPress?.(title), [onPress, title]);
+
   return (
     <TouchableOpacity
       style={[styles.container, selected && styles.containerSelected]}
       activeOpacity={0.8}
-      onPress={onPress}>
+      onPress={handlePress}>
       <Image source={image} style={styles.icon} resizeMode="contain" />
       <Text style={styles.title} numberOfLines={2}>
         {title}
@@ -36,6 +36,8 @@ export function AiHelpCategoryCard({image, title, selected, onPress}: Props) {
     </TouchableOpacity>
   );
 }
+
+export const AiHelpCategoryCard = React.memo(AiHelpCategoryCardBase);
 
 const styles = StyleSheet.create({
   container: {

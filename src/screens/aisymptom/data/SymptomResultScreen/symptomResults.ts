@@ -3,14 +3,11 @@ import type {ImageSourcePropType} from 'react-native';
 export type ConditionSuggestion = {
   id: string;
   name: string;
-  /** 0–100. Drives both the bar width and its colour. */
   confidence: number;
   description?: string;
-  /** Spells out "confidence" after the percentage instead of just "%". */
   labelConfidence?: boolean;
   severity: string;
   triggers: string;
-  /** Name of the specialty that treats this — matches a backend Specialty. */
   specialty?: string;
 };
 
@@ -34,7 +31,6 @@ export const RESULT_CTA_LABEL = 'See what to do next';
 
 export const SUGGESTED_DOCTORS_HEADING = 'Suggested doctors';
 
-// Placeholder results until the backend scores the intake.
 export const CONDITION_SUGGESTIONS: ConditionSuggestion[] = [
   {
     id: 'migraine',

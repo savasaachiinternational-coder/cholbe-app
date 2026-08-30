@@ -15,6 +15,9 @@ import { useEdgeToEdgeStatusBar } from '../../hooks/useEdgeToEdgeStatusBar';
 import type { RootStackParamList } from '../../navigation/types';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
 import { FONT } from '../../theme/typography';
+import { HomeBottomNav } from './HomeBottomNav';
+import type { BottomTabKey } from './homeData';
+import { navigateCustomerTab } from './customerTabNavigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddReportMenu'>;
 
@@ -36,6 +39,10 @@ export function AddReportMenuScreen({ navigation }: Props) {
       return;
     }
     navigation.navigate('UploadReportOptionsMenu');
+  };
+
+  const handleTabPress = (tab: BottomTabKey) => {
+    navigateCustomerTab(navigation, tab);
   };
 
   return (
@@ -125,7 +132,7 @@ export function AddReportMenuScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      <View
+      {/* <View
         style={[styles.bottomTabBar, { paddingBottom: 12 + insets.bottom }]}
       >
         <TouchableOpacity
@@ -176,6 +183,14 @@ export function AddReportMenuScreen({ navigation }: Props) {
           <Feather name="user" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Profile</Text>
         </TouchableOpacity>
+      </View> */}
+
+      <View style={styles.bottomNavWrap}>
+        <HomeBottomNav
+          activeTab={'report'}
+          bottomInset={insets.bottom}
+          onTabPress={handleTabPress}
+        />
       </View>
     </View>
   );
@@ -353,6 +368,12 @@ const styles = StyleSheet.create({
     fontFamily: FONT.semibold,
     fontWeight: '600',
   },
+  bottomNavWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   bottomTabBar: {
     flexDirection: 'row',
     minHeight: 74,
@@ -380,3 +401,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

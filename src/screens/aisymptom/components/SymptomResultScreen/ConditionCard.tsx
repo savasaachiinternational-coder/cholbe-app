@@ -3,7 +3,6 @@ import React from 'react';
 import type {ConditionSuggestion} from '../../data/SymptomResultScreen/symptomResults';
 import { FONT } from '../../../../theme/typography';
 
-/** Confidence reads green when it is high and red as it drops. */
 function confidenceColors(confidence: number) {
   if (confidence >= 70) return {fill: '#17962F', track: '#E5EAE6'};
   if (confidence >= 50) return {fill: '#E36A79', track: '#FBDEDE'};
@@ -14,7 +13,7 @@ type Props = {
   condition: ConditionSuggestion;
 };
 
-export function ConditionCard({condition}: Props) {
+function ConditionCardBase({condition}: Props) {
   const {fill, track} = confidenceColors(condition.confidence);
   const width: DimensionValue = `${Math.max(
     0,
@@ -47,6 +46,8 @@ export function ConditionCard({condition}: Props) {
     </View>
   );
 }
+
+export const ConditionCard = React.memo(ConditionCardBase);
 
 const styles = StyleSheet.create({
   container: {

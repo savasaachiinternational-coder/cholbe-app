@@ -1,6 +1,6 @@
-import {generateJson} from '../shared/geminiClient';
+import { GeminiError, generateJson } from '../shared/geminiClient';
 
-export {GeminiError as SymptomBriefError} from '../shared/geminiClient';
+export { GeminiError as SymptomBriefError } from '../shared/geminiClient';
 
 const SYSTEM_CONTEXT = `
 You clean up raw OCR text scanned from a document a patient attached to a symptom checker.
@@ -37,7 +37,6 @@ const BRIEF_SCHEMA = {
         'The polished sickness-only brief. Empty string when hasSicknessInfo is false. Never put commentary here.',
     },
   },
-  // Ordered so the model commits to the verdict before writing the summary.
   required: ['hasSicknessInfo', 'summary'],
   propertyOrdering: ['hasSicknessInfo', 'summary'],
 } as const;
@@ -47,25 +46,51 @@ type RawBrief = {
   summary?: string;
 };
 
-/**
- * Polishes OCR text down to the sickness-related part.
- *
- * Returns null when the document holds nothing health-related, so the caller
- * can say so rather than dropping a page of letterhead into the composer.
- * Throws `SymptomBriefError` when Gemini could not be reached or refused.
- */
+function cleanOcrText(rawText: string): string {
+  return rawText
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function fallbackBriefFromText(text: string): string | null {
+  const lines = text
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  if (!lines.length) return null;
+
+  const symptomLinePattern =
+    /(pain|ache|fever|cough|nausea|vomit|bloat|stomach|headache|sore|fatigue|weak|dizzy|diarrh|constipat|gas|acid|burn|chest|breath|belch|tired|cramp)/i;
+  const relevantLines = lines.filter(line => symptomLinePattern.test(line));
+  const selectedLines = (relevantLines.length ? relevantLines : lines).slice(0, 3);
+
+  return selectedLines.join(' ');
+}
+
 export async function briefSymptomText(rawText: string): Promise<string | null> {
-  const text = rawText.trim();
+  const text = cleanOcrText(rawText);
   if (!text) return null;
 
-  const brief = await generateJson<RawBrief>({
-    systemInstruction: SYSTEM_CONTEXT,
-    parts: [{text: `OCR text from the attached document:\n\n${text}`}],
-    responseSchema: BRIEF_SCHEMA,
-  });
+  let brief: RawBrief;
+  try {
+    brief = await generateJson<RawBrief>({
+      systemInstruction: SYSTEM_CONTEXT,
+      parts: [{ text: `OCR text from the attached document:\n\n${text}` }],
+      responseSchema: BRIEF_SCHEMA,
+    });
+  } catch (err) {
+    if (err instanceof GeminiError && /empty input/i.test(err.message)) {
+      return fallbackBriefFromText(text);
+    }
+    throw err;
+  }
 
   const summary = brief.summary?.trim();
-  // Trust the flag, but an empty summary means the same thing either way.
   if (!brief.hasSicknessInfo || !summary) return null;
   return summary;
 }

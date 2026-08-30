@@ -1,11 +1,16 @@
-import {StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import React from 'react';
 import Feather from 'react-native-vector-icons/Feather';
 import LinearGradient from 'react-native-linear-gradient';
-import type {PickedFile} from '../../../../utils/fileAsset';
-import {AiAttachmentChip} from './AiAttachmentChip';
-import {AiVoiceNoteChip} from './AiVoiceNoteChip';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { PickedFile } from '../../../../utils/fileAsset';
+import { AiAttachmentChip } from './AiAttachmentChip';
+import { AiVoiceNoteChip } from './AiVoiceNoteChip';
 import { FONT } from '../../../../theme/typography';
 
 type VoiceNote = {
@@ -31,7 +36,7 @@ type Props = {
   onSend: () => void;
 };
 
-export function AiSymptomComposer({
+function AiSymptomComposerBase({
   message,
   onChangeMessage,
   attachment,
@@ -48,7 +53,6 @@ export function AiSymptomComposer({
   canSend,
   onSend,
 }: Props) {
-  const insect = useSafeAreaInsets();
   return (
     <View>
       {attachment ? (
@@ -68,7 +72,7 @@ export function AiSymptomComposer({
         />
       ) : null}
 
-      <View style={[styles.inputBox, {marginBottom:insect.bottom+10}]}>
+      <View style={styles.inputBox}>
         {recording ? (
           <View style={styles.recordingRow}>
             <View style={styles.recordingDot} />
@@ -76,13 +80,14 @@ export function AiSymptomComposer({
             <TouchableOpacity
               activeOpacity={0.8}
               hitSlop={10}
-              onPress={onCancelRecording}>
+              onPress={onCancelRecording}
+            >
               <Text style={styles.recordingCancel}>Cancel</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <TextInput
-            style={[styles.input,]}
+            style={styles.input}
             value={message}
             onChangeText={onChangeMessage}
             placeholder="e.g. Headache, stomach pain"
@@ -97,7 +102,8 @@ export function AiSymptomComposer({
             activeOpacity={0.8}
             hitSlop={8}
             onPress={onPickAttachment}
-            disabled={recording || scanning}>
+            disabled={recording || scanning}
+          >
             <Feather
               name="plus"
               color={recording || scanning ? '#B7BFC7' : '#454F5B'}
@@ -109,7 +115,8 @@ export function AiSymptomComposer({
             <TouchableOpacity
               activeOpacity={0.8}
               hitSlop={8}
-              onPress={onToggleRecording}>
+              onPress={onToggleRecording}
+            >
               <Feather
                 name={recording ? 'square' : 'mic'}
                 color={recording ? '#E5484D' : '#454F5B'}
@@ -120,15 +127,17 @@ export function AiSymptomComposer({
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={onSend}
-              disabled={!canSend}>
+              disabled={!canSend}
+            >
               <LinearGradient
                 colors={['#5FD3A2', '#4EA8E9']}
-                start={{x: 0, y: 0}}
-                end={{x: 1, y: 1}}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
                 style={[
                   styles.sendButton,
                   !canSend && styles.sendButtonDisabled,
-                ]}>
+                ]}
+              >
                 <Feather name="send" color="#FFFFFF" size={16} />
               </LinearGradient>
             </TouchableOpacity>
@@ -138,6 +147,8 @@ export function AiSymptomComposer({
     </View>
   );
 }
+
+export const AiSymptomComposer = React.memo(AiSymptomComposerBase);
 
 const styles = StyleSheet.create({
   inputBox: {

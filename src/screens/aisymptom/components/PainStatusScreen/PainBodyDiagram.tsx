@@ -5,13 +5,15 @@ type Props = {
   source: ImageSourcePropType;
 };
 
-export function PainBodyDiagram({source}: Props) {
+function PainBodyDiagramBase({source}: Props) {
   return (
     <View style={styles.container}>
       <Image source={source} style={styles.image} resizeMode="contain" />
     </View>
   );
 }
+
+export const PainBodyDiagram = React.memo(PainBodyDiagramBase);
 
 const styles = StyleSheet.create({
   container: {

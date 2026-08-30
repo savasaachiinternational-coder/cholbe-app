@@ -509,6 +509,7 @@ export function AdminUsersScreen({ navigation, route }: Props) {
                   style={styles.input}
                   placeholder="Full name"
                   value={fullName}
+                  placeholderTextColor={'#616161'}
                   onChangeText={setFullName}
                 />
                 <TextInput
@@ -516,6 +517,7 @@ export function AdminUsersScreen({ navigation, route }: Props) {
                   placeholder="Email"
                   value={email}
                   onChangeText={setEmail}
+                  placeholderTextColor={'#616161'}
                   autoCapitalize="none"
                   keyboardType="email-address"
                 />
@@ -523,6 +525,7 @@ export function AdminUsersScreen({ navigation, route }: Props) {
                   style={styles.input}
                   placeholder="Phone (optional)"
                   value={phone}
+                  placeholderTextColor={'#616161'}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
                 />
@@ -530,12 +533,14 @@ export function AdminUsersScreen({ navigation, route }: Props) {
                   style={styles.input}
                   placeholder="Specialty"
                   value={specialtyName}
+                  placeholderTextColor={'#616161'}
                   onChangeText={setSpecialtyName}
                 />
                 <TextInput
                   style={styles.input}
                   placeholder="Consultation fee"
                   value={fee}
+                  placeholderTextColor={'#616161'}
                   onChangeText={setFee}
                   keyboardType="numeric"
                 />

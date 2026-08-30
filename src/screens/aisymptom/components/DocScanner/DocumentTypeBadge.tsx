@@ -12,7 +12,7 @@ const LABELS: Record<ScannedDocument['documentType'], string> = {
   LAB_REPORT: 'Lab test report',
 };
 
-export function DocumentTypeBadge({documentType}: Props) {
+function DocumentTypeBadgeBase({documentType}: Props) {
   const isPrescription = documentType === 'PRESCRIPTION';
   return (
     <View style={[styles.container, isPrescription ? styles.rx : styles.lab]}>
@@ -20,6 +20,8 @@ export function DocumentTypeBadge({documentType}: Props) {
     </View>
   );
 }
+
+export const DocumentTypeBadge = React.memo(DocumentTypeBadgeBase);
 
 const styles = StyleSheet.create({
   container: {

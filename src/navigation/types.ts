@@ -207,6 +207,5 @@ export type RootStackParamList = {
   Ideation:{intake: SymptomIntake};
   SymptomResult:{intake: SymptomIntake};
   IdeationNext:undefined;
-  AiSymptomSelected:{intake: SymptomIntake} | undefined;
   DocScanner:undefined;
 };

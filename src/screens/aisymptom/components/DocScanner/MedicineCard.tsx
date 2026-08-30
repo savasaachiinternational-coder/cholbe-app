@@ -7,7 +7,6 @@ type Props = {
   medicine: Medicine;
 };
 
-/** Rows the model left blank are dropped rather than shown as "N/A" noise. */
 function DetailRow({label, value}: {label: string; value?: string}) {
   if (!value?.trim()) return null;
   return (
@@ -18,7 +17,7 @@ function DetailRow({label, value}: {label: string; value?: string}) {
   );
 }
 
-export function MedicineCard({medicine}: Props) {
+function MedicineCardBase({medicine}: Props) {
   const hasDetails =
     !!medicine.dosage?.trim() ||
     !!medicine.frequency?.trim() ||
@@ -39,6 +38,8 @@ export function MedicineCard({medicine}: Props) {
     </View>
   );
 }
+
+export const MedicineCard = React.memo(MedicineCardBase);
 
 const styles = StyleSheet.create({
   container: {

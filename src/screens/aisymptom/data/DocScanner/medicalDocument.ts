@@ -27,10 +27,6 @@ export type DiagnosticReport = {
   results: LabResult[];
 };
 
-/**
- * Discriminated on `documentType`, so narrowing on that field gives the caller
- * either `medicines` or `results` — never both, never neither.
- */
 export type ScannedDocument = PrescriptionReport | DiagnosticReport;
 
 export const DOC_SCANNER_TITLE = 'Scan a medical document';
@@ -43,10 +39,5 @@ export const DOC_SCANNER_CTA_LABEL = 'Select prescription or lab report';
 export const DOC_SCANNER_EMPTY_HINT =
   'Nothing scanned yet. Pick a clear, well-lit photo of the whole page for the best reading.';
 
-/**
- * Shown under every result. Extraction is best-effort OCR by a language model —
- * it can misread a dosage, and that is not a risk to leave implicit in a health
- * app.
- */
 export const DOC_SCANNER_DISCLAIMER =
   'Automatically extracted and may contain mistakes. Always check against the original document before acting on it.';

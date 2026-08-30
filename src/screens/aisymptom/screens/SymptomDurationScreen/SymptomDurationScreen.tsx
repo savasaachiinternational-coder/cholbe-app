@@ -1,6 +1,11 @@
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import React, {useState} from 'react';
-import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
+import {
+  StackActions,
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../../../navigation/types';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -38,7 +43,7 @@ export function SymptomDurationScreen() {
     if (!duration) return;
 
     const intake: SymptomIntake = {title, body, duration: duration.label};
-    navigation.navigate('PainStatus', {intake});
+    navigation.dispatch(StackActions.replace('PainStatus', {intake}));
   };
 
   return (
@@ -96,8 +101,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    // flexGrow (not flex) lets the spacers push content apart when it is short,
-    // while still allowing the content to scroll once it outgrows the screen.
     flexGrow: 1,
     paddingHorizontal: 16,
     paddingBottom: 16,

@@ -85,7 +85,6 @@ import { PreviousHistoryCheck } from '../screens/aisymptom/screens/PreviousHisto
 import { IdeationScreen } from '../screens/aisymptom/screens/IdeationScreen/IdeationScreen';
 import { SymptomResultScreen } from '../screens/aisymptom/screens/SymptomResultScreen/SymptomResultScreen';
 import { IdeationNext } from '../screens/aisymptom/screens/IdeationNext/IdeationNext';
-import { AiSymptomSelected } from '../screens/aisymptom/screens/AiSymptomSelected/AiSymptomSelected';
 import { DocScanner } from '../screens/aisymptom/screens/DocScanner/DocScanner';
 import type { RootStackParamList } from './types';
 
@@ -517,11 +516,6 @@ export function RootNavigator({
       <Stack.Screen
         name="IdeationNext"
         component={IdeationNext}
-        options={{ animation: 'slide_from_right' }}
-      />
-      <Stack.Screen
-        name="AiSymptomSelected"
-        component={AiSymptomSelected}
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen

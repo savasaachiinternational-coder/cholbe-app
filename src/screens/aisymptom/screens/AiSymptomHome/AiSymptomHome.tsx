@@ -1,39 +1,40 @@
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import React, {useEffect, useState} from 'react';
-import Feather from 'react-native-vector-icons/Feather';
-import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import type {RootStackParamList} from '../../../../navigation/types';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useEdgeToEdgeStatusBar} from '../../../../hooks/useEdgeToEdgeStatusBar';
-import {getStoredUser} from '../../../../api/tokenStorage';
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../../navigation/types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEdgeToEdgeStatusBar } from '../../../../hooks/useEdgeToEdgeStatusBar';
+import { useKeyboardHeight } from '../../../../hooks/useKeyboardHeight';
+import { getStoredUser } from '../../../../api/tokenStorage';
 import {
   AiHelpCategoryCard,
   CATEGORY_GRID_GAP,
 } from '../../components/AiSymptomHome/AiHelpCategoryCard';
-import {AiSymptomHeaderCard} from '../../components/shared/AiSymptomHeaderCard';
-import {AiSymptomComposer} from '../../components/AiSymptomHome/AiSymptomComposer';
-import {AI_HELP_CATEGORIES} from '../../data/AiSymptomHome/aiHelpCategories';
-import {useAiSymptomComposer} from './useAiSymptomComposer';
+import { AiSymptomHeaderCard } from '../../components/shared/AiSymptomHeaderCard';
+import { AiSymptomComposer } from '../../components/AiSymptomHome/AiSymptomComposer';
+import { AI_HELP_CATEGORIES } from '../../data/AiSymptomHome/aiHelpCategories';
+import { useAiSymptomComposer, type AiSymptomDraft } from './useAiSymptomComposer';
 import { FONT } from '../../../../theme/typography';
 
-type Navigation = NativeStackNavigationProp<RootStackParamList, 'AiSymptomHome'>;
+type Navigation = NativeStackNavigationProp<
+  RootStackParamList,
+  'AiSymptomHome'
+>;
 type Route = RouteProp<RootStackParamList, 'AiSymptomHome'>;
 
 export function AiSymptomHome() {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   const navigation = useNavigation<Navigation>();
   const route = useRoute<Route>();
   const [userName, setUserName] = useState<string | null>(null);
+
   useEffect(() => {
     let active = true;
     getStoredUser()
@@ -46,35 +47,40 @@ export function AiSymptomHome() {
     };
   }, []);
 
-  const composer = useAiSymptomComposer(draft => {
-    navigation.navigate('SymptomDuration', {
-      title: draft.categories.join(', '),
-      body: draft.message,
-    });
-  });
+  const submitDraft = useCallback(
+    (draft: AiSymptomDraft) => {
+      navigation.navigate('SymptomDuration', {
+        title: draft.categories.join(', '),
+        body: draft.message,
+      });
+    },
+    [navigation],
+  );
+
+  const composer = useAiSymptomComposer(submitDraft);
+  const { ingestScannedFile } = composer;
+  const scannedFile = route.params?.scannedFile;
 
   useEffect(() => {
-    const scannedFile = route.params?.scannedFile;
     if (!scannedFile) return;
-    composer.ingestScannedFile(scannedFile);
-    // Clear the param so returning to this screen later doesn't re-ingest it.
-    navigation.setParams({scannedFile: undefined});
-  }, [route.params?.scannedFile, composer.ingestScannedFile, navigation]);
+    ingestScannedFile(scannedFile);
+    navigation.setParams({ scannedFile: undefined });
+  }, [scannedFile, ingestScannedFile, navigation]);
 
-  const closeAssistant = () => {
+  const closeAssistant = useCallback(() => {
     if (navigation.canGoBack()) navigation.goBack();
-  };
+  }, [navigation]);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.marginatedContainer}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        <View style={{marginTop: insets.top + 12}}>
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ marginTop: insets.top + 12 }}>
           <AiSymptomHeaderCard onClose={closeAssistant} />
         </View>
 
@@ -87,25 +93,14 @@ export function AiSymptomHome() {
           </Text>
         </View>
 
-        {/* <TouchableOpacity
-          style={styles.docScannerLink}
-          activeOpacity={0.85}
-          onPress={() => navigation.navigate('DocScanner')}>
-          <Feather name="file-text" size={18} color="#45A096" />
-          <Text style={styles.docScannerLinkLabel}>
-            Scan a prescription or lab report
-          </Text>
-          <Feather name="chevron-right" size={18} color="#45A096" />
-        </TouchableOpacity> */}
-
         <View style={styles.helpCardContainer}>
-          {AI_HELP_CATEGORIES.map((item, index) => (
+          {AI_HELP_CATEGORIES.map(item => (
             <AiHelpCategoryCard
-              key={`${item.title}-${index}`}
+              key={item.title}
               image={item.image}
               title={item.title}
               selected={composer.categories.includes(item.title)}
-              onPress={() => composer.selectCategory(item.title)}
+              onPress={composer.selectCategory}
             />
           ))}
         </View>
@@ -114,8 +109,9 @@ export function AiSymptomHome() {
       <View
         style={[
           styles.composerWrapper,
-          {paddingBottom: Math.max(insets.bottom, 12)},
-        ]}>
+          { paddingBottom: Math.max(insets.bottom, 12) + keyboardHeight },
+        ]}
+      >
         <AiSymptomComposer
           message={composer.message}
           onChangeMessage={composer.setMessage}
@@ -134,7 +130,7 @@ export function AiSymptomHome() {
           onSend={composer.send}
         />
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -167,26 +163,6 @@ const styles = StyleSheet.create({
     fontFamily: FONT.regular,
     fontWeight: '400',
     lineHeight: 22,
-  },
-  docScannerLink: {
-    marginTop: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: '#45A096',
-  },
-  docScannerLinkLabel: {
-    flex: 1,
-    color: '#091B27',
-    fontSize: 14,
-    fontFamily: FONT.semibold,
-    fontWeight: '600',
   },
   helpCardContainer: {
     marginTop: 20,

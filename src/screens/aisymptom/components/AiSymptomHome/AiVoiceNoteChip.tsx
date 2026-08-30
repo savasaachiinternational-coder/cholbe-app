@@ -10,7 +10,7 @@ type Props = {
   onRemove: () => void;
 };
 
-export function AiVoiceNoteChip({id, uri, onRemove}: Props) {
+function AiVoiceNoteChipBase({id, uri, onRemove}: Props) {
   const {isPlaying, progress, positionLabel, durationLabel, toggle, stop} =
     useVoicePlayer(id, uri);
 
@@ -47,6 +47,8 @@ export function AiVoiceNoteChip({id, uri, onRemove}: Props) {
     </View>
   );
 }
+
+export const AiVoiceNoteChip = React.memo(AiVoiceNoteChipBase);
 
 const styles = StyleSheet.create({
   container: {

@@ -6,12 +6,11 @@ import { FONT } from '../../../../theme/typography';
 type Props = {
   iconName: string;
   title: string;
-  /** Rendered as a bullet list; use `body` for a single paragraph instead. */
   bullets?: string[];
   body?: string;
 };
 
-export function AdviceCard({iconName, title, bullets, body}: Props) {
+function AdviceCardBase({iconName, title, bullets, body}: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -30,6 +29,8 @@ export function AdviceCard({iconName, title, bullets, body}: Props) {
     </View>
   );
 }
+
+export const AdviceCard = React.memo(AdviceCardBase);
 
 const styles = StyleSheet.create({
   container: {

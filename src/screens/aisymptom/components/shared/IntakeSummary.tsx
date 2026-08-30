@@ -42,7 +42,7 @@ function buildRows(intake: Partial<SymptomIntake>): Row[] {
   return rows;
 }
 
-export function IntakeSummary({intake}: Props) {
+function IntakeSummaryBase({intake}: Props) {
   const rows = buildRows(intake);
   const hasHeader = Boolean(intake.title || intake.body);
   if (!hasHeader && rows.length === 0) return null;
@@ -92,6 +92,8 @@ export function IntakeSummary({intake}: Props) {
   );
 }
 
+export const IntakeSummary = React.memo(IntakeSummaryBase);
+
 const styles = StyleSheet.create({
   card: {
     marginTop: 16,
@@ -101,7 +103,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#F5F4FD',
     elevation: 1,
-    // Clips the wave to the rounded corners.
     overflow: 'hidden',
   },
   backgroundWave: {

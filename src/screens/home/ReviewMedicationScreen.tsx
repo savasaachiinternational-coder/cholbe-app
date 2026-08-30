@@ -21,6 +21,9 @@ import {useMedicationDraft} from '../../context/MedicationDraftContext';
 import {ApiError} from '../../api/client';
 import { WaveTitleBand } from '../../components/WaveTitleBand';
 import { FONT } from '../../theme/typography';
+import { HomeBottomNav } from './HomeBottomNav';
+import { navigateCustomerTab } from './customerTabNavigation';
+import { BottomTabKey } from './homeData';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewMedication'>;
 
@@ -45,6 +48,10 @@ export function ReviewMedicationScreen({navigation}: Props) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleTabPress = (tab: BottomTabKey) => {
+    navigateCustomerTab(navigation, tab);
   };
 
   return (
@@ -100,7 +107,7 @@ export function ReviewMedicationScreen({navigation}: Props) {
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.bottomTabBar, {paddingBottom: 12 + insets.bottom}]}>
+      {/* <View style={[styles.bottomTabBar, {paddingBottom: 12 + insets.bottom}]}>
         <TouchableOpacity
           style={[styles.tabItem, {width: width / 5}]}
           activeOpacity={0.7}
@@ -144,7 +151,15 @@ export function ReviewMedicationScreen({navigation}: Props) {
           <Feather name="user" size={24} color="#A0A5BA" />
           <Text style={styles.tabLabel}>Profile</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
+
+       <View style={styles.bottomNavWrap}>
+              <HomeBottomNav
+                activeTab={'medication'}
+                bottomInset={insets.bottom}
+                onTabPress={handleTabPress}
+              />
+            </View>
     </View>
   );
 }
@@ -354,6 +369,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONT.semibold,
     fontWeight: '600',
+  },
+    bottomNavWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   bottomTabBar: {
     flexDirection: 'row',

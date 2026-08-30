@@ -103,8 +103,6 @@ export function DocScanner() {
 
   const confirm = () => {
     if (!pickedFile) return;
-    // AiSymptomHome is already on the stack under this screen, so navigating
-    // to it pops back rather than pushing a new instance.
     navigation.navigate('AiSymptomHome', {scannedFile: pickedFile});
   };
 

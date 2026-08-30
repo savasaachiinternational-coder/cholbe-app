@@ -28,7 +28,6 @@ import {useSymptomAnalysis} from './useSymptomAnalysis';
 import {useSuggestedDoctors} from './useSuggestedDoctors';
 import { FONT } from '../../../../theme/typography';
 
-// Matches the two-column grid on DoctorListScreen.
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const DOCTOR_CARD_WIDTH = (SCREEN_WIDTH - 44) / 2;
 
@@ -40,7 +39,6 @@ type Route = RouteProp<RootStackParamList, 'SymptomResult'>;
 
 const RESULT_ERROR_HEADING = "I couldn't work that out";
 
-/** The API returns a raw amount; the card wants it already formatted. */
 function formatFee(fee: string | number): string {
   const amount = typeof fee === 'string' ? Number(fee) : fee;
   return Number.isNaN(amount) ? String(fee) : formatBdt(amount);
@@ -109,8 +107,6 @@ export function SymptomResultScreen() {
           </View>
         ) : null}
 
-        {/* An empty section under a heading reads as broken, so both are
-            hidden until there is something to show. */}
         {doctorsLoading || doctors.length ? (
           <>
             <Text style={styles.sectionHeading}>

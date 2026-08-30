@@ -15,12 +15,11 @@ import { FONT } from '../../../../theme/typography';
 type Props = {
   file: PickedFile;
   scanning?: boolean;
-  /** What the scan is busy with — OCR first, then the Gemini clean-up. */
   scanLabel?: string;
   onRemove: () => void;
 };
 
-export function AiAttachmentChip({file, scanning, scanLabel, onRemove}: Props) {
+function AiAttachmentChipBase({file, scanning, scanLabel, onRemove}: Props) {
   const isImage = isImageFile(file.mimeType, file.uri, file.fileName);
 
   return (
@@ -52,6 +51,8 @@ export function AiAttachmentChip({file, scanning, scanLabel, onRemove}: Props) {
     </View>
   );
 }
+
+export const AiAttachmentChip = React.memo(AiAttachmentChipBase);
 
 const styles = StyleSheet.create({
   container: {

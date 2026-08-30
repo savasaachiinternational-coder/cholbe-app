@@ -7,7 +7,7 @@ type Props = {
   result: LabResult;
 };
 
-export function LabResultCard({result}: Props) {
+function LabResultCardBase({result}: Props) {
   const abnormal = result.isAbnormal === true;
   const value = [result.value, result.unit?.trim()].filter(Boolean).join(' ');
 
@@ -34,6 +34,8 @@ export function LabResultCard({result}: Props) {
     </View>
   );
 }
+
+export const LabResultCard = React.memo(LabResultCardBase);
 
 const styles = StyleSheet.create({
   container: {

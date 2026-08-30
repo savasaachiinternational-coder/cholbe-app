@@ -3,11 +3,6 @@ import type {ImageSourcePropType} from 'react-native';
 export type PainLocation = {
   id: string;
   label: string;
-  /**
-   * Body diagram with this region highlighted. Only Upper Leg has been
-   * exported so far — the rest fall back to the default diagram until their
-   * artwork lands, at which point adding it here is a one-line change.
-   */
   image?: ImageSourcePropType;
 };
 

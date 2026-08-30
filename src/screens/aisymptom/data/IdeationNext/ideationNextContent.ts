@@ -5,7 +5,6 @@ export const IDEATION_NEXT_HEADING = "Here's what you can do next";
 export const TELEMEDICINE_PROMO = {
   badge: 'Get 10% off',
   caption: 'Your first telemedicine visit >',
-  // Placeholder art until the banner illustration is exported.
   image: require('../../../../assets/b3.png') as ImageSourcePropType,
 };
 

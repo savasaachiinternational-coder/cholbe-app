@@ -698,7 +698,7 @@ export function HomeScreen() {
             <TouchableOpacity
               style={styles.viewAllRow}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate('MedicineList')}
+              onPress={() => navigation.navigate('PharmacyShop')}
             >
               <Text style={styles.viewAllText}>View All</Text>
               <Feather name="chevron-right" size={14} color="#64748B" />

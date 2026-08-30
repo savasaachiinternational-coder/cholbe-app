@@ -9,7 +9,7 @@ type Props = {
   onClose?: () => void;
 };
 
-export function AiSymptomHeaderCard({
+function AiSymptomHeaderCardBase({
   title = 'ideated AI',
   subtitle = 'Describe feel, AI will guide you step-by-step',
   onClose,
@@ -40,6 +40,8 @@ export function AiSymptomHeaderCard({
     </View>
   );
 }
+
+export const AiSymptomHeaderCard = React.memo(AiSymptomHeaderCardBase);
 
 const styles = StyleSheet.create({
   container: {

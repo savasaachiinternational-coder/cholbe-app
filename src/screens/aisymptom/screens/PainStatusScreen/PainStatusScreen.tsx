@@ -1,13 +1,17 @@
 import {ScrollView, StyleSheet, Text, View} from 'react-native';
 import React, {useState} from 'react';
-import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
+import {
+  StackActions,
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useEdgeToEdgeStatusBar} from '../../../../hooks/useEdgeToEdgeStatusBar';
 import type {RootStackParamList} from '../../../../navigation/types';
 import {AiSymptomHeaderCard} from '../../components/shared/AiSymptomHeaderCard';
 import {GradientPillButton} from '../../components/shared/GradientPillButton';
-import {IntakeSummary} from '../../components/shared/IntakeSummary';
 import {PainBodyDiagram} from '../../components/PainStatusScreen/PainBodyDiagram';
 import {PainLocationChip} from '../../components/PainStatusScreen/PainLocationChip';
 import { FONT } from '../../../../theme/typography';
@@ -35,9 +39,11 @@ export function PainStatusScreen() {
 
   const handleContinue = () => {
     if (!selected) return;
-    navigation.navigate('PreviousHistoryCheck', {
-      intake: {...intake, location: selected.label},
-    });
+    navigation.dispatch(
+      StackActions.replace('PreviousHistoryCheck', {
+        intake: {...intake, location: selected.label},
+      }),
+    );
   };
 
   return (
@@ -46,8 +52,6 @@ export function PainStatusScreen() {
         <AiSymptomHeaderCard onClose={closeAssistant} />
 
         <Text style={styles.question}>{PAIN_LOCATION_QUESTION}</Text>
-
-        {/* <IntakeSummary intake={intake} /> */}
 
         <PainBodyDiagram source={selected?.image ?? DEFAULT_BODY_DIAGRAM} />
 
@@ -97,7 +101,6 @@ const styles = StyleSheet.create({
   },
   chipScroll: {
     flexGrow: 0,
-    // Cancel the screen padding so chips can scroll edge to edge.
     marginHorizontal: -16,
     marginVertical: 20,
   },

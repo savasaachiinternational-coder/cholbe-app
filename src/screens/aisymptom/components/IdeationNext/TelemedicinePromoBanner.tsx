@@ -17,7 +17,7 @@ type Props = {
   onPress?: () => void;
 };
 
-export function TelemedicinePromoBanner({
+function TelemedicinePromoBannerBase({
   badge,
   caption,
   image,
@@ -42,6 +42,8 @@ export function TelemedicinePromoBanner({
     </TouchableOpacity>
   );
 }
+
+export const TelemedicinePromoBanner = React.memo(TelemedicinePromoBannerBase);
 
 const styles = StyleSheet.create({
   container: {

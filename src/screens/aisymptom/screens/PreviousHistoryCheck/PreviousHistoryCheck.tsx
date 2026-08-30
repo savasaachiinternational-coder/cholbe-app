@@ -1,14 +1,19 @@
-import {StyleSheet, Text, View} from 'react-native';
-import React, {useState} from 'react';
-import {useNavigation, useRoute, type RouteProp} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useEdgeToEdgeStatusBar} from '../../../../hooks/useEdgeToEdgeStatusBar';
-import type {RootStackParamList} from '../../../../navigation/types';
-import {AiSymptomHeaderCard} from '../../components/shared/AiSymptomHeaderCard';
-import {ChoicePill} from '../../components/shared/ChoicePill';
-import {GradientPillButton} from '../../components/shared/GradientPillButton';
-import {IntakeSummary} from '../../components/shared/IntakeSummary';
+import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  StackActions,
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEdgeToEdgeStatusBar } from '../../../../hooks/useEdgeToEdgeStatusBar';
+import type { RootStackParamList } from '../../../../navigation/types';
+import { AiSymptomHeaderCard } from '../../components/shared/AiSymptomHeaderCard';
+import { ChoicePill } from '../../components/shared/ChoicePill';
+import { GradientPillButton } from '../../components/shared/GradientPillButton';
+import { IntakeSummary } from '../../components/shared/IntakeSummary';
 import { FONT } from '../../../../theme/typography';
 import {
   PREVIOUS_HISTORY_OPTIONS,
@@ -25,7 +30,7 @@ export function PreviousHistoryCheck() {
   useEdgeToEdgeStatusBar();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Navigation>();
-  const {intake} = useRoute<Route>().params;
+  const { intake } = useRoute<Route>().params;
   const [haveInPrevious, setHaveInPrevious] = useState<boolean | null>(null);
 
   const closeAssistant = () => {
@@ -33,16 +38,17 @@ export function PreviousHistoryCheck() {
   };
 
   const handleContinue = () => {
-    // `false` is a valid answer, so check for an unanswered question explicitly.
     if (haveInPrevious === null) return;
-    navigation.navigate('Ideation', {
-      intake: {...intake, haveInPrevious},
-    });
+    navigation.dispatch(
+      StackActions.replace('Ideation', {
+        intake: { ...intake, haveInPrevious },
+      }),
+    );
   };
 
   return (
     <View style={styles.container}>
-      <View style={[styles.content, {paddingTop: insets.top + 12}]}>
+      <View style={[styles.content, { paddingTop: insets.top + 12 }]}>
         <AiSymptomHeaderCard onClose={closeAssistant} />
 
         <Text style={styles.question}>{PREVIOUS_HISTORY_QUESTION}</Text>
@@ -65,7 +71,7 @@ export function PreviousHistoryCheck() {
 
         <View style={styles.spacer} />
 
-        <View style={{paddingBottom: Math.max(insets.bottom, 16)}}>
+        <View style={{ paddingBottom: Math.max(insets.bottom, 16) }}>
           <GradientPillButton
             label="Continue"
             disabled={haveInPrevious === null}

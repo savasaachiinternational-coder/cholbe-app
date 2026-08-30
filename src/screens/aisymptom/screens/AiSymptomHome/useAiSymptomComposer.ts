@@ -1,14 +1,14 @@
-import {useCallback, useState} from 'react';
-import {Alert} from 'react-native';
-import {launchImageLibrary} from 'react-native-image-picker';
-import {useVoiceRecorder} from '../../../../hooks/useVoiceRecorder';
-import {stopActiveVoicePlayback} from '../../../../hooks/useVoicePlayer';
-import {pickedFileFromAsset, type PickedFile} from '../../../../utils/fileAsset';
+import { useCallback, useState } from 'react';
+import { Alert } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { useVoiceRecorder } from '../../../../hooks/useVoiceRecorder';
+import { stopActiveVoicePlayback } from '../../../../hooks/useVoicePlayer';
+import { pickedFileFromAsset, type PickedFile } from '../../../../utils/fileAsset';
 import {
   canRecognizeText,
   recognizeTextFromImage,
 } from '../../../../utils/textRecognition';
-import {briefSymptomText} from '../../services/AiSymptomHome/symptomBriefService';
+import { briefSymptomText } from '../../services/AiSymptomHome/symptomBriefService';
 
 function errorText(err: unknown, fallback: string) {
   return err instanceof Error && err.message ? err.message : fallback;
@@ -20,14 +20,12 @@ export type AiVoiceNote = {
 };
 
 export type AiSymptomDraft = {
-  /** Categories chosen in the grid — joined into the intake title. */
   categories: string[];
   message: string;
   attachment: PickedFile | null;
   voiceNote: AiVoiceNote | null;
 };
 
-/** The attachment pipeline runs on-device OCR, then a Gemini clean-up pass. */
 type ScanStatus = 'idle' | 'reading' | 'briefing';
 
 const SCAN_LABELS: Record<ScanStatus, string> = {
@@ -42,12 +40,11 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
   const [voiceNote, setVoiceNote] = useState<AiVoiceNote | null>(null);
   const [scanStatus, setScanStatus] = useState<ScanStatus>('idle');
   const [categories, setCategories] = useState<string[]>([]);
-  const {recording, recordLabel, getLastError, start, stop, cancel} =
+  const { recording, recordLabel, getLastError, start, stop, cancel } =
     useVoiceRecorder();
 
   const scanning = scanStatus !== 'idle';
 
-  // Append rather than replace so a typed symptom is not lost.
   const appendMessage = useCallback((text: string) => {
     setMessage(prev => (prev ? `${prev}\n${text}` : text));
   }, []);
@@ -65,16 +62,11 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
         return;
       }
 
-      // OCR returns the whole page — letterhead, addresses, billing lines and
-      // all. Gemini trims it to the sickness-related part before it lands in
-      // the composer.
       setScanStatus('briefing');
       let brief: string | null;
       try {
         brief = await briefSymptomText(text);
       } catch (err) {
-        // Keep the raw transcription rather than losing the scan when the
-        // brief cannot be produced (no key, offline, blocked prompt).
         Alert.alert(
           'Summary',
           errorText(err, 'Could not summarise that document.'),
@@ -84,6 +76,7 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
       }
 
       if (!brief) {
+        appendMessage(text);
         Alert.alert('Scan', 'No health details found in that document.');
         return;
       }
@@ -104,21 +97,17 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
       result = await launchImageLibrary({
         mediaType: 'mixed',
         selectionLimit: 1,
-        // Full-resolution photos slow OCR down without reading any better.
         maxWidth: 1600,
         maxHeight: 1600,
         quality: 0.9,
       });
     } catch (err) {
-      // launchImageLibrary rejects when the native module is missing from the
-      // build; without this the tap looks like it did nothing at all.
       Alert.alert('Attachment', errorText(err, 'Could not open the picker.'));
       return;
     }
 
     if (result.didCancel) return;
 
-    // The picker reports failures in the response rather than by rejecting.
     if (result.errorCode) {
       Alert.alert(
         'Attachment',
@@ -143,8 +132,6 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
     });
   }, [runPickAttachment]);
 
-  // Used when a file arrives from outside the picker flow, e.g. the
-  // DocScanner camera screen handing back a captured photo.
   const ingestScannedFile = useCallback(
     (file: PickedFile) => {
       processFile(file).catch(err => {
@@ -163,11 +150,10 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
         Alert.alert('Voice note', 'Could not save the recording. Please try again.');
         return;
       }
-      setVoiceNote({id: `voice-${Date.now()}`, uri});
+      setVoiceNote({ id: `voice-${Date.now()}`, uri });
       return;
     }
 
-    // Only one voice note per draft — drop the previous one before recording.
     await stopActiveVoicePlayback();
     setVoiceNote(null);
 
@@ -192,7 +178,6 @@ export function useAiSymptomComposer(onSubmit?: (draft: AiSymptomDraft) => void)
 
   const removeVoiceNote = useCallback(() => setVoiceNote(null), []);
 
-  // Multi-select: tapping toggles a category in or out of the selection.
   const selectCategory = useCallback((title: string) => {
     setCategories(prev =>
       prev.includes(title)
